@@ -1,0 +1,19 @@
+/**
+ * @file
+ * Defines the styles for the multichoice question type.
+ */
+
+.multichoice_row {
+
+  p {
+    margin: 0;
+  }
+
+  td {
+    vertical-align: middle;
+  }
+
+  .selector-td {
+    text-align: center;
+  }
+}

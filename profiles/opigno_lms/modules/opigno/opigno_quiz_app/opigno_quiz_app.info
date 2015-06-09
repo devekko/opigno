@@ -1,0 +1,40 @@
+name = Opigno Quiz App
+description = Opigno Quiz functionality and default displays.
+core = 7.x
+package = Opigno Apps
+
+files[] = views/opigno_quiz_app_field_course_quiz_weight.inc
+files[] = views/opigno_quiz_app_sort_course_quiz_weight.inc
+
+dependencies[] = opigno
+dependencies[] = og
+dependencies[] = og_quiz
+dependencies[] = number
+dependencies[] = quiz
+dependencies[] = long_answer
+dependencies[] = matching
+dependencies[] = quiz_directions
+dependencies[] = multichoice
+dependencies[] = scale
+dependencies[] = short_answer
+dependencies[] = truefalse
+dependencies[] = quiz_ddlines
+dependencies[] = quiz_drag_drop
+dependencies[] = cloze
+dependencies[] = h5p
+dependencies[] = quiz_h5p
+dependencies[] = opigno_scorm
+dependencies[] = opigno_scorm_ui
+dependencies[] = opigno_scorm_quiz
+dependencies[] = views
+dependencies[] = views_content
+dependencies[] = entityreference
+dependencies[] = rules
+dependencies[] = rules_conditional
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.11"
+core = "7.x"
+project = "opigno_quiz_app"
+datestamp = "1425245887"
+

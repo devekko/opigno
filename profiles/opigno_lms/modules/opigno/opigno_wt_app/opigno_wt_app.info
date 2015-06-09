@@ -1,0 +1,14 @@
+name = Opigno WYSIWYG Templates App
+description = Prepackaged WYSIWYG templates.
+core = 7.x
+package = Opigno Apps
+
+dependencies[] = wysiwyg
+dependencies[] = wysiwyg_template
+
+; Information added by drupal.org packaging script on 2013-09-19
+version = "7.x-1.0-rc3"
+core = "7.x"
+project = "opigno_wt_app"
+datestamp = "1379574245"
+

@@ -1,0 +1,24 @@
+<?php
+
+/**
+ * @file
+ * Installs the og_massadd module
+ *
+ */
+
+/**
+ * Implements hook_install().
+ */
+function og_massadd_install() {
+  //  variable_set('certify_certificate_path', '/var/drupal-content/certify/');
+  drupal_set_message(st("Organic Groups Mass Add settings are available under !link",
+    array( '!link' => l(st('Administer > Site configuration > OG Mass Add'),  'admin/config/og_massadd' ) )
+  ));
+}
+
+/**
+ * Implements of hook_uninstall().
+ */
+function og_massadd_uninstall() {
+  //  variable_del('certify_certificate_path');
+}

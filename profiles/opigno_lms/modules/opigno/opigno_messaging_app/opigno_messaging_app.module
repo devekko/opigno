@@ -1,0 +1,133 @@
+<?php
+
+/**
+ * @file
+ * Opigno messaging app module functions file.
+ */
+
+function opigno_messaging_app_permission() {
+  return array(
+    'message all groups' => array(
+      'title' => t("Message to all groups"),
+      'description' => t("Allows messaging all the groups"),
+    ),
+  );
+}
+
+function opigno_messaging_app_og_permission() {
+  return array(
+    'can be messaged' => array(
+      'title' => t("Can be messaged"),
+      'description' => t("Allows user to be messaged"),
+    ),
+    'can message anyone' => array(
+      'title' => t("Can message anyone"),
+      'description' => t("Allows user to message anyone"),
+    ),
+  );
+}
+
+function _opigno_messaging_app_get_groups($user) {
+  if (user_access("message all groups", $user)) {
+    $allgroups = og_get_all_group('node');
+    // Force og_get_all_group() structure to be the same as og_get_groups_by_user()
+    foreach ($allgroups as $group_index => $groupid) {
+      $groups['node'][$groupid] = $groupid;
+    }
+    /////////////////////////////////////////////////////
+  }
+  else {
+    $groups = og_get_groups_by_user($user, NULL);
+  }
+  return $groups;
+}
+
+
+function _opigno_messaging_app_get_users_in_groups($groups, $user) {
+  $allusers = entity_load('user');
+  foreach ($allusers as $account) {
+    foreach ($groups['node'] as $groupsid => $group_id) {
+      if (($account->uid != 0) && ($account->uid != $user->uid)) {
+        if ((og_is_member('node', $group_id, 'user', $account)) && ((og_user_access('node', $group_id, "can be messaged", $account)) || (og_user_access('node', $group_id, "can message anyone", $user)))) {
+          $users[$account->uid] = $account->name;
+        }
+      }
+    }
+  }
+  return $users;
+}
+
+function opigno_messaging_app_form_alter(&$form, &$form_state, $form_id) {
+  if (($form['form_id']['#value'] == 'privatemsg_new') && (strpos($form['#action'], '/messages/new') !== FALSE)) {
+    $form['#attached']['js'][] = drupal_add_js(drupal_get_path('module', 'opigno_messaging_app') . '/js/multiselect_messaging.js');
+    global $user;
+    $groups = _opigno_messaging_app_get_groups($user);
+    $form['groups'] = array(
+      '#type' => 'select',
+      '#title' => t('Courses and Classes'),
+      '#options' => array(
+        'All' => t('All'),
+      ),
+      '#default_value' => t('All'),
+      '#description' => t('Choose class or course to filter'),
+      '#weight' => -7,
+      '#ajax' => array(
+        'callback' => 'messaging_user_update_callback',
+        'wrapper' => 'recipient1-div',
+        'method' => 'replace',
+        'effect' => 'fade',
+      ),
+    );
+
+    $cache = array();
+    foreach ($groups['node'] as $groupid => $group_id) {
+      $node = node_load($group_id);
+      if (!isset($cache[$node->type])) {
+        $typeinfo = node_type_load($node->type);
+        $cache[$node->type] = $typeinfo->name; //check if object
+      }
+      $form['groups']['#options'][$cache[$node->type]][$groupid] = $node->title;
+    }
+
+    unset($form['recipient']['#required']);
+    if (!isset($form['recipient1'])) {
+      $form['recipient1'] = array(
+        '#type' => 'multiselect',
+        '#title' => t('Select recipients'),
+        '#default_value' => NULL,
+        '#size' => 10,
+        '#required' => TRUE,
+        '#weight' => -6,
+        '#prefix' => '<div id="recipient1-div">',
+        '#suffix' => '</div>',
+        '#validated' => TRUE,
+      );
+    }
+
+    $users = _opigno_messaging_app_get_users_in_groups($groups, $user);
+    foreach ($users as $account) {
+      $form['recipient1']['#options'][$account] = $account;
+    }
+
+    $form['body']['#required'] = TRUE;
+    $form['subject']['#required'] = TRUE;
+  }
+}
+
+function messaging_user_update_callback($form, &$form_state) {
+  $form['recipient1']['#options'] = NULL;
+  $group = $form_state['input']['groups'];
+  global $user;
+  if ($group === t('All')) {
+    $groups = _opigno_messaging_app_get_groups($user);
+    $users = _opigno_messaging_app_get_users_in_groups($groups, $user);
+  }
+  else {
+    $groups['node'][$group] = $group;
+    $users = _opigno_messaging_app_get_users_in_groups($groups, $user);
+  }
+  foreach ($users as $userid => $username) {
+    $form['recipient1']['#options'][$username] = $username;
+  }
+  return $form['recipient1'];
+}

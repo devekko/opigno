@@ -1,0 +1,17 @@
+/**
+ * @file
+ * Miscellaneous styles.
+ */
+
+.opigno-quiz-app-fullscreen-link {
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    //display: none !important;
+  }
+}
+
+/* Update Quiz App first.
+.opigno-quiz-app-course-status-passed {
+
+}
+//*/

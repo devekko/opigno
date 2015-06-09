@@ -1,0 +1,221 @@
+/**
+ * @file
+ * Define specific Opigno styles.
+ */
+
+.opigno-webex-app-link {
+  padding: 0;
+
+  a {
+    @include action-start-element;
+    display: block;
+    text-decoration: none;
+    padding-left: .5em;
+    background-position: right center;
+  }
+}
+
+.opigno-tool-block {
+  background: $light-blue;
+  color: white;
+  margin-right: 1.5%;
+  height: 150px;
+  margin-bottom: 1.25em;
+
+  .opigno-tool-icon {
+    background-repeat: no-repeat;
+    background-position: center 20px;
+    position: relative;
+    float: left;
+    width: 30%;
+    height: 100%;
+    margin-right: 1em;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      float: none;
+      width: 100%;
+    }
+
+    .opigno-tool-name {
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      text-align: center;
+      text-transform: uppercase;
+      white-space: nowrap;
+
+      a {
+        color: white;
+        text-decoration: none;
+      }
+    }
+  }
+
+  .opigno-tool-description {
+    margin-top: 2em;
+    text-align: center;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      display: none;
+    }
+  }
+}
+
+.opigno-tool-block.js-processed {
+  cursor: pointer;
+}
+
+.opigno-tool-block.js-processed:hover {
+  background: $dark-blue;
+}
+
+$tools-collection: (forum, poll, quiz-import, quiz, tft, meetings, audio, video);
+@each $tool in $tools-collection {
+  .opigno-#{$tool}-tool {
+
+    .opigno-tool-icon {
+      background-image: url(../img/#{$tool}-tool-icon.png);
+    }
+  }
+}
+
+/* to refactor cedric */
+.opigno-in-house-tool .opigno-tool-icon {
+  background-image: url(../img/training-tool-icon.png)
+}
+
+.opigno-quiz-app-fullscreen-link {
+  width: 0;
+  padding-left: 30px;
+  height: 30px;
+  display: block;
+  overflow: hidden;
+  background-position: center center;
+  background-repeat: no-repeat;
+  text-indent: -9999px;
+}
+
+.opigno-quiz-app-go-fullscreen-link {
+  background-image: url(../img/fullscreen-icon.png);
+}
+
+.opigno-quiz-app-loading-content {
+  width: 100%;
+  min-height: 400px;
+  background: url(../img/ajax-loader-dark-blue.gif) center center no-repeat;
+}
+
+.opigno-quiz-app-exit-fullscreen-link {
+  display: none;
+  background-image: url(../img/smallscreen-icon.png);
+}
+
+@media screen and (min-width: 1400px) {
+  .opigno-tool-block.col-2-out-of-6 {
+    width: 31.33333%;
+  }
+}
+
+@media screen and (min-width: 700px) and (max-width: 1399px) {
+  .opigno-tool-block.col-2-out-of-4 {
+    width: 48%;
+  }
+}
+
+@media screen and (min-width: 0px) and (max-width: 699px) {
+  .opigno-tool-block.col-1-out-of-2 {
+    width: 48%;
+  }
+}
+
+/*
+.opigno-tools, .pane-node-opigno-course-tools .pane-content {
+  overflow: hidden;
+
+  .opigno-tool {
+    float: left;
+    width: 18%;
+    padding: 1%;
+    margin-right: 2%;
+    border: 1px solid #eee;
+
+    .opigno-tool-name {
+      margin-top: 0.5em;
+    }
+
+    .opigno-tool-description {
+      font-style: italic;
+    }
+  }
+
+  .opigno-tool.platon-js-processed:hover {
+    background: #eee;
+    cursor: pointer;
+  }
+}
+
+.opigno-tool-block {
+
+  .opigno-tool-icon {
+    @extend .icon;
+    float: right;
+    font-size: 4em;
+    margin: 0 0 1em;
+  }
+}
+
+.opigno-quiz-tool {
+
+  .opigno-tool-icon {
+    @extend .icon-directions;
+  }
+}
+
+.opigno-wiki-tool {
+
+  .opigno-tool-icon {
+    @extend .icon-collaborate;
+  }
+}
+
+.opigno-forum-tool {
+
+  .opigno-tool-icon {
+    @extend .icon-forum;
+  }
+}
+
+.opigno-quiz-import-tool {
+
+  .opigno-tool-icon {
+    @extend .icon-upload;
+  }
+}
+
+.opigno-tft-tool {
+
+  .opigno-tool-icon {
+    @extend .icon-files;
+  }
+}
+
+.opigno-poll-tool {
+
+  .opigno-tool-icon {
+    @extend .icon-question;
+  }
+}
+
+.opigno-webex-video-conference-tool {
+
+  .opigno-tool-icon {
+    @extend .icon-monitor;
+  }
+}
+
+.opigno-quiz-app-add-quiz {
+  display: block;
+  padding: 0 0.5em;
+  margin: 1em 0;
+}*/

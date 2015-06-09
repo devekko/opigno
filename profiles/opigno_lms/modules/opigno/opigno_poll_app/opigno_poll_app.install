@@ -1,0 +1,36 @@
+<?php
+
+/**
+ * @file
+ * Module install logic.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function opigno_poll_app_install() {
+  // Disable comments by default.
+  if (module_exists('comment')) {
+    variable_set('comment_poll', COMMENT_NODE_HIDDEN);
+  }
+
+  // Add the OG audience field.
+  include_once drupal_get_path('module', 'og') . '/og_ui/og_ui.module';
+  if (function_exists('og_ui_node_type_save')) {
+    variable_set('og_group_content_type_poll', TRUE);
+    og_ui_node_type_save('poll');
+  }
+
+  // Add the OG content access field.
+  if (module_exists('og_access')) {
+    og_create_field(OG_CONTENT_ACCESS_FIELD, 'node', 'poll');
+  }
+
+  if (module_exists('opigno_lms')) {
+    opigno_lms_set_og_permissions(OPIGNO_COURSE_BUNDLE, array(
+      OPIGNO_LMS_MEMBER_ROLE => array('vote on polls'),
+      OPIGNO_LMS_ADMIN_ROLE => array('cancel own vote', 'inspect all votes'),
+      OPIGNO_LMS_TEACHER_ROLE => array('cancel own vote', 'inspect all votes'),
+    ));
+  }
+}

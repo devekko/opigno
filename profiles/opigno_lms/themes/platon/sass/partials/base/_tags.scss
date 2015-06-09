@@ -1,0 +1,41 @@
+/**
+ * @file
+ * Overrides the default HTML styles. For table styles, look at the partials/base/tables partial.
+ */
+
+body {
+  background: /*url(../img/background-pattern.png) left bottom*/ $deep-blue;
+  @include background-size(cover);
+}
+
+a {
+  color: $link-color;
+}
+
+h1 {
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    font-size: 1.6em;
+  }
+}
+
+a:hover {
+  color: $link-hover-color;
+}
+
+fieldset {
+  margin: 1em 0;
+  padding: 0;
+  background: $medium-gray;
+  border: 0;
+}
+
+legend {
+  line-height: 1;
+  width: 98%;
+  padding-left: 2%;
+  padding-top: .5em;
+  padding-bottom: .5em;
+  background: $light-blue;
+  color: white;
+}

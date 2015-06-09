@@ -1,0 +1,8 @@
+.idea/
+_site/
+_themes/
+_modules/
+_build/
+reset.sh
+re-build.sh
+opigno.sublime*

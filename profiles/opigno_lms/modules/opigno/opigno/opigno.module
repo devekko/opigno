@@ -1,0 +1,815 @@
+<?php
+
+/**
+ * @file
+ * Contains all hook_implementations and module specific API.
+ */
+
+define('OPIGNO_COURSE_BUNDLE', 'course');
+
+/**
+ * Implements hook_menu().
+ */
+function opigno_menu() {
+  $items = array(
+    'node/%node/tools' => array(
+      'title' => 'Tools',
+      'access callback' => 'opigno_access_tools',
+      'access arguments' => array(1),
+      'page callback' => 'opigno_tools_page',
+      'page arguments' => array(1),
+      'type' => MENU_LOCAL_TASK,
+      'weight' => 10,
+    ),
+    'admin/opigno' => array(
+      'title' => "Opigno Administration",
+      'page callback' => 'opigno_admin_overview_page',
+      'access arguments' => array('access opigno administration pages'),
+    ),
+    'admin/opigno/students' => array(
+      'title' => "Student management",
+      'description' => "Tools for managing the platform students",
+      'position' => 'left',
+      'weight' => -10,
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('access administration pages'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+    ),
+    'admin/opigno/system' => array(
+      'title' => "Administration",
+      'description' => "Manage Opigno settings and users",
+      'position' => 'left',
+      'weight' => -5,
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('access administration pages'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+    ),
+    'admin/opigno/appearance' => array(
+      'title' => "Appearance",
+      'description' => "Manage Opigno theme settings and appearance",
+      'position' => 'right',
+      'weight' => -5,
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('access administration pages'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+    ),
+    'admin/opigno/content' => array(
+      'title' => "Content",
+      'description' => "Manage Opigno courses, quizzes, etc",
+      'position' => 'right',
+      'weight' => -10,
+      'page callback' => 'system_admin_menu_block_page',
+      'access arguments' => array('access administration pages'),
+      'file' => 'system.admin.inc',
+      'file path' => drupal_get_path('module', 'system'),
+    ),
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function opigno_permission() {
+  return array(
+    'access opigno administration pages' => array(
+      'title' => t("Access the Opigno administration pages"),
+      'description' => t("This permission is necessary for some global tools, like exporting user lists."),
+    ),
+  );
+}
+
+/**
+ * Implements hook_init().
+ */
+function opigno_init() {
+  _opigno_install_custom_fields();
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function opigno_hook_info() {
+  return array(
+    'opigno_tool' => array(
+      'group' => 'opigno',
+    ),
+    'opigno_tool_alter' => array(
+      'group' => 'opigno',
+    ),
+  );
+}
+
+/**
+ * Implements hook_og_context_negotiation_info
+ */
+function opigno_og_context_negotiation_info() {
+  $providers = array();
+
+  $providers['opigno_tool'] = array(
+    'name' => t('Opigno tool urls'),
+    'description' => t("Determine context by checking node/%/tool-page."),
+    'callback' => 'opigno_og_context_handler',
+    'menu path' => array('node/%'),
+  );
+  $providers['opigno_entity_reference'] = array(
+    'name' => t('Opigno entity reference urls'),
+    'description' => t("Determine context by checking entityreference/autocomplete/single/%/%/%."),
+    'callback' => 'opigno_og_context_handler',
+    'menu path' => array('entityreference/autocomplete/single/%/%/%'),
+  );
+  return $providers;
+}
+
+/**
+ * Implements hook_block_info().
+ */
+function opigno_block_info() {
+  return array(
+    'opigno_tools_block' => array(
+      'info' => t("Opigno Course Tools"),
+    ),
+    'opigno_tool_actions_block' => array(
+      'info' => t("Opigno Course Tool Actions"),
+    ),
+  );
+}
+
+/**
+ * Implements hook_block_view().
+ */
+function opigno_block_view($delta) {
+  global $user;
+  $node = menu_get_object();
+  switch ($delta) {
+    case 'opigno_tool_actions_block':
+      if (!empty($node) && opigno_access_tools($node)) {
+        $links = array();
+        foreach (opigno_get_node_tools($node, $user) as $tool) {
+          if (!empty($tool['actions'])) {
+            foreach ($tool['actions'] as $action_id => $action) {
+              $defaults = array(
+                'access_arguments' => array('access content'),
+                'access_callback' => 'user_access',
+              );
+              $action += $defaults;
+
+              if (opigno_tool_action_access($action, $user)) {
+                $links[$action_id] = $action;
+              }
+            }
+          }
+        }
+      }
+      return array(
+        'subject' => t("Tool actions"),
+        'content' => empty($links) ? '' : theme('links', array('links' => $links)),
+      );
+
+    case 'opigno_tools_block':
+      if (!empty($node) && opigno_access_tools($node)) {
+        $elements = array();
+        foreach (opigno_get_node_tools($node, $user) as $tool) {
+          $elements[$delta] = array(
+            '#type' => 'html_tag',
+            '#tag' => 'p',
+            '#value' => check_plain($tool['name']),
+          );
+        }
+      }
+      return array(
+        'subject' => t("Tool actions"),
+        'content' => empty($elements) ? '' : $elements,
+      );
+  }
+}
+
+/**
+ * Implements hook_apps_servers_info()
+ */
+function opigno_apps_servers_info() {
+  return array(
+    'opigno' => array(
+      'title' => 'Opigno',
+      'description' => t("Apps for Opigno"),
+      'manifest' => 'http://www.opigno.org/app/query/opigno',
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function opigno_theme() {
+  return array(
+    'opigno_tool' => array(
+      'variables' => array('tool' => NULL, 'course' => NULL),
+      'template' => 'templates/opigno--tool',
+    ),
+    'opigno_tools' => array(
+      'variables' => array('tools' => NULL, 'course' => NULL),
+      'template' => 'templates/opigno--tools',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_info().
+ */
+function opigno_field_info() {
+  return array(
+    'opigno_tools' => array(
+      'label' => t('Opigno tools'),
+      'description' => t("This field stores tools that can be activated/deactivated per course."),
+      'settings' => array('allowed_values' => array(), 'allowed_values_function' => ''),
+      'default_widget' => 'options_buttons',
+      'default_formatter' => 'opigno_tools_name',
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_widget_info_alter().
+ */
+function opigno_field_widget_info_alter(&$info) {
+  $info['options_buttons']['field types'] = array_merge($info['options_buttons']['field types'], array('opigno_tools'));
+}
+
+/**
+ * Implements hook_options_list().
+ */
+function opigno_options_list($field, $instance, $entity_type, $entity) {
+  $options = array();
+  foreach (opigno_get_tools() as $tool) {
+    $options[$tool['machine_name']] = $tool['name'];
+  }
+  return $options;
+}
+
+/**
+ * Implements hook_field_is_empty().
+ */
+function opigno_field_is_empty($item, $field) {
+  return empty($item['tool']);
+}
+
+
+/**
+ * Implements hook_field_formatter_info().
+ */
+function opigno_field_formatter_info() {
+  return array(
+    'opigno_tools_name' => array(
+      'label' => t('Only display tool name'),
+      'field types' => array('opigno_tools'),
+    ),
+    'opigno_tools_tool' => array(
+      'label' => t('Display the tool "block" (opigno--tool.tpl.php)'),
+      'field types' => array('opigno_tools'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_field_formatter_view().
+ */
+function opigno_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  global $user;
+  $element = array();
+
+    switch ($display['type']) {
+      case 'opigno_tools_name':
+        foreach ($items as $delta => $item) {
+          $info = opigno_get_tool($item['tool'], $entity, $user);
+          if (!empty($info)) {
+            $element[$delta] = array(
+              '#type' => 'html_tag',
+              '#tag' => 'p',
+              '#value' => check_plain($info['name']),
+            );
+          }
+        }
+        break;
+
+      case 'opigno_tools_tool':
+        foreach ($items as $delta => $item) {
+          $info = opigno_get_tool($item['tool'], $entity, $user);
+          if (!empty($info)) {
+            $element[$delta] = array(
+              '#theme' => 'opigno_tool',
+              '#tool' => $info,
+              '#course' => $entity,
+            );
+          }
+        }
+        break;
+    }
+
+  return $element;
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function opigno_form_alter(&$form, &$form_state, $form_id) {
+  // UX: Add a confirmation to the permissions form to ask the user whether to
+  // auto-enable the 'access opigno administration pages' permission along with
+  // 'access administration pages'.
+  if ($form_id == 'user_admin_permissions') {
+    $form['#attached']['js'][] = drupal_get_path('module', 'opigno') . '/js/opigno.admin.js';
+  }
+  if ($form_id=="og_ui_confirm_subscribe")
+  {
+    $form['#submit'][]="opigno_set_user_as_student";
+  }
+}
+
+function opigno_set_user_as_student($form, &$form_state) {
+  Global $user;
+  $gid = $form['gid']['#value'];
+  $node = node_load($gid);
+  $roles = og_roles("node", $node->type, $node->nid, $force_group = FALSE, $include_all = TRUE);
+  foreach ($roles as $index => $role) {
+    if ($role == 'student') {
+      og_role_grant("node", $gid, $user->uid, $index);
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_opigno_tool().
+ */
+function opigno_preprocess_opigno_tool(&$vars) {
+  $vars['name'] = check_plain($vars['tool']['name']);
+  $vars['machine_name'] = check_plain($vars['tool']['machine_name']);
+  $vars['description'] = check_plain($vars['tool']['description']);
+  $vars['path'] = check_plain($vars['tool']['path']);
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function opigno_views_api() {
+  return array(
+    'api' => '3.0',
+  );
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function opigno_views_query_alter(&$view, &$query) {
+  global $user;
+  if (preg_match('/exclude_own_groups/', $query->options['query_comment'])) {
+    $nids = array();
+
+    $nid_query = new EntityFieldQuery();
+    $nid_query->entityCondition('entity_type', 'og_membership')
+      ->entityCondition('bundle', 'og_membership_type_default')
+      ->propertyCondition('entity_type', 'user', '=')
+      ->propertyCondition('etid', $user->uid, '=')
+      ->addMetaData('account', user_load(1)); // Run the query as user 1.
+
+    $result = $nid_query->execute();
+    if (!empty($result['og_membership'])) {
+      foreach($result['og_membership'] as $id => $item) {
+        $og_membership = og_membership_load($id);
+        $nids[] = $og_membership->gid;
+      }
+    }
+
+    foreach ($query->where as &$conditions) {
+      if (is_array($conditions)) {
+        foreach ($conditions['conditions'] as &$condition) {
+          if ($condition['field'] == 'node.nid') {
+            if (!empty($nids)) {
+              $condition['value'] = $nids;
+              $condition['operator'] = 'NOT IN';
+            }
+            else {
+              $condition['value'] = 0;
+              $condition['operator'] = '<>';
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Determines the context from a url.
+ */
+function opigno_og_context_handler() {
+  if (preg_match('/^node\/[0-9]+\/./', current_path())) {
+    if (og_is_group('node', node_load(arg(1)))) {
+      return array('node' => array(arg(1)));
+    }
+  }
+  elseif (preg_match('/^entityreference\/autocomplete\/single/', current_path())) {
+    if (is_numeric(arg(6))&&og_is_group('node', node_load(arg(6)))) {
+      return array('node' => array(arg(6)));
+    }
+  }
+}
+
+/**
+ * Fetches the list of tools for the platform.
+ *
+ * @param  stdClass $node = NULL
+ *
+ * @return array
+ */
+function opigno_get_tools($node = NULL) {
+  $tools = &drupal_static(__FUNCTION__);
+  $group = isset($node->nid) ? $node->nid : 'global';
+
+  if (empty($tools[$group])) {
+    $tools[$group] = module_invoke_all('opigno_tool', $node);
+    foreach ($tools[$group] as $key => &$tool) {
+      $tool['machine_name'] = $key;
+      if (!isset($tools['weight'])) {
+        $tool['weight'] = 0;
+      }
+    }
+    drupal_alter('opigno_tool', $tools[$group], $node);
+    usort($tools[$group], 'drupal_sort_weight');
+
+    // Key them by machine name again, as the sort loses them.
+    $temp = array();
+    foreach ($tools[$group] as $key => $ordered_tool) {
+      $temp[$ordered_tool['machine_name']] = $ordered_tool;
+    }
+    $tools[$group] = $temp;
+  }
+
+  return $tools[$group];
+}
+
+/**
+ * Fetch information for a specific tool.
+ * Optionally, can be filtered by access rights.
+ *
+ * @param  string $name
+ * @param  stdClass $node = NULL
+ * @param  stdClass $account = NULL
+ *
+ * @return array|false
+ */
+function opigno_get_tool($name, $node = NULL, $account = NULL) {
+  // Add defaults to prevent Notices.
+  $defaults = array(
+    'machine_name' => $name,
+    'description' => '',
+    'path' => '',
+    'actions' => array(),
+    'access_arguments' => array('access content'),
+    'access_callback' => 'user_access',
+    'weight' => 0,
+  );
+
+  $tools = opigno_get_tools($node);
+
+  if (isset($tools[$name])) {
+    $tool = $tools[$name] + $defaults;
+
+    // If an account was given, check user access.
+    if (isset($account)) {
+      if (!opigno_tool_access($tool, $account)) {
+        return FALSE;
+      }
+    }
+    return $tool;
+  }
+  return FALSE;
+}
+
+/**
+ * Check user access for the tool.
+ *
+ * @param  array $tool
+ * @param  stdClass $account
+ *
+ * @return bool
+ */
+function opigno_tool_access($tool, $user=NULL) {
+  if ($user==null)
+  {
+    Global $user;
+  }
+  return call_user_func_array($tool['access_callback'], array_merge($tool['access_arguments'], array($user)));
+}
+
+/**
+ * Check user access for the tool action.
+ *
+ * @param  array $action
+ * @param  stdClass $account
+ *
+ * @return bool
+ */
+function opigno_tool_action_access($action, $account) {
+  return call_user_func_array($action['access_callback'], array_merge($action['access_arguments'], array($account)));
+}
+
+/**
+ * Custom access callback for the tools tab on course nodes, or the rendered
+ * opigno_tools field.
+ *
+ * @param  stdClass $node
+ *
+ * @return bool
+ */
+function opigno_access_tools($node) {
+  global $user;
+
+  if ($node->type === OPIGNO_COURSE_BUNDLE) {
+    if ($user->uid === '1') {
+      return TRUE;
+    }
+
+    $tools = opigno_get_tools($node);
+
+    // If there are some tools, we must do some more checking.
+    if (!empty($tools)) {
+      // Only allow tool access when the membership is in a certain state.
+      $allowed_states = variable_get('opigno_access_tools_only_when_state', array(OG_STATE_ACTIVE)); // @todo this is hardcoded for now
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'og_membership', '=')
+        ->propertyCondition('gid', $node->nid, '=')
+        ->propertyCondition('entity_type', 'user', '=')
+        ->propertyCondition('etid', $user->uid, '=');
+      $result = $query->execute();
+
+      if (!empty($result['og_membership'])) {
+        $info = current($result['og_membership']); // There's only one membership.
+        $og_membership = og_membership_load($info->id);
+        return in_array((int) $og_membership->state, $allowed_states, TRUE);
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Get tools for the node.
+ * Optionally filter by access permissions.
+ *
+ * @param  stdClass $node
+ * @param  stdClass $account = NULL
+ *
+ * @return array
+ */
+function opigno_get_node_tools($node, $account = NULL) {
+  $tools = array();
+  foreach ($node->opigno_course_tools[LANGUAGE_NONE] as $item) {
+    $tool = opigno_get_tool($item['tool'], $node, $account);
+    if (!empty($tool)) {
+      $tools[$item['tool']] = $tool;
+    }
+  }
+  return $tools;
+}
+
+/**
+ * Page callback for the tools page.
+ */
+function opigno_tools_page($node) {
+  global $user;
+  foreach (opigno_get_node_tools($node, $user) as $tool) {
+    $tools[] = theme('opigno_tool', array('tool' => $tool, 'course' => $node));
+  }
+  return theme('opigno_tools', array('tools' => $tools, 'course' => $node));
+}
+
+/**
+ * Returns an array of all course node NIDs for the platform.
+ *
+ * @param bool $only_published
+ *
+ * @return array
+ */
+function opigno_get_courses($only_published = FALSE) {
+  $query = db_select('node', 'n')
+    ->fields('n', array('nid'))
+    ->condition('n.type', OPIGNO_COURSE_BUNDLE);
+
+  if ($only_published) {
+    $query->condition('n.status', NODE_PUBLISHED);
+  }
+
+  $nids = array();
+  $result = $query->execute();
+  while ($nid = $result->fetchField()) {
+    $nids[] = $nid;
+  }
+
+  return $nids;
+}
+
+/**
+ * This is a hack to circumvent the fact that we cannot easily install custom field types
+ * within the install hook. This is because the hook_field_info() is not called at that point,
+ * triggering a FieldException: Attempt to create a field of unknown type.
+ * This function installs the custom fields and sets a variable, making sure we only install it
+ * once. It is called in opigno_init().
+ */
+function _opigno_install_custom_fields() {
+  if (!variable_get('opigno_installed_fields', FALSE)) {
+    // Add the activate tools field.
+    $field = field_info_field('opigno_course_tools');
+    if (empty($field)) {
+      field_create_field(array(
+        'active' => 1,
+        'cardinality' => -1,
+        'deleted' => 0,
+        'entity_types' => array(),
+        'field_name' => 'opigno_course_tools',
+        'foreign keys' => array(),
+        'indexes' => array(
+          'tool' => array(
+            0 => 'tool',
+          ),
+        ),
+        'locked' => 0,
+        'module' => 'opigno',
+        'settings' => array(
+          'allowed_values' => array(),
+          'allowed_values_function' => '',
+        ),
+        'translatable' => 0,
+        'type' => 'opigno_tools',
+      ));
+    }
+
+    $instance = field_info_instance('node', 'opigno_course_tools', OPIGNO_COURSE_BUNDLE);
+    if (empty($instance)) {
+      field_create_instance(array(
+        'field_name' => 'opigno_course_tools',
+        'entity_type' => 'node',
+        'bundle' => OPIGNO_COURSE_BUNDLE,
+        'label' => "Course tools",
+        'description' => "Activate tools for this course. Deactivated tools will be hidden from users.",
+        'required' => FALSE,
+      ));
+    }
+    variable_set('opigno_installed_fields', TRUE);
+  }
+}
+
+/**
+ * Helper function to get all users from a course.
+ *
+ * @param  int $gid
+ * @param  int $state = OG_STATE_ACTIVE
+ *
+ * @return array
+ */
+function opigno_get_users_in_group($gid, $state = OG_STATE_ACTIVE) {
+  $users = array();
+  $query = new EntityFieldQuery();
+  $query->entityCondition('entity_type', 'og_membership')
+    ->propertyCondition('group_type', 'node', '=')
+    ->propertyCondition('gid', $gid, '=')
+    ->propertyCondition('entity_type', 'user', '=')
+    ->propertyCondition('state', $state, '=');
+
+  $result = $query->execute();
+  if (!empty($result['og_membership'])) {
+    // Use a temporary array for sorting.
+    $temp = array();
+    foreach ($result['og_membership'] as $membership_info) {
+      $og_membership = og_membership_load($membership_info->id);
+      $account = user_load($og_membership->etid);
+      $temp[$account->name] = $account;
+    }
+
+    // Sort by name.
+    ksort($temp);
+
+    foreach ($temp as $account) {
+      $users[$account->uid] = $account;
+    }
+  }
+  return $users;
+}
+
+/**
+ * Menu callback; Provide the administration overview page.
+ */
+function opigno_admin_overview_page() {
+  $blocks = array();
+  $admin = db_query("SELECT menu_name, mlid FROM {menu_links} WHERE link_path = 'admin/opigno' AND module = 'system'")->fetchAssoc();
+  if ($admin) {
+    $result = db_query("
+      SELECT m.*, ml.*
+      FROM {menu_links} ml
+      INNER JOIN {menu_router} m ON ml.router_path = m.path
+      WHERE menu_name = :menu_name AND ml.plid = :mlid AND hidden = 0", $admin, array('fetch' => PDO::FETCH_ASSOC));
+    foreach ($result as $item) {
+      _menu_link_translate($item);
+      if (!$item['access']) {
+        continue;
+      }
+      // The link description, either derived from 'description' in hook_menu()
+      // or customized via menu module is used as title attribute.
+      if (!empty($item['localized_options']['attributes']['title'])) {
+        $item['description'] = $item['localized_options']['attributes']['title'];
+        unset($item['localized_options']['attributes']['title']);
+      }
+      $block = $item;
+      $block['content'] = '';
+      $block['content'] .= theme('admin_block_content', array('content' => system_admin_menu_block($item)));
+      if (!empty($block['content'])) {
+        $block['show'] = TRUE;
+      }
+
+      // Prepare for sorting as in function _menu_tree_check_access().
+      // The weight is offset so it is always positive, with a uniform 5-digits.
+      $blocks[(50000 + $item['weight']) . ' ' . $item['title'] . ' ' . $item['mlid']] = $block;
+    }
+  }
+  if ($blocks) {
+    ksort($blocks);
+    return theme('admin_page', array('blocks' => $blocks));
+  }
+  else {
+    return t('You do not have any administrative items.');
+  }
+}
+
+// @deprecated
+function _opigno_course_students_info($node) {
+  $node_id = $node->nid;
+  $group_members = opigno_get_users_in_group($node_id);
+  $students_number = 0;
+  foreach ($group_members AS $member) {
+    $user = user_load($member->uid);
+    $user_roles = og_get_user_roles('node', $node_id, $user->uid, FALSE);
+    foreach ($user_roles as $roleid => $rolename) {
+      if (($roleid == 5) && (sizeof($user_roles) == 1)) {
+        $students_number++;
+      }
+    }
+  }
+  return array(
+    'places' => $node->field_course_places[LANGUAGE_NONE][0]['value'],
+    'available_places' => $node->field_course_places[LANGUAGE_NONE][0]['value'] - $students_number,
+    'students' => $students_number
+  );
+}
+
+
+/**
+ * Implements hook_og_role_grant().
+ */
+function opigno_og_role_grant($entity_type, $gid, $uid, $rid) {
+  if (module_exists('rules')) {
+    rules_invoke_event('og_user_was_granted_role', $entity_type, $gid, $uid, $rid);
+  }
+}
+
+/**
+ * Implements hook_og_role_revoke().
+ */
+function opigno_og_role_revoke($entity_type, $gid, $uid, $rid) {
+  if (module_exists('rules')) {
+    rules_invoke_event('og_user_was_revoked_role', $entity_type, $gid, $uid, $rid);
+  }
+}
+
+function opigno_get_course_teachers($gid)
+{
+  $users=opigno_get_users_in_group($gid,OG_STATE_ACTIVE);
+  $teachers=array();
+  foreach($users as $user)
+  {
+    $roles=og_get_user_roles('node',$gid, $user->uid, $include = TRUE);
+    foreach($roles as $index => $role)
+    {
+      if ($role=="teacher")
+      {
+        $teachers[]=$user;
+      }
+    }
+  }
+  return $teachers;
+}
+
+function opigno_get_teacher_html($gid) {
+  $teachers = opigno_get_course_teachers($gid);
+  $html = "";
+  foreach ($teachers as $teacher) {
+    $user = user_load($teacher->uid);
+    $html .= '<div class="teacher teacher-' . $user->uid . '">';
+    $html .= theme('user_picture', array('account' => $user));
+    $html .= theme('username', array('account' => $user));
+    $html .= "</div>";
+  }
+  return $html;
+}

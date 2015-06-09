@@ -1,0 +1,83 @@
+<?php
+
+/**
+ * @file
+ * Module file. Defines module hooks.
+ */
+
+function opigno_forum_app_views_api() {
+  return array('api' => '3.0');
+}
+
+/**
+ * Implements hook_opigno_breadcrumbs().
+ */
+function opigno_forum_app_opigno_breadcrumbs($gid) {
+  $breadcrumbs = array();
+
+  $node = menu_get_object();
+  // Must we handle this page request for the breadcrumb ?
+  if ((isset($node->type) && $node->type == 'forum') ||
+      preg_match('/^comment\/reply\/[0-9]+/', current_path())) {
+    
+    // Add the Forums link.
+    $forum_id = opigno_forum_app_get_course_forum_id($gid);
+    $breadcrumbs[] = l(t("Forum"), "forum/$forum_id");
+
+    // If we're replying, add the topic link as well.
+    if (preg_match('/^comment\/reply\/[0-9]+/', current_path())) {
+      $parts = explode('/', current_path());
+      // Replying to a comment ? Remove comment ID.
+      if (preg_match('/^comment\/reply\/[0-9]+\/[0-9]+/', current_path())) {
+        array_pop($parts);
+      }
+      $topic_id = array_pop($parts);
+      $topic = node_load($topic_id);
+      $breadcrumbs[] = l($topic->title, "node/$topic_id");
+    }
+  }
+
+  if (!empty($breadcrumbs)) {
+    return $breadcrumbs;
+  }
+}
+
+function opigno_forum_app_opigno_tool($node = NULL) {
+  $give = isset($node->nid) ? opigno_forum_app_get_course_forum_id($node->nid) : NULL;  
+  return array(
+    'forum' => array(
+      'name' => t("Forum"),
+      'path' => isset($give) ? "forum/" . $give : '',
+      'description' => t("Forums allow teachers and students to communicate."),
+    ),
+  );
+}
+
+/**
+ * Helper function to the forum ID for the passed course ID.
+ *
+ * @param int $gid
+ *
+ * @return int|null
+ */
+function opigno_forum_app_get_course_forum_id($gid) {
+  $subquery1 = db_select('taxonomy_term_data', 'tt');
+  $subquery1->addField('tt', 'tid', 'tid');
+  $subquery1->addField('tt', 'vid', 'vid');
+  $subquery2 = db_select('taxonomy_vocabulary', 'tv');
+  $subquery2->addField('tv', 'vid', 'vid');
+  $subquery2->addField('tv', 'machine_name', 'machine_name');
+  $subquery2->condition('tv.machine_name', 'forums', '=');
+  $query = db_select('og_membership', 'og_m');
+  $query->fields('og_m', array('etid', 'entity_type', 'gid'));
+  $query->join($subquery1, 'tt', 'og_m.etid=tt.tid');
+  $query->join($subquery2, 'tv', 'tt.vid=tv.vid');
+  $query->condition('og_m.entity_type', 'taxonomy_term', '=');
+  $query->condition('og_m.gid', $gid, '=');
+  $query->orderBy('og_m.etid', 'ASC');
+  $result1 = $query->execute();
+  foreach ($result1 as $record) {
+    return $record->etid;
+  }
+  return NULL;
+}

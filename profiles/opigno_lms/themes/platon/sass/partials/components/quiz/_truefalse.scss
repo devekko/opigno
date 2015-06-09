@@ -1,0 +1,56 @@
+/**
+ * @file
+ * Defines the styles for the true/false question type.
+ */
+
+#quiz-question-answering-form {
+
+  #edit-tries.form-radios {
+    overflow: hidden;
+
+    .form-type-radio {
+      float: left;
+      width: 56px;
+      height: 70px;
+      background-position: center top;
+      background-repeat: no-repeat;
+      text-align: center;
+      padding-top: 60px;
+      margin-right: 1em;
+      text-transform: uppercase;
+
+      input {
+        display: block;
+        width: 100%;
+        margin-bottom: .5em;
+      }
+
+      label {
+        padding: 0.25em;
+      }
+    }
+
+    .form-type-radio:first-of-type {
+      background-image: url(../img/true.png);
+
+      label {
+        background: lighten($leaf-green, 20%);
+      }
+    }
+
+    .form-type-radio:last-of-type {
+      background-image: url(../img/false.png);
+
+      label {
+        background: lighten($blood-red, 20%);
+      }
+    }
+
+    .form-type-radio.js-processed {
+
+      input {
+        display: none;
+      }
+    }
+  }
+}

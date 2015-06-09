@@ -1,0 +1,85 @@
+/**
+ * @file
+ * Defines the default styles for the TFT module.
+ */
+
+
+#folder-explorer-container.tft-node-form li.active > .link-wrapper > a {
+  background-color: white;
+}
+
+#folder-menu-container .folder-wrapper {
+  background: $dark-blue;
+  color: white;
+  padding: 0 0 0 1em;
+
+  #tabs {
+    float: right;
+
+    ul {
+      margin: 0;
+
+      #tft-back {
+
+        a {
+          @include action-prev-element;
+        }
+      }
+
+      #manage-folders {
+
+        a {
+          @include action-sort-element;
+        }
+      }
+
+      li {
+        margin: 0;
+
+        a {
+          margin-right: 0;
+          border-left: 1px solid white !important;
+        }
+
+        a.disabled {
+          background-color: lighten($dark-gray, 20%) !important;
+        }
+      }
+    }
+  }
+}
+
+#folder-content-container a.folder-folder-link, #folder-explorer-container li  a.folder-link {
+  padding-left: 2em;
+  background: url(../img/folder-icon.png) left center no-repeat;
+}
+
+#folder-content-container a.file {
+  padding-left: 2em;
+}
+
+#folder-content-container {
+
+  #table-th-name {
+    width: 40%;
+  }
+}
+
+#folder-add-content-links {
+  background: $dark-gray;
+
+  li {
+
+    a {
+      @include action-add-element;
+      margin: 0;
+      padding-left: 1.5em;
+      border-left: 1px solid white !important;
+    }
+  }
+}
+
+#folder-menu-ops-links
+{
+  float: right;
+}

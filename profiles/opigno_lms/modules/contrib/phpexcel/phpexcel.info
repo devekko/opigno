@@ -1,0 +1,14 @@
+name = PHPExcel
+description = Provides a simple API for using the PHPExcel library
+core = 7.x
+dependencies[] = libraries
+
+files[] = tests/phpexcel.test
+
+
+; Information added by drupal.org packaging script on 2013-06-28
+version = "7.x-3.7"
+core = "7.x"
+project = "phpexcel"
+datestamp = "1372415451"
+

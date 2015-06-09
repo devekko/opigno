@@ -1,0 +1,82 @@
+/**
+ * @file
+ * Preview styles for the color integration.
+ */
+
+@import "partials/utility";
+@import "partials/base";
+
+#preview {
+  border: 10px solid white;
+}
+
+#preview-header {
+  background: url(preview-header.png) $deep-blue;
+  padding: 20px;
+  color: white;
+  font-size: .8em;
+  position: relative;
+
+  #preview-user-account-information {
+    position: absolute;
+    max-width: 190px;
+    right: 10px;
+    top: 20px;
+
+    #preview-user-account-information-picture {
+      padding-top: .55em;
+    }
+
+    #preview-user-account-information-picture,
+    #preview-user-account-information-name {
+      float: left;
+      margin-right: 1em;
+    }
+  }
+}
+
+#preview-main {
+  background: url(../img/body-background.png) center top repeat-y;
+  overflow: hidden;
+  padding: 0 30px 0 0;
+
+  #preview-sidebar {
+    float: left;
+    width: 30%;
+    padding: 10px 10px 10px 30px;
+    @include box-sizing(border-box);
+    background: $medium-gray;
+    min-height: 350px;
+  }
+
+  #preview-content {
+    float: left;
+    padding: 10px;
+    width: 70%;
+    background: $light-gray;
+    @include box-sizing(border-box);
+
+    #preview-title-wrapper {
+      padding: .5em;
+      background: $medium-gray;
+      margin-bottom: 1em;
+      overflow: hidden;
+
+      h1 {
+        margin: 0;
+        float: left;
+      }
+    }
+  }
+}
+
+#preview-footer {
+  background: $deep-blue;
+  padding: 20px;
+  color: white;
+  font-size: 0.7em;
+
+  a {
+    color: inherit;
+  }
+}

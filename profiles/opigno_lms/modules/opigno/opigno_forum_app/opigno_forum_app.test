@@ -1,0 +1,55 @@
+<?php
+
+class opigno_forum_app_forum_is_created_TestCase extends DrupalWebTestCase {
+  protected $privileged_user;
+  protected $nonpriveliged_user;
+
+  static public function getInfo() {
+    return array(
+      'name' => 'Opigno Forum app',
+      'description' => 'Web Tests for Opigno Forum app',
+      'group' => 'Opigno Forum app',
+    );
+  }
+
+  public function setUp() {
+    // Enable any modules required for the test. This should be an array of
+    // module names.
+    parent::setUp(array('opigno_forum_app','opigno'));
+    // Create and log in our privileged user.
+    $this->privileged_user = $this->drupalCreateUser(array(
+      'create course content',
+    ));
+    $this->drupalLogin($this->privileged_user);
+  }
+
+  public function test_opigno_forum_app_course_create() {
+    // Create node to edit.
+    $edit = array();
+    $edit['title'] = $this->randomName(8);
+    $edit["body[und][0][value]"] = $this->randomName(16);
+    $this->drupalPost('node/add/course', $edit, t('Save'));
+    // Was the course created?
+    $this->assertText(t('Course @title has been created.', array('@title' => $edit['title'])));
+    $taxonomy=taxonomy_get_term_by_name($edit['title'],'forums');
+    // Was the forum created?
+    $this->assertNotNull($taxonomy, 'Forum was found.');
+
+    /// Can the creator of the course/ group member access the forum
+    foreach($taxonomy as $id => $ataxonomy)
+    {
+      $this->drupalGet('forum/'.$id);
+      $this->assertText(t('No posts in this forum.'));
+    }
+
+    // can a user not in the group access the forum?
+    $this->nonpriveliged_user = $this->drupalCreateUser();
+    $this->drupalLogin($this->nonpriveliged_user);
+    foreach($taxonomy as $id => $ataxonomy)
+    {
+      $this->drupalGet('forum/'.$id);
+      $this->assertText(t('Page not found'));
+    }
+  }
+
+}

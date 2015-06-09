@@ -1,0 +1,230 @@
+/**
+ * @file
+ * Defines the general navigation styles, like for menus and tabs.
+ */
+
+ul.tabs {
+  border: 0;
+  padding: 0;
+  margin: 0 0 1em 0;
+  overflow: hidden;
+
+  li {
+    float: left;
+    margin: 0 .1em 0 0;
+    padding: 0;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      margin-bottom: .5em;
+    }
+
+    a, a.active {
+      display: block;
+      border: 0;
+      padding: .3em 2em;
+      background-color: $light-blue;
+      color: white;
+
+      @media screen and (max-width: $mobile-breakpoint) {
+        padding: .1em .5em;
+        font-size: .9em;
+      }
+    }
+
+    a.active, a:hover {
+      background-color: $dark-blue;
+    }
+  }
+}
+
+#main-navigation-wrapper {
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+}
+
+#main-navigation-wrapper.open {
+  display: block !important;
+}
+
+.main-navigation-row {
+  margin-bottom: 3%;
+
+  .main-navigation-item {
+
+    a {
+      position: relative;
+      display: block;
+      height: 100px;
+      width: 100%;
+      color: $dark-blue;
+      background-color: white;
+      background-position: center center;
+      background-repeat: no-repeat;
+      text-align: center;
+      text-transform: uppercase;
+      text-decoration: none;
+      @include background-size(cover);
+
+      @media screen and (max-width: $mobile-breakpoint) {
+        @include background-size(auto 100%);
+      }
+
+      span {
+        display: block;
+        position: absolute;
+        bottom: 7px;
+        left: 10px;
+        right: 10px;
+      }
+    }
+
+    a:hover, a.active {
+      background-color: $dark-blue;
+      color: white;
+    }
+  }
+}
+
+#og-context-navigation {
+
+  ul {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+  }
+
+  li {
+    list-style-type: none;
+    margin: 0 .5em 0 0;
+    padding: 0;
+    float: left;
+
+    a {
+      display: block;
+      min-width: 30px;
+      height: 25px;
+      color: white;
+      padding: 20px 5px 0 10px;
+      margin: 0;
+      text-align: center;
+      background-color: #88c1e6;
+      text-transform: uppercase;
+      text-decoration: none;
+      background-position: center 10px;
+      background-repeat: no-repeat;
+
+      @media screen and (max-width: $mobile-breakpoint) {
+        text-indent: -9999px;
+        min-width: 20px;
+        height: 15px;
+        padding-top: 15px;
+        background-position: center center;
+        margin-top: 3px;
+      }
+    }
+
+    a:hover, a.acive {
+      background-color: $dark-blue;
+    }
+  }
+
+  $menu-items-collection: (home, settings, users, tools);
+  @each $menu-item in $menu-items-collection {
+    .platon-og-context-#{$menu-item}-tab {
+      background-image: url(../img/node-#{$menu-item}-tab-icon.png);
+    }
+  }
+
+  /* to refactor cedric*/
+  .platon-og-context-home-tab {
+    background-image: url(../img/node-home-tab-icon.png)
+  }
+
+  .platon-og-context-quiz-tab {
+    background-image: url(../img/quiz-tool-tab-icon.png)
+  }
+
+  .platon-og-context-settings-tab {
+    background-image: url(../img/node-settings-tab-icon.png)
+  }
+
+  .platon-og-context-poll-tab {
+    background-image: url(../img/poll-tool-tab-icon.png)
+  }
+
+  .platon-og-context-forum-tab {
+    background-image: url(../img/forum-tool-tab-icon.png)
+  }
+
+  .platon-og-context-tft-tab {
+    background-image: url(../img/tft-tool-tab-icon.png)
+  }
+
+  .platon-og-context-quiz_import-tab {
+    background-image: url(../img/quiz-import-tool-tab-icon.png)
+  }
+
+  .platon-og-context-users-tab {
+    background-image: url(../img/node-users-tab-icon.png)
+  }
+
+  .platon-og-context-tools-tab {
+    background-image: url(../img/node-tools-tab-icon.png)
+  }
+
+  .platon-og-context-meetings-tab {
+    background-image: url(../img/meetings-tool-tab-icon.png)
+  }
+
+  .platon-og-context-audio-tab {
+    background-image: url(../img/audio-tool-tab-icon.png)
+  }
+  .platon-og-context-sort-tab {
+    background-image: url(../img/sort-tool-tab-icon.png);
+  }
+  .platon-og-context-video-tab {
+    background-image: url(../img/video-tool-tab-icon.png);
+  }
+  .platon-og-context-in_house-tab {
+    background-image: url(../img/training-tool-tab-icon.png);
+  }
+
+}
+
+#back-to-parent-link {
+  margin: .25em 0;
+
+  a {
+    background: url(../img/back-icon.png) 5px center no-repeat;
+    padding-left: 1em;
+    text-decoration: none;
+    color: $dark-blue;
+  }
+}
+
+.action-links {
+  overflow: hidden;
+  list-style: none;
+  margin: 1em 0;
+  padding: 0;
+
+  li {
+    list-style-type: none;
+    float: left;
+    margin-right: .5em;
+
+    a {
+      @include action-add-element;
+      color: white;
+      text-decoration: none;
+      margin-bottom: 5px;
+    }
+  }
+}
+
+.opigno-group-progress-course a.selected
+{
+  color: #0009E0;
+}

@@ -1,0 +1,20 @@
+name = Opigno Notifications App
+description = Opigno Notifications app
+core = 7.x
+package = Opigno Apps
+
+dependencies[] = rules
+dependencies[] = og
+dependencies[] = date
+dependencies[] = date_popup
+dependencies[] = opigno
+dependencies[] = rules_conditional
+dependencies[] = rules_i18n
+dependencies[] = views
+
+; Information added by drupal.org packaging script on 2013-09-20
+version = "7.x-1.0-rc3"
+core = "7.x"
+project = "opigno_notifications_app"
+datestamp = "1379687938"
+

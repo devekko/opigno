@@ -1,0 +1,210 @@
+<?php
+
+/**
+ * @file
+ * Module hook implementations.
+ */
+
+/**
+ * Implements hook_modules_installed().
+ */
+function opigno_og_prereq_modules_installed($modules) {
+  if (in_array('opigno_quiz_app', $modules)) {
+    foreach (_opgino_og_prereq_install_opigno_quiz_app_rules() as $rule) {
+      rules_import($rule);
+    }
+  }
+}
+
+/**
+ * Implements hook_og_permission().
+ */
+function opigno_og_prereq_og_permission() {
+  return array(
+    'skip pre-required group when added as a member' => array(
+      'title' => t("Skip the pretest when added as a member"),
+      'description' => t("Whenever a user with this permission is added, even if he didn't answer the pretest, his membership get's approved."),
+    ),
+  );
+}
+
+/**
+ * Implements hook_og_role_grant().
+ */
+function opigno_og_prereq_og_role_grant($entity_type, $gid, $uid, $rid) {
+  $account = user_load($uid, TRUE);
+
+  if ($entity_type == 'node') {
+    if (!og_user_access($entity_type, $gid, 'skip pre-required group when added as a member', $account)) {
+      $required_courses = opigno_og_prereq_fetch_required_courses(node_load($gid));
+      
+      if (!empty($required_courses)) {
+        foreach ($required_courses as $required_course) {
+          // If the user already passed the pre-test, don't deactivate his membership.
+          if (!opigno_og_prereq_user_passed_course($uid, $required_course)) {
+            $query = new EntityFieldQuery();
+            $query->entityCondition('entity_type', 'og_membership', '=')
+              ->propertyCondition('gid', $gid, '=')
+              ->propertyCondition('entity_type', 'user', '=')
+              ->propertyCondition('etid', $uid, '=');
+            $result = $query->execute();
+
+            if (!empty($result['og_membership'])) {
+              $og_membership = og_membership_load(current($result['og_membership'])->id);
+              if ($og_membership->state == OG_STATE_ACTIVE) {
+                $og_membership->state = OG_STATE_PENDING;
+                og_membership_save($og_membership);
+                drupal_set_message(t("The membership for %user was temporarily set to <em>pending</em>. She must first fulfill the required courses to get full access to this group.", array('%user' => $account->name)), 'warning', FALSE);
+              }
+            }
+          }
+        }
+      }
+    }
+    else {
+      $query = new EntityFieldQuery();
+      $query->entityCondition('entity_type', 'og_membership', '=')
+        ->propertyCondition('gid', $gid, '=')
+        ->propertyCondition('entity_type', 'user', '=')
+        ->propertyCondition('etid', $uid, '=');
+      $result = $query->execute();
+
+      if (!empty($result['og_membership'])) {
+        $og_membership = og_membership_load(current($result['og_membership'])->id);
+        if ($og_membership->state == OG_STATE_PENDING) {
+          $og_membership->state = OG_STATE_ACTIVE;
+          og_membership_save($og_membership);
+        }
+      }
+    }
+  }
+}
+
+function opigno_og_prereq_fetch_required_courses($node) {
+  $nodes = array();
+  if (!empty($node->course_required_course_ref)) {
+    foreach ($node->course_required_course_ref as $lang => $items) {
+      foreach ($items as $item) {
+        $nodes[$item['target_id']] = node_load($item['target_id']);
+      }
+    }
+  }
+  return $nodes;
+}
+
+function opigno_og_prereq_user_passed_course($uid, $course) {
+  if (!empty($course->course_required_quiz_ref)) {
+    foreach ($course->course_required_quiz_ref as $lang => $items) {
+      foreach ($items as $item) {
+        $quiz = node_load($item['target_id']);
+
+        if (isset($quiz)) {
+          $score = @current(quiz_get_score_data(array($quiz->nid), $uid));
+          if (empty($score->percent_score) || $score->percent_score < $score->percent_pass) {
+            return FALSE;
+          }
+        }
+      }
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Implements hook_og_role_revoke().
+ */
+function opigno_og_prereq_og_role_revoke($entity_type, $gid, $uid, $rid) {
+  opigno_og_prereq_og_role_grant($entity_type, $gid, $uid, $rid);
+}
+
+/**
+ * Enable a rule depending on Opigno Quiz App.
+ */
+function _opgino_og_prereq_install_opigno_quiz_app_rules() {
+  return array(
+    'rules_course_required_courses_are_completed' => '{ "rules_course_required_courses_are_completed" : {
+        "LABEL" : "Course required courses are completed",
+        "PLUGIN" : "rule condition set",
+        "TAGS" : [ "og", "opigno", "quiz" ],
+        "REQUIRES" : [ "rules_conditional", "rules" ],
+        "USES VARIABLES" : {
+          "course" : { "label" : "Course", "type" : "node" },
+          "user" : { "label" : "User", "type" : "user" },
+          "has_finished_courses" : { "label" : "Has finished required courses", "type" : "boolean" }
+        },
+        "DO" : [
+          { "component_rules_get_course_required_courses" : {
+              "USING" : { "course" : [ "course" ] },
+              "PROVIDE" : { "required_courses" : { "required_courses" : "Required courses" } }
+            }
+          },
+          { "LOOP" : {
+              "USING" : { "list" : [ "required-courses" ] },
+              "ITEM" : { "list_item" : "Current list item" },
+              "DO" : [
+                { "CONDITIONAL" : [
+                    {
+                      "IF" : { "NOT component_rules_user_has_answered_all_required_quizzes" : { "course" : [ "course" ], "user" : [ "user" ] } },
+                      "DO" : [ { "data_set" : { "data" : [ "has-finished-courses" ], "value" : 0 } } ]
+                    }
+                  ]
+                }
+              ]
+            }
+          }
+        ],
+        "RESULT" : [  ]
+      }
+    }',
+    'rules_activate_membership_when_required_course_is_passed' => '{ "rules_activate_membership_when_required_course_is_passed" : {
+    "LABEL" : "Activate membership when required course is passed",
+    "PLUGIN" : "reaction rule",
+    "OWNER" : "rules",
+    "TAGS" : [ "og", "opigno", "quiz" ],
+    "REQUIRES" : [ "rules", "rules_conditional", "og", "opigno_quiz_app" ],
+    "ON" : { "opigno_quiz_app_rules_quiz_passed" : [] },
+    "DO" : [
+      { "component_rules_get_course_from_quiz" : {
+          "USING" : { "quiz" : [ "node" ] },
+          "PROVIDE" : { "course" : { "course" : "Course" } }
+        }
+      },
+      { "CONDITIONAL" : [
+          {
+            "IF" : { "component_rules_user_has_passed_all_required_quizzes" : { "course" : [ "course" ], "user" : [ "user" ] } },
+            "DO" : [
+              { "component_rules_get_courses_that_require_this_course" : {
+                  "USING" : { "course" : [ "course" ] },
+                  "PROVIDE" : { "requiring_courses" : { "requiring_courses" : "Requiring courses" } }
+                }
+              },
+              { "LOOP" : {
+                  "USING" : { "list" : [ "requiring-courses" ] },
+                  "ITEM" : { "list_item" : "Current list item" },
+                  "DO" : [
+                    { "CONDITIONAL" : [
+                        {
+                          "IF" : { "og_user_in_group" : {
+                              "account" : [ "user" ],
+                              "group" : [ "list-item" ],
+                              "states" : { "value" : { "2" : "2" } }
+                            }
+                          },
+                          "DO" : [
+                            { "component_rules_activate_group_membership" : { "course" : [ "list-item" ], "user" : [ "user" ] } }
+                          ]
+                        }
+                      ]
+                    }
+                  ]
+                }
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  }
+}',
+  );
+}

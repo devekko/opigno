@@ -1,0 +1,18 @@
+/**
+ * @file
+ * Styles for the audio player.
+ */
+
+.audiojs {
+  color: $dark-blue;
+  background: $dark-gray; 
+  @include box-shadow(none);
+
+  .loaded { 
+    background: $medium-gray; 
+  }
+
+  .progress { 
+    background: $dark-blue; 
+  }
+}

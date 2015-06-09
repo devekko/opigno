@@ -1,0 +1,133 @@
+/* to refactor jma */
+
+/* My courses view*/
+
+.view-opigno-my-courses .opigno-group
+{
+  background: white;
+  margin-bottom: 30px;
+}
+.view-opigno-my-courses .opigno-group h3
+{
+  padding: 10px;
+  background: $dark-blue;
+  margin-bottom: 0px;
+}
+
+.view-opigno-my-courses .opigno-group .views-row
+{
+  margin-left: 10px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #ececeb;
+}
+
+.view-opigno-my-courses .opigno-group h3 a
+{
+  color: white;
+  text-decoration: none;
+}
+
+.view-opigno-my-courses .views-field.views-field-opigno-course-image .field-content img
+{
+  width: 100px;
+  display: inline;
+}
+.view-opigno-my-courses .views-field.views-field-opigno-course-image .field-content
+{
+  width: 100px;
+  display: inline;
+}
+.view-opigno-my-courses .views-field.views-field-opigno-course-image
+{
+  height: 100px;
+  width: 100px;
+  display: inline;
+}
+
+.view-opigno-my-courses .views-field.views-field-title
+{
+  font-size: 150%;
+}
+@media screen and (min-width: 600px) {
+.view-opigno-my-courses .views-field.views-field-title
+{
+  display: inline;
+  margin-left: 35px;
+  position: relative;
+  height:100px;
+  top:-50px;
+  width: 200px;
+}
+}
+
+.view-opigno-my-courses .views-field-body span
+{
+  width: 140px;
+  float: left;
+}
+
+
+.view-opigno-my-courses .views-field-body p
+{
+  margin:0px;
+}
+
+.view-opigno-my-courses .views-field-body
+{
+  min-height: 30px;
+  max-width: 600px;
+}
+.view-opigno-my-courses .views-field-body .field-content
+{
+  margin-left:140px;
+}
+
+/* teachers*/
+.view-opigno-my-courses .views-field-teachers p
+{
+  margin:0px;
+}
+
+.view-opigno-my-courses .views-field-teachers .views-label-teachers
+{
+  float: left;
+}
+
+.view-opigno-my-courses .views-field-teachers
+{
+  min-height: 110px;
+  max-width: 600px;
+}
+
+.view-opigno-my-courses .views-field-teachers .teacher
+{
+  padding-left: 140px;
+  height:110px;
+  min-height: 110px;
+  max-width: 600px;
+}
+
+.view-opigno-my-courses .views-field-teachers .field-content .user-picture
+{
+  float: left;
+}
+
+.view-opigno-my-courses .views-field-teachers .field-content .username
+{
+  margin-left:10px
+}
+/* */
+
+
+.view-opigno-my-courses .views-field.views-field-created
+{
+  max-width: 600px;
+  background: #ececeb;
+}
+
+.view-opigno-my-courses .views-field.views-field-created span.views-label
+{
+  width: 140px;
+  float: left;
+}

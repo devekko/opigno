@@ -1,0 +1,1478 @@
+<?php
+
+/**
+ * @file
+ * Module file. Defines module hooks.
+ */
+
+define('OPIGNO_QUIZ_APP_PASSED',  'passed');
+define('OPIGNO_QUIZ_APP_FAILED',  'failed');
+define('OPIGNO_QUIZ_APP_PENDING', 'pending');
+
+/**
+ * Implements hook_menu().
+ */
+function opigno_quiz_app_menu() {
+  return array(
+    'user/%/achievements' => array(
+      'title' => "My achievements",
+      'page callback' => 'opigno_quiz_app_user_results',
+      'page arguments' => array(1),
+      'access arguments' => array('access student results'),
+      'file' => 'includes/opigno_quiz_app.pages.inc',
+      'type' => MENU_LOCAL_TASK,
+    ),
+    'my-achievements' => array(
+      'title' => "My achievements",
+      'page callback' => 'opigno_quiz_app_user_results',
+      'access arguments' => array('access student results'),
+      'file' => 'includes/opigno_quiz_app.pages.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'my-results' => array(
+      'title' => "My results",
+      'page callback' => 'opigno_quiz_app_current_user_results',
+      'access callback' => 'user_is_logged_in',
+      'file' => 'includes/opigno_quiz_app.pages.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'node/%node/teacher-results' => array(
+      'title' => "Student results",
+      'description' => "Displays all student results to teachers",
+      'page callback' => 'opigno_quiz_app_course_results',
+      'page arguments' => array(1),
+      'access callback' => 'opigno_quiz_app_access_node_teacher_results',
+      'access arguments' => array(1, NULL),
+      'file' => 'includes/opigno_quiz_app.pages.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'node/%node/sort-quizzes' => array(
+      'title' => "Sort @quiz_name_plural",
+      'title arguments' => array('@quiz_name_plural' => defined('QUIZ_NAME_PLURAL') ? QUIZ_NAME_PLURAL : 'quizzes'),
+      'description' => "Sort quizzes inside the course",
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('opigno_quiz_app_sort_course_quizzes_form', 1),
+      'access callback' => 'opigno_quiz_app_access_node_sort_quizzes',
+      'access arguments' => array(1),
+      'file' => 'includes/opigno_quiz_app.pages.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'admin/opigno/students/teacher-results' => array(
+      'title' => "My course student results",
+      'description' => "Displays all course student results to teachers",
+      'page callback' => 'opigno_quiz_app_courses_results',
+      'access arguments' => array('access teacher results'),
+      'file' => 'includes/opigno_quiz_app.pages.inc',
+    )
+  );
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function opigno_quiz_app_menu_alter(&$items) {
+  // Intercept Quiz taking rendering for fullscreen logic.
+  $items['node/%node/take']['page callback'] = 'opigno_quiz_app_quiz_take';
+  $items['node/%node/take']['file'] = 'includes/opigno_quiz_app.pages.inc';
+  $items['node/%node/take']['file path'] = drupal_get_path('module', 'opigno_quiz_app');
+}
+
+/**
+ * Implements hook_permission().
+ */
+function opigno_quiz_app_permission() {
+  return array(
+    'access student results' => array(
+      'title' => t("Access student results"),
+    ),
+    'access teacher results' => array(
+      'title' => t('Access teacher results'),
+      'description' => t('Allows course teachers to access all their student results.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_og_permission().
+ */
+function opigno_quiz_app_og_permission() {
+  return array(
+    'skip display of results' => array(
+      'title' => t("Skip displaying results on teacher results page"),
+      'description' => t("Some roles might be allowed to take quizzes, but these should not be shown on the teacher results page.")
+    ),
+    'sort quizzes' => array(
+      'title' => t("Sort quizzes inside this course"),
+    ),
+  );
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function opigno_quiz_app_node_insert($node) {
+  if ($node->type == 'quiz' && !empty($node->nid) && !empty($node->og_group_ref)) {
+    foreach ($node->og_group_ref as $lang => $items) {
+      foreach ($items as $item) {
+        // Set a default weight of 0.
+        opigno_quiz_app_set_course_quiz_weight($item['target_id'], $node->nid);
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_update().
+ */
+function opigno_quiz_app_node_update($node) {
+  if ($node->type == 'quiz' && !empty($node->nid) && !empty($node->og_group_ref)) {
+    $original_node = $node->original;
+    // adds the weight for new courses
+    foreach ($node->og_group_ref as $lang => $items) {
+      foreach ($items as $item) {
+        // Set a default weight of 0.
+        if (!opigno_quiz_app_is_in_entity_reference($item['target_id'], $original_node->og_group_ref)) {
+          opigno_quiz_app_set_course_quiz_weight($item['target_id'], $node->nid);
+        }
+      }
+    }
+
+    // removes the weight from courses that were removed
+    foreach ($original_node->og_group_ref as $lang => $items) {
+      foreach ($items as $item) {
+        // Set a default weight of 0.
+        if (!opigno_quiz_app_is_in_entity_reference($item['target_id'], $node->og_group_ref)) {
+          opigno_quiz_app_delete_course_quiz_weight($item['target_id'], $node->nid);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Compares entity references fields
+ */
+function opigno_quiz_app_is_in_entity_reference($target_id, $field) {
+  foreach ($field as $lang => $items) {
+    foreach ($items as $item) {
+      if ($target_id == $item['target_id']) {
+        return TRUE;
+      }
+    }
+  }
+  return FALSE;
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function opigno_quiz_app_node_view($node) {
+  
+}
+
+/**
+ * Implements hook_og_context_negotiation_info
+ */
+function opigno_quiz_app_og_context_negotiation_info() {
+  $providers = array();
+  $paths = array();
+  foreach (opigno_quiz_app_get_quiz_question_types() as $type) {
+    $type = str_replace('_', '-', $type);
+    $paths[] = "node/add/$type";
+  }
+
+  $providers['opigno_quiz_app_question_add'] = array(
+    'name' => t('Opigno Quiz App: add question'),
+    'description' => t("Determine context by checking node/add/[question type]."),
+    'callback' => 'opigno_quiz_app_og_context_handler',
+    'menu path' => $paths,
+  );
+
+  return $providers;
+}
+
+/**
+ * OG Context provider.
+ *
+ * When creating a Quiz question, check the parent Quiz. If it's part
+ * of a group, return the group context.
+ *
+ * @return array
+ */
+function opigno_quiz_app_og_context_handler() {
+  if (opigno_quiz_app_is_node_add_question()) {
+    $node = (object) array(
+      'type' => str_replace('-', '_', array_pop(explode('/', current_path()))),
+    );
+    og_quiz_node_prepare($node);
+    if (isset($node->og_group_ref)) {
+      $items = array_shift($node->og_group_ref);
+      $gid = $items[0]['target_id'];
+      return array('node' => array($gid));
+    }
+  }
+}
+
+/**
+ * Implements hook_opigno_breadcrumbs().
+ */
+function opigno_quiz_app_opigno_breadcrumbs($gid) {
+  $breadcrumbs = array();
+
+  $node = menu_get_object();
+  // Must we handle this page request for the breadcrumb ?
+  if ((isset($node->type) && $node->type == 'quiz') || 
+      current_path() == 'node/add/quiz' ||
+      preg_match('/^node\/[0-9]+\/sort-quizzes$/', current_path()) || 
+      opigno_quiz_app_is_node_add_question()) {
+    
+    // Add the Opigno Quizzes view link.
+    $breadcrumbs[] = l(opigno_quiz_app_get_quizzes_view_title(), "node/$gid/quizzes");
+
+    // Is this a sub page of the quiz (like node/%/take) ? Add the Quiz itself.
+    if (isset($node->type) && $node->type == 'quiz' && preg_match('/^node\/[0-9]+\/.+/', current_path())) {
+      $breadcrumbs[] = l($node->title, "node/{$node->nid}");
+    }
+    // Is this a question add form ? And the parent Quiz NID is given in the URL ?
+    // Add the parent Quiz title and the manage question tab.
+    if (opigno_quiz_app_is_node_add_question() && !empty($_GET['quiz_nid'])) {
+      $quiz = node_load($_GET['quiz_nid']);
+      $breadcrumbs[] = l($quiz->title, "node/{$_GET['quiz_nid']}");
+      $breadcrumbs[] = l(t("Manage questions"), "node/{$_GET['quiz_nid']}/questions");
+    }
+  }
+
+  if (!empty($breadcrumbs)) {
+    return $breadcrumbs;
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function opigno_quiz_app_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if ($root_path == 'node/%') {
+    $node = node_load(arg(1));
+    if ($node->type == "course") {
+      if (og_user_access('node', $node->nid, 'access quiz')) {
+        $lessons = opigno_quiz_app_course_lessons($node->nid);
+        if (isset($lessons[$node->nid])) {
+          $quiz = key($lessons[$node->nid]);
+          $item = menu_get_item('node/'.$quiz.'/take');
+          $item['title'] = t("Start");
+          $item['options']['attributes']['class'][] = $item['localized_options']['attributes']['class'][] = 'opigno-quiz-app-course-start';
+          $data['actions']['output'][] = array(
+            '#theme' => 'menu_local_action',
+            '#link' => $item,
+          );
+        }
+      }
+    }
+  }
+
+  if ($root_path == 'node/%/quizzes') {
+    $gid = arg(1);
+    if (og_user_access('node',$gid,'create quiz content')) {
+      $item = menu_get_item('node/add/quiz');
+      $item['title'] = t("Add a new @quiz_name", array('@quiz_name' => QUIZ_NAME));
+      $item['options']['query']['og_group_ref'] = $item['localized_options']['query']['og_group_ref'] = $gid;
+      $item['options']['attributes']['class'][] = $item['localized_options']['attributes']['class'][] = 'opigno-quiz-app-add-quiz';
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+    $node=node_load($gid);
+    if (opigno_quiz_app_access_node_sort_quizzes($node,NULL)) {
+      $item = menu_get_item("node/$gid/sort-quizzes");
+      $destination = request_path();
+      $item['options']['query']['destination'] = $item['localized_options']['query']['destination'] = $destination;
+      $item['options']['attributes']['class'][] = $item['localized_options']['attributes']['class'][] = 'opigno-quiz-app-sort-quizzes';
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function opigno_quiz_app_theme() {
+  return array(
+    'opigno_quiz_app_user_results' => array(
+      'variables' => array('user' => NULL, 'results' => NULL),
+    ),
+    'opigno_quiz_app_user_course_results' => array(
+      'variables' => array('user' => NULL, 'course_node' => NULL, 'course_results' => NULL),
+    ),
+    'opigno_quiz_app_course_results' => array(
+      'variables' => array('course' => NULL, 'results' => NULL),
+    ),
+    'opigno_quiz_app_course_user_results' => array(
+      'variables' => array('course' => NULL, 'user' => NULL, 'results' => NULL),
+    ),
+    'opigno_quiz_app_sort_course_quizzes_form' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function opigno_quiz_app_views_api() {
+  return array(
+    'api' => '3.0',
+  );
+}
+
+/**
+ * Implements hook_views_data().
+ */
+function opigno_quiz_app_views_data() {
+  $data['opigno_quiz_app_quiz_sort']['table']['group'] = t("Opigno Quiz App");
+  $data['opigno_quiz_app_quiz_sort']['table']['join'] = array(
+    'node' => array(
+      'left_field' => 'nid',
+      'field' => 'quiz_nid',
+    ),
+  );
+
+  $data['opigno_quiz_app_quiz_sort']['gid'] = array(
+    'title' => t("The Quiz group"),
+    'help' => t("The gid of the quiz weight table"),
+    'filter' => array(
+      'handler' => 'views_handler_filter_numeric',
+    ),
+    'relationship' => array(
+      'base' => 'node',
+      'base field' => 'nid',
+      'field' => 'gid',
+      'handler' => 'views_handler_relationship',
+      'label' => t("Group"),
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+  );
+
+  $data['opigno_quiz_app_quiz_sort']['quiz_nid'] = array(
+    'title' => t("The Quiz weight (as in order) inside a group"),
+    'relationship' => array(
+      'base' => 'node',
+      'base field' => 'nid',
+      'label' => t("Quiz"),
+    ),
+  );
+  $data['opigno_quiz_app_quiz_sort']['weight'] = array(
+    'title' => t("Quiz weight (as in order)"),
+    'help' => t("The weight of the quiz inside a specific group"),
+    'field' => array(
+      'handler' => 'opigno_quiz_app_field_course_quiz_weight',
+      'click sortable' => TRUE,
+    ),
+    'filter' => array(
+      'handler' => 'opigno_quiz_app_field_course_quiz_weight',
+    ),
+    'sort' => array(
+      'handler' => 'opigno_quiz_app_sort_course_quiz_weight',
+    ),
+    'argument' => array(
+      'handler' => 'views_handler_argument_numeric',
+    ),
+  );
+  return $data;
+}
+
+/**
+ * Implements hook_modules_enabled().
+ */
+function opigno_quiz_app_modules_enabled($modules) {
+  if (in_array('opigno_calendar_app', $modules)) {
+    module_load_install('opigno_quiz_app');
+    opigno_quiz_app_enable_calendar_integration();
+  }
+}
+
+/**
+ * Implements hook_quiz_finished().
+ */
+function opigno_quiz_app_quiz_finished($quiz, $score, $rid, $taker = NULL) {
+  if (module_exists('rules')) {
+    global $user;
+
+    $taker = isset($taker) ? $taker : clone $user;
+    $author = user_load(array('uid' => $quiz->uid));
+    $quiz = node_load($quiz->nid);
+
+    rules_invoke_event('opigno_quiz_app_rules_quiz_taken', $taker, $author, $quiz);
+
+    if ($score['percentage_score'] >= $quiz->pass_rate) {
+      rules_invoke_event('opigno_quiz_app_rules_quiz_passed', $taker, $author, $quiz);
+    }
+    else {
+      rules_invoke_event('opigno_quiz_app_rules_quiz_failed', $taker, $author, $quiz);
+    }
+  }
+
+  // Make sure we're NOT in fullscreen anymore.
+  setcookie('opigno_quiz_app_fs', 'false');
+}
+
+/**
+ * Implements hook_quiz_scored().
+ */
+function opigno_quiz_app_quiz_scored($quiz, $score, $rid) {
+  $taker = user_load(array('uid' => db_select('quiz_node_results', 'r')
+    ->fields('r', array('uid'))
+    ->condition('result_id', $rid)
+    ->execute()
+    ->fetchField()));
+
+  opigno_quiz_app_quiz_finished($quiz, $score, $rid, $taker);
+}
+
+/**
+ * Implements hook_opigno_tool().
+ */
+function opigno_quiz_app_opigno_tool($node = NULL) {
+  return array(
+    'quiz' => array(
+      'name' => t("Quiz"),
+      'path' => isset($node) ? "node/{$node->nid}/quizzes" : '',
+      'description' => t("Quizzes allow teachers to assess students and provide scenario-like information."),
+      'actions' => array(
+        'add_quiz' => array(
+          'title' => t("Add a new Quiz"),
+          'href' => 'node/add/quiz',
+          'access_arguments' => array('node', isset($node) ? $node->nid : 0, 'create quiz content'),
+          'access_callback' => 'og_user_access',
+          'query' => array(
+            'og_group_ref' => isset($node) ? $node->nid : '',
+          )
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Access callback: check if user has access to student results for the specified course.
+ *
+ * @param  stdClass $node
+ *         The group node.
+ * @param  stdClass $quiz = NULL
+ *         (optional) The quiz to check permissions for.
+ * @param  stdClass $account = NULL
+ *
+ * @return bool
+ */
+function opigno_quiz_app_access_node_teacher_results($node, $quiz = NULL, $account = NULL) {
+  if (!isset($account)) {
+    global $user;
+    $account = clone $user;
+  }
+  $access = user_access('view any quiz results', $account) || og_user_access('node', $node->nid, 'view any quiz results', $account);
+  if (!$access && isset($quiz)) {
+    $access = (user_access('view results for own quiz', $account) || og_user_access('node', $node->nid, 'view results for own quiz', $account)) && $quiz->uid == $account->uid;
+  }
+  return $access;
+}
+
+/**
+ * Access callback: check if user has access to sort quizzes inside the course.
+ *
+ * @param  stdClass $node
+ * @param  stdClass $account = NULL
+ *
+ * @return bool
+ */
+function opigno_quiz_app_access_node_sort_quizzes($node, $account = NULL) {
+  if (!isset($account)) {
+    global $user;
+    $account = clone $user;
+  }
+  return og_user_access('node', $node->nid, 'sort quizzes', $account);
+}
+
+/**
+ * Access callback: check if user has access to take quizzes inside the course.
+ *
+ * @param  stdClass $node
+ * @param  stdClass $account = NULL
+ *
+ * @return bool
+ */
+function opigno_quiz_app_take_access($node, $account = NULL) {
+  if (!isset($account)) {
+    global $user;
+    $account = clone $user;
+  }
+  return og_user_access('node', $node->nid, 'access quiz', $account);
+}
+
+/**
+ * Helper function to get the Opigno Quizzes View title.
+ *
+ * As the title might change depending on individual configuration,
+ * fetch it here and cache it for better performance.
+ *
+ * @return string
+ */
+function opigno_quiz_app_get_quizzes_view_title() {
+  $cache = cache_get('opigno_quiz_app:view_title:opigno_quizzes');
+  if ($cache) {
+    return $cache->data;
+  }
+  else {
+    $view = views_get_view('opigno_quizzes');
+    if (!empty($view->display['default']->display_options['title'])) {
+      $quiz_view_title = $view->display['default']->display_options['title'];
+    }
+    else {
+      $quiz_view_title = t("Quizzes");
+    }
+    cache_set('opigno_quiz_app:view_title:opigno_quizzes', $quiz_view_title, 'cache', CACHE_TEMPORARY);
+    return $quiz_view_title;
+  }
+}
+
+/**
+ * Helper function to fetch all course quizzes.
+ *
+ * @param  stdClass $node
+ *
+ * @return array
+ */
+function opigno_quiz_app_get_course_quizzes($node) {
+  $quizzes = &drupal_static(__FUNCTION__);
+
+  if (!isset($quizzes[$node->nid])) {
+    $quizzes[$node->nid] = array();
+
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'node')
+      ->entityCondition('bundle', 'quiz')
+      ->fieldCondition('og_group_ref', 'target_id', $node->nid, '=')
+      ->addMetaData('account', user_load(1));
+    $result = $query->execute();
+
+    $temp = array();
+    if (!empty($result['node'])) {
+      foreach (array_keys($result['node']) as $quiz_nid) {
+        $temp[$quiz_nid] = opigno_quiz_app_get_course_quiz_weight($node->nid, $quiz_nid);
+      }
+    }
+    // Sort by weight.
+    asort($temp);
+    $quizzes[$node->nid] = array_keys($temp);
+  }
+
+  return $quizzes[$node->nid];
+}
+
+/**
+ * Helper function to fetch the weight of a quiz inside a course.
+ *
+ * @param  int $gid
+ * @param  int $nid
+ *
+ * @return int
+ */
+function opigno_quiz_app_get_course_quiz_weight($gid, $nid) {
+  $weight = db_select('opigno_quiz_app_quiz_sort', 'w')
+              ->fields('w', array('weight'))
+              ->condition('w.gid', $gid)
+              ->condition('w.quiz_nid', $nid)
+              ->execute()
+              ->fetchField();
+
+  return empty($weight) ? 0 : $weight;
+}
+
+/**
+ * Helper function to insert the weight of a quiz inside a course.
+ *
+ * @param  int $gid
+ * @param  int $nid
+ * @param  int $weight
+ */
+function opigno_quiz_app_set_course_quiz_weight($gid, $nid, $weight = 0) {
+  db_merge('opigno_quiz_app_quiz_sort')
+    ->key(array(
+      'gid' => $gid,
+      'quiz_nid' => $nid,
+    ))
+    ->fields(array(
+      'gid' => $gid,
+      'quiz_nid' => $nid,
+      'weight' => $weight,
+    ))
+    ->execute();
+}
+
+/**
+ * Helper function to delete the weight of a quiz inside a course.
+ *
+ * @param  int $gid
+ * @param  int $nid
+ */
+function opigno_quiz_app_delete_course_quiz_weight($gid,$nid)
+{
+  db_delete('opigno_quiz_app_quiz_sort')
+    ->condition('gid', $gid)
+    ->condition('quiz_nid', $nid)
+    ->execute();
+}
+
+/**
+ * Helper function to fetch all the required quizzes for the passed course node.
+ *
+ * @param  stdClass $node
+ *
+ * @return array
+ */
+function opigno_quiz_app_get_all_required_quizzes($node) {
+  $quizzes = &drupal_static(__FUNCTION__);
+
+  if (!isset($quizzes[$node->nid])) {
+    $quizzes[$node->nid] = array();
+    if (isset($node->course_required_quiz_ref[LANGUAGE_NONE])) {
+      foreach ($node->course_required_quiz_ref[LANGUAGE_NONE] as $item) {
+        $nody=node_load($item['target_id']);
+        if ($nody->type=="quiz")
+        {
+        $nody=node_load($item['target_id']);
+        $quizzes[$node->nid][$item['target_id']] = node_load($item['target_id']);
+        }
+      }
+    }
+  }
+
+  return $quizzes[$node->nid];
+}
+
+/**
+ * Helper function to check if the user passed all required quizzes inside the course.
+ *
+ * @param  int $nid
+ * @param  int $uid
+ *
+ * @return bool
+ */
+function opigno_quiz_app_user_passed($nid, $uid) {
+  $cache = & drupal_static(__FUNCTION__);
+
+  if (!isset($cache["$nid:$uid"])) {
+    // Always false for none-courses.
+    $cache["$nid:$uid"] = FALSE;
+    $node = node_load($nid);
+
+    if ($node->type == OPIGNO_COURSE_BUNDLE) {
+      // Default to true (if no quizzes).
+      $cache["$nid:$uid"] = TRUE;
+      $quizzes = opigno_quiz_app_get_all_required_quizzes($node);
+      $all_scores = quiz_get_score_data(array_keys($quizzes), $uid);
+      foreach ($all_scores as $score) {
+        if ($score->percent_pass > $score->percent_score) {
+          $cache["$nid:$uid"] = FALSE;
+          break;
+        }
+      }
+
+      if (module_exists('opigno_in_house_training_app')) {
+        $iht = opigno_in_house_get_all_required_iht($node);
+        foreach ($iht as $index => $rest) {
+          $value = opigno_in_house_training_score_form_get_default_value($index, $uid);
+          if ($value['status'] != 1) {
+            $cache["$nid:$uid"] = FALSE;
+            break;
+          }
+        }
+      }
+
+      if (module_exists('opigno_webex_app')) {
+        $webx = opigno_webex_app_get_all_required_quizzes($node);
+        foreach ($webx as $index => $rest) {
+          $value = opigno_webex_attendance_form_get_default_value($index, $uid);
+          if ($value['status'] != 1) {
+            $cache["$nid:$uid"] = FALSE;
+            break;
+          }
+        }
+      }
+    }
+  }
+  return $cache["$nid:$uid"];
+}
+
+/**
+ * Helper function to get all results for a given course and user.
+ *
+ * @param  int $uid
+ * @param  int $nid
+ * @param  bool $filter_access = FALSE
+ *
+ * @return array|false
+ */
+function opigno_quiz_app_get_course_data_result($uid, $nid, $filter_access = FALSE) {
+  $cache = &drupal_static(__FUNCTION__);
+
+  $filter_access = (int) $filter_access;
+
+  if (!isset($cache["$nid:$uid:$filter_access"])) {
+    $node = node_load($nid);
+    $quizzes = opigno_quiz_app_get_all_required_quizzes($node);
+    $final_score = 0;
+    $failed = OPIGNO_QUIZ_APP_PASSED;
+    $total_time = 0;
+    $count = 0;
+
+    if ($filter_access) {
+      $temp = array();
+      foreach ($quizzes as $quiz_nid => $quiz) {
+        if (opigno_quiz_app_access_node_teacher_results($node, $quiz)) {
+          $temp[$quiz_nid] = $quiz;
+        }
+      }
+      $quizzes = $temp;
+    }
+
+    if (empty($quizzes)) {
+      $cache["$nid:$uid:$filter_access"] = FALSE;
+      return FALSE;
+    }
+
+    $nids = array_keys($quizzes);
+
+    // Fetch all scores to calculate the total time spent.
+    $all_scores = opigno_quiz_app_get_score_data($nids, $uid);
+    $quiz_total_time = array();
+    foreach ($all_scores as $quiz_nid => $results) {
+      foreach ($results as $rid => $score) {
+        if ($score->time_end != 0) {
+          if (!isset($quiz_total_time[$quiz_nid])) {
+            $quiz_total_time[$quiz_nid] = 0;
+          }
+          $total_time += $score->time_end - $score->time_start;
+          $quiz_total_time[$quiz_nid] += $score->time_end - $score->time_start;
+        }
+      }
+    }
+
+    // Get only best scores for final table.
+    $all_scores = quiz_get_score_data($nids, $uid);
+    foreach ($all_scores as $score) {
+      if (isset($quizzes[$score->nid])) {
+        $info['quizzes'][$quizzes[$score->nid]->title]['passed'] = isset($score->percent_score) ? ($score->percent_score >= $score->percent_pass ? OPIGNO_QUIZ_APP_PASSED : OPIGNO_QUIZ_APP_FAILED) : OPIGNO_QUIZ_APP_PENDING;
+        $info['quizzes'][$quizzes[$score->nid]->title]['score'] = isset($score->percent_score) ? $score->percent_score : NULL;
+        $info['quizzes'][$quizzes[$score->nid]->title]['total_time'] = isset($quiz_total_time[$score->nid]) ? $quiz_total_time[$score->nid] : NULL;
+
+        if (isset($score->percent_score) && isset($quizzes[$score->nid]->quiz_weight[LANGUAGE_NONE][0]['value'])) {
+          $final_score += $quizzes[$score->nid]->quiz_weight[LANGUAGE_NONE][0]['value'] * $score->percent_score;
+          $count += $quizzes[$score->nid]->quiz_weight[LANGUAGE_NONE][0]['value'];
+        }
+        elseif (isset($score->percent_score)) {
+          $final_score += $score->percent_score;
+          $count++;
+        }
+        else {
+          $failed = OPIGNO_QUIZ_APP_PENDING;
+        }
+
+        if ($failed !== OPIGNO_QUIZ_APP_PENDING && $failed !== OPIGNO_QUIZ_APP_FAILED && $score->percent_score < $score->percent_pass) {
+          $failed = OPIGNO_QUIZ_APP_FAILED;
+        }
+      }
+    }
+
+    ////////////////resultschange//////////////
+    if (module_exists('opigno_in_house_training_app')) {
+      $iht = opigno_in_house_get_all_required_iht($node);
+      foreach ($iht as $index => $rest) {
+        $value = opigno_in_house_training_score_form_get_default_value($index, $uid);
+        $info['iht'][$rest->title]['passed']=OPIGNO_QUIZ_APP_PASSED;
+        $info['iht'][$rest->title]['score']=t("Attended");
+        $info['iht'][$rest->title]['total_time']=opigno_calendar_app_get_node_duration($rest);
+        if ($value['status'] != 1)
+        {
+          $failed=OPIGNO_QUIZ_APP_FAILED;
+          $info['iht'][$rest->title]['passed']=OPIGNO_QUIZ_APP_FAILED;
+          $info['iht'][$rest->title]['score']=t("Absent");
+          $info['iht'][$rest->title]['total_time']=0;
+        }
+        $total_time+=$info['iht'][$rest->title]['total_time'];
+      }
+    }
+
+    if (module_exists('opigno_webex_app')) {
+      $webx = opigno_webex_app_get_all_required_quizzes($node);
+      foreach ($webx as $index => $rest) {
+        $value = opigno_webex_attendance_form_get_default_value($index, $uid);
+        $info['webx'][$rest->title]['passed']=OPIGNO_QUIZ_APP_PASSED;
+        $info['webx'][$rest->title]['score']=t("Attended");
+        $info['webx'][$rest->title]['total_time']=opigno_calendar_app_get_node_duration($rest);
+        if ($value['status'] != 1) {
+          $failed=OPIGNO_QUIZ_APP_FAILED;
+          $info['webx'][$rest->title]['passed']=OPIGNO_QUIZ_APP_FAILED;
+          $info['webx'][$rest->title]['score']=t("Absent");
+          $info['webx'][$rest->title]['total_time']=0;
+        }
+        $total_time+=$info['webx'][$rest->title]['total_time'];
+      }
+    }
+    ///////////////////////////////////////////////
+
+
+    // Failsafe. There were no visible results for allowed quizzes.
+    if (empty($info['quizzes'])) {
+      $cache["$nid:$uid:$filter_access"] = FALSE;
+      return FALSE;
+    }
+
+    $info['passed'] = $failed;
+    $info['total_score'] = $count ? round($final_score / $count) : 0;
+    $info['total_time'] = $total_time;
+
+    $cache["$nid:$uid:$filter_access"] = $info;
+  }
+
+  return $cache["$nid:$uid:$filter_access"];
+}
+
+/**
+ * DEPRECATED.
+ * A typo in the function name omitted the 'app' word.
+ * This is now an alias to opigno_quiz_app_get_score_data(), which should be used instead.
+ * @see opigno_quiz_app_get_score_data().
+ */
+function opigno_quiz_get_score_data($nids, $uid) {
+  drupal_set_message('Called deprecated opigno_quiz_get_score_data(). Should be replaced with opigno_quiz_app_get_score_data()', 'warning');
+  if (function_exists('dpm')) {
+    dpm(debug_backtrace(), 'Callstack to deprecated opigno_quiz_get_score_data()');
+  }
+  return opigno_quiz_app_get_score_data($nids, $uid);
+}
+
+/**
+ * Helper function to fetch score data for quizzes. The difference with the core quiz function is that
+ * this function gets all results (not just the best one) and also returns the start and end time.
+ *
+ * @param  array $nids
+ * @param  int $uid
+ *
+ * @return array
+ */
+function opigno_quiz_app_get_score_data($nids, $uid) {
+  $scores = array();
+  $query = db_select('quiz_node_results', 'r');
+  $query->leftJoin('quiz_node_properties', 'p', 'r.vid = p.vid');
+  $query->addField('r', 'score', 'percent_score');
+  $query->addField('p', 'pass_rate', 'percent_pass');
+  $result = $query
+    ->fields('r', array('result_id', 'nid', 'time_start', 'time_end'))
+    ->condition('r.uid', $uid)
+    ->condition('r.time_end', 0, '>')
+    ->condition('r.nid', $nids, 'IN')
+    ->execute();
+
+  while ($score = $result->fetchObject()) {
+    $scores[$score->nid][$score->result_id] = $score;
+  }
+
+  return $scores;
+}
+
+/**
+ * Helper function to get the certificate download link from the Opigno Certificate App.
+ *
+ * @param  int $nid
+ * @param  int $uid
+ *
+ * @return string
+ */
+function opigno_quiz_app_get_certificate($nid, $uid) {
+  $download_certificate = '';
+  if (function_exists('opigno_certificate_app_get_certificate_path')) {
+    $certificate_path = opigno_certificate_app_get_certificate_path($nid, $uid);
+
+    if ($certificate_path) {
+      $download_certificate = ' (' . l(t("download certificate"), $certificate_path, array('attributes' => array('class' => array('opigno-quiz-app-download-certificate', 'opigno-certificate-app-download-certificate-link')))) . ')';
+    }
+  }
+  return $download_certificate;
+}
+
+/**
+ * Theme callback: display user results.
+ */
+function theme_opigno_quiz_app_user_results($vars) {
+  $html = '';
+  foreach ($vars['results'] as $course_info) {
+    $html .= theme('opigno_quiz_app_user_course_results', array('user' => $vars['user'], 'course_node' => $course_info['node'], 'course_results' => $course_info));
+  }
+  return $html;
+}
+
+/**
+ * Theme callback: display user results for a specific course.
+ */
+function theme_opigno_quiz_app_user_course_results($vars) {
+  $download_certificate = opigno_quiz_app_get_certificate($vars['course_node']->nid, $vars['user']->uid);
+  $header = array(
+    array(
+      'data' => t("@title (!status - <a href='!url'>see details</a>)", array('@title' => $vars['course_node']->title, '!status' => $vars['course_results']['passed'] == OPIGNO_QUIZ_APP_PASSED ? t("Passed") : ($vars['course_results']['passed'] == OPIGNO_QUIZ_APP_FAILED ? t("Failed") : t("Pending")), '!url' => "node/{$vars['course_node']->nid}/my-quiz-results")) . $download_certificate,
+      'class' => array('opigno-quiz-app-course-status', 'opigno-quiz-app-course-status-' . ($vars['course_results']['passed'] == OPIGNO_QUIZ_APP_PASSED ? 'passed' : ($vars['course_results']['passed'] == OPIGNO_QUIZ_APP_FAILED ? 'failed' : 'pending')))
+    ),
+    array(
+      'data' => isset($vars['course_results']['total_score']) ? $vars['course_results']['total_score'] : '-',
+      'class' => array('opigno-quiz-app-course-total-score')
+    ),
+    array(
+      'data' => isset($vars['course_results']['total_time']) ? gmdate('H:i:s', $vars['course_results']['total_time']) : '-',
+      'class' => array('opigno-quiz-app-course-total-time')
+    ),
+  );
+
+  $rows = array();
+  if (!empty($vars['course_results']['quizzes'])) {
+    foreach ($vars['course_results']['quizzes'] as $quiz_title => $score) {
+      $rows[] = array(
+        'class' => array('opigno-quiz-app-quiz-result', 'opigno-quiz-app-quiz-result-' . ($score['passed'] == OPIGNO_QUIZ_APP_PASSED ? 'passed' : ($score['passed'] == OPIGNO_QUIZ_APP_FAILED ? 'failed' : 'pending'))),
+        'data' => array(
+          check_plain($quiz_title),
+          isset($score['score']) ? $score['score'] : '-',
+          isset($score['total_time']) ? gmdate('H:i:s', $score['total_time']) : '-',
+        )
+      );
+    }
+  }
+
+  //////////////////////////////////////////
+  if (!empty($vars['course_results']['iht'])) {
+    foreach ($vars['course_results']['iht'] as $quiz_title => $score) {
+      $rows[] = array(
+        'class' => array('opigno-quiz-app-quiz-result', 'opigno-quiz-app-quiz-result-' . ($score['passed'] == OPIGNO_QUIZ_APP_PASSED ? 'passed' : ($score['passed'] == OPIGNO_QUIZ_APP_FAILED ? 'failed' : 'pending'))),
+        'data' => array(
+          check_plain($quiz_title),
+          isset($score['score']) ? $score['score'] : '-',
+          isset($score['total_time']) ? gmdate('H:i:s', $score['total_time']) : '-',
+        )
+      );
+    }
+  }
+
+  if (!empty($vars['course_results']['webx'])) {
+    foreach ($vars['course_results']['webx'] as $quiz_title => $score) {
+      $rows[] = array(
+        'class' => array('opigno-quiz-app-quiz-result', 'opigno-quiz-app-quiz-result-' . ($score['passed'] == OPIGNO_QUIZ_APP_PASSED ? 'passed' : ($score['passed'] == OPIGNO_QUIZ_APP_FAILED ? 'failed' : 'pending'))),
+        'data' => array(
+          check_plain($quiz_title),
+          isset($score['score']) ? $score['score'] : '-',
+          isset($score['total_time']) ? gmdate('H:i:s', $score['total_time']) : '-',
+        )
+      );
+    }
+  }
+  //////////////////////////////////////////*/
+
+  return theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('class' => array('opigno-quiz-app-results-table', 'opigno-quiz-app-results-collapsible-table', 'opigno-quiz-app-user-course-results-table'))));
+}
+
+/**
+ * Theme callback: display course results.
+ */
+function theme_opigno_quiz_app_course_results($vars) {
+  $html = '';
+  foreach ($vars['results'] as $results) {
+    $html .= theme('opigno_quiz_app_course_user_results', array('user' => $results['user'], 'course' => $vars['course'], 'results' => $results));
+  }
+  return $html;
+}
+
+/**
+ * Theme callback: display course results for a specific user.
+ */
+function theme_opigno_quiz_app_course_user_results($vars) {
+  $download_certificate = opigno_quiz_app_get_certificate($vars['course']->nid, $vars['user']->uid);
+  $header = array(
+    array(
+      'data' => t("@name (!status)", array('@name' => $vars['user']->name, '!status' => $vars['results']['passed'] == OPIGNO_QUIZ_APP_PASSED ? t("Passed") : ($vars['results']['passed'] == OPIGNO_QUIZ_APP_FAILED ? t("Failed") : t("Pending")))) . $download_certificate,
+      'class' => array('opigno-quiz-app-course-status', 'opigno-quiz-app-course-status-' . ($vars['results']['passed'] == OPIGNO_QUIZ_APP_PASSED ? 'passed' : ($vars['results']['passed'] == OPIGNO_QUIZ_APP_FAILED ? 'failed' : 'pending')))
+    ),
+    array(
+      'data' => isset($vars['results']['total_score']) ? $vars['results']['total_score'] : '-',
+      'class' => array('opigno-quiz-app-course-total-score')
+    ),
+    array(
+      'data' => isset($vars['results']['total_time']) ? gmdate('H:i:s', $vars['results']['total_time']) : '-',
+      'class' => array('opigno-quiz-app-course-total-time')
+    ),
+  );
+
+  $rows = array();
+  if (!empty($vars['results']['quizzes'])) {
+    foreach ($vars['results']['quizzes'] as $quiz_title => $score) {
+      $rows[] = array(
+        'class' => array('opigno-quiz-app-quiz-result', 'opigno-quiz-app-quiz-result-' . ($score['passed'] == OPIGNO_QUIZ_APP_PASSED ? 'passed' : ($score['passed'] == OPIGNO_QUIZ_APP_FAILED ? 'failed' : 'pending'))),
+        'data' => array(
+          check_plain($quiz_title),
+          isset($score['score']) ? $score['score'] : '-',
+          isset($score['total_time']) ? gmdate('H:i:s', $score['total_time']) : '-',
+        )
+      );
+    }
+  }
+
+  //////////////////////////////////////////
+  if (!empty($vars['results']['iht'])) {
+    foreach ($vars['results']['iht'] as $quiz_title => $score) {
+      $rows[] = array(
+        'class' => array('opigno-quiz-app-quiz-result', 'opigno-quiz-app-quiz-result-' . ($score['passed'] == OPIGNO_QUIZ_APP_PASSED ? 'passed' : ($score['passed'] == OPIGNO_QUIZ_APP_FAILED ? 'failed' : 'pending'))),
+        'data' => array(
+          check_plain($quiz_title),
+          isset($score['score']) ? $score['score'] : '-',
+          isset($score['total_time']) ? gmdate('H:i:s', $score['total_time']) : '-',
+        )
+      );
+    }
+  }
+
+  if (!empty($vars['results']['webx'])) {
+    foreach ($vars['results']['webx'] as $quiz_title => $score) {
+      $rows[] = array(
+        'class' => array('opigno-quiz-app-quiz-result', 'opigno-quiz-app-quiz-result-' . ($score['passed'] == OPIGNO_QUIZ_APP_PASSED ? 'passed' : ($score['passed'] == OPIGNO_QUIZ_APP_FAILED ? 'failed' : 'pending'))),
+        'data' => array(
+          check_plain($quiz_title),
+          isset($score['score']) ? $score['score'] : '-',
+          isset($score['total_time']) ? gmdate('H:i:s', $score['total_time']) : '-',
+        )
+      );
+    }
+  }
+  //////////////////////////////////////////
+
+  return theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('class' => array('opigno-quiz-app-results-table', 'opigno-quiz-app-results-collapsible-table', 'opigno-quiz-app-course-user-results-table'))));
+}
+
+/**
+ * Theme callback: render the order form.
+ */
+function theme_opigno_quiz_app_sort_course_quizzes_form($vars) {
+  $form = $vars['form'];
+  drupal_add_tabledrag('opigno-quiz-app-sort-course-quizzes', 'order', 'sibling', 'opigno-quiz-app-sort-course-quizzes-weight');
+
+  $header = array(
+    function_exists('locale') ? locale(QUIZ_NAME) : QUIZ_NAME,
+    t("Weight"),
+  );
+
+  $rows = array();
+  foreach ($form['table'] as $key => $item) {
+    if (preg_match('/quiz_[0-9]+/', $key)) {
+      $data = array();
+      $data[] = drupal_render($item['title']) . drupal_render($item['nid']);
+      $data[] = drupal_render($item['weight']);
+
+      $rows[] = array(
+        'data' => $data,
+        'class' => array('draggable'),
+      );
+    }
+  }
+
+  $form['table'] = array(
+    '#markup' => theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('id' => 'opigno-quiz-app-sort-course-quizzes'))),
+    '#weight' => 1,
+  );
+
+  return drupal_render_children($form);
+}
+
+/**
+ * Enable fullscreen mode for the passed Quiz node.
+ *
+ * @param object $node
+ */
+function _opigno_quiz_app_enable_fullscreen($node) {
+  $included = &drupal_static(__FUNCTION__);
+  if (empty($included)) {
+    drupal_add_library('system', 'jquery.cookie');
+    $path = drupal_get_path('module', 'opigno_quiz_app');
+    drupal_add_css("$path/css/opigno_quiz_app.css");
+    drupal_add_js("$path/js/opigno_quiz_app.fullscreen.js");
+
+    $included = TRUE;
+  }
+  drupal_add_js(array(
+    'opignoQuizApp' => array(
+      'fullScreen' => array(
+        array('nid' => $node->nid),
+      )
+    )
+  ), 'setting');
+}
+
+/**
+ * Helper function to determine if we're adding a Question node.
+ *
+ * @return bool
+ */
+function opigno_quiz_app_is_node_add_question() {
+  static $result;
+  if (!isset($result)) {
+    $question_types = opigno_quiz_app_get_quiz_question_types();
+    $result = preg_match('/^node\/add\/(' . str_replace('_', '-', implode('|', $question_types)) . ')$/', current_path());
+  }
+  return $result;
+}
+
+/**
+ * Helper function to get the available quiz question types.
+ * 
+ * Statically cached for better performance.
+ *
+ * @return array
+ */
+function opigno_quiz_app_get_quiz_question_types() {
+  static $types;
+  if (!isset($types)) {
+    $types = array_keys(_quiz_question_get_implementations());
+  }
+  return $types;
+}
+
+/**
+ * Quiz node form alter
+ *
+ * Shows/Hides calendar date field
+ */
+function opigno_quiz_app_form_alter(&$form, &$form_state, $form_id) {
+  if (($form_id=="quiz_node_form")&&(isset($form['type']['#value']))&&($form['type']['#value']=="quiz")) {
+    $form['field_add_to_calendar']['#parent']='quiz_availability';
+    $form['opigno_calendar_date']['#parent']='quiz_availability';
+    $form['opigno_calendar_date']['#states'] = array(
+      'invisible' => array(
+        '#edit-field-add-to-calendar-und' => array('checked' => FALSE),
+      ),
+    );
+    $form['quiz_availability']['field_add_to_calendar']=$form['field_add_to_calendar'];
+    $form['quiz_availability']['opigno_calendar_date']=$form['opigno_calendar_date'];
+    $form['#submit'][] = 'opigno_quiz_app_unset_opigno_calendar_date';
+    unset($form['field_add_to_calendar']);
+    unset($form['opigno_calendar_date']);
+    $form['#validate'][]="opigno_quiz_app_check_questions_for_type";
+  }
+  elseif ($form_id == 'quiz_question_answering_form') {
+    /// Hides the finish quiz for users not registered
+    //$form['question']['#weight']=-1;
+    $form['is_doubtful']['#weight']=49;
+    $form['navigation']['#weight']=50;
+    if (!user_is_logged_in())
+    {
+      /// Is it the last question?
+      if (isset($form['#attributes']['data-confirm-message']))
+      {
+        unset($form['navigation']['submit']);
+        unset($form['navigation']['op']);
+      }
+    }
+    /////////////////////////////////////////////////////
+    $path = drupal_get_path('module', 'opigno_quiz_app');
+    drupal_add_js("$path/js/opigno_quiz_app.js");
+  }
+}
+
+function opigno_quiz_app_check_questions_for_type($form, &$form_state)
+{
+  if ((isset($form_state['values']['quiz_type'][LANGUAGE_NONE][0]['value']))&&(isset($form_state['values']['nid']))&&(isset($form_state['values']['vid'])))
+  {
+    switch ($form_state['values']['quiz_type'][LANGUAGE_NONE][0]['value']) {
+      case 'quiz':
+        $quiz_questions=quiz_get_questions($form_state['values']['nid'],$form_state['values']['vid'],TRUE,TRUE,TRUE,TRUE);
+        foreach($quiz_questions as $index => $value)
+        {
+          if ($value->type=="quiz_directions")
+          {
+            form_set_error('quiz_type',t('You cannot set this lesson as quiz type, remove all slides questions first.'));
+          }
+        }
+        break;
+      case "theory":
+        $quiz_questions=quiz_get_questions($form_state['values']['nid'],$form_state['values']['vid'],TRUE,TRUE,TRUE,TRUE);
+        foreach($quiz_questions as $index => $value)
+        {
+          if ($value->type!="quiz_directions")
+          {
+            form_set_error('quiz_type',t('You cannot set this lesson as theory type, remove all non slides questions first.'));
+          }
+        }
+        break;
+      case "mix":
+        break;
+    }
+  }
+}
+
+/**
+ * Quiz node submit function
+ *
+ * Removes calendar field in case of not beeing used
+ */
+function opigno_quiz_app_unset_opigno_calendar_date($form, &$form_state)
+{
+  if ($form_state['values']['field_add_to_calendar'][LANGUAGE_NONE][0]['value']==0)
+  {
+    $form_state['values']['opigno_calendar_date'][LANGUAGE_NONE][0]['value']=NULL;
+    $form_state['values']['opigno_calendar_date'][LANGUAGE_NONE][0]['value2']=NULL;
+    $form_state['values']['opigno_calendar_date'][LANGUAGE_NONE][0]['timezone']=NULL;
+    $form_state['values']['opigno_calendar_date'][LANGUAGE_NONE][0]['offset']=NULL;
+    $form_state['values']['opigno_calendar_date'][LANGUAGE_NONE][0]['offset2']=NULL;
+    $form_state['values']['opigno_calendar_date'][LANGUAGE_NONE][0]['rrule']=NULL;
+  }
+}
+
+/////////////////////////////////////////// Group interface ////////////////////////////////////////////////////
+/**
+ * Implements hook_preprocess_page().
+ */
+function opigno_quiz_app_preprocess_page(&$vars) {
+  $group = og_context('node');
+  if (!empty($group['gid'])) {
+    $node = node_load($group['gid']);
+    if ($node->type == "course") {
+      $vars['group_state']['course'][$node->nid]['quiz'] = opigno_quiz_app_course_lessons_progress_and_time($group['gid']);
+    }
+    if ($node->type == "class") {
+      if (isset($node->opigno_class_courses[LANGUAGE_NONE])) {
+        foreach ($node->opigno_class_courses[LANGUAGE_NONE] as $cindex => $course) {
+          $vars['group_state']['course'][$course['target_id']]['quiz'] = opigno_quiz_app_course_lessons_progress_and_time($course['target_id']);
+        }
+      }
+    }
+  }
+}
+
+function opigno_quiz_app_course_lessons($course_nid) {
+  Global $user;
+  $lessons = array();
+  $query = db_select('node', 'n')
+    ->fields('n', array('nid', 'title','vid'))
+    ->condition('n.status', 1, '=')
+    ->condition('n.type', 'quiz', '=');
+  $query->join('og_membership', 'og_m', 'og_m.etid = n.nid'); //JOIN node with users
+  $query->fields('og_m', array('gid'))
+    ->condition('og_m.gid', $course_nid, '=')
+    ->condition('og_m.field_name', 'og_group_ref', '=')
+    ->condition('og_m.state', 1, '=')
+    ->condition('og_m.entity_type', 'node', '=');
+  $result = $query->execute();
+  if (opigno_quiz_app_course_has_been_sorted($result,$course_nid))
+  {
+   $query->join('opigno_quiz_app_quiz_sort', 'oqs', 'oqs.quiz_nid = n.nid'); //JOIN node with users
+   $query->fields('oqs', array('weight'))
+     ->condition('oqs.gid', $course_nid, '=')
+     ->orderBy('oqs.weight', 'ASC');
+  }
+  $result = $query->execute();
+  while ($record = $result->fetchAssoc()) {
+    if ($router_item = menu_get_item('node/'.$record['nid'])) {
+      if ($router_item['access']) {
+        $lessons[$course_nid][$record['nid']]['vid'] = $record['vid'];
+      }
+    }
+  }
+  return $lessons;
+}
+
+function opigno_quiz_app_course_lessons_progress_and_time($course_nid, $account = NULL) {
+  if ($account == NULL) {
+    Global $user;
+    $account=$user;
+    $uid=$account->uid;
+  }
+  $lessons = opigno_quiz_app_course_lessons($course_nid);
+  $lessons_=array();
+  foreach ($lessons as $course_nid => $quizs) {
+    foreach ($quizs as $quiz_id => $quiz) {
+      $score = quiz_get_score_data(array($quiz_id), $uid);
+      $lessons_[$course_nid][$quiz['vid']]=$score[$quiz['vid']];
+      $total_time=0;
+      $all_scores = opigno_quiz_app_get_score_data(array($quiz_id), $uid);
+      foreach ($all_scores as $quiz_nid => $results) {
+        foreach ($results as $rid => $score) {
+          if ($score->time_end != 0) {
+            if (!isset($quiz_total_time[$quiz_nid])) {
+              $quiz_total_time[$quiz_nid] = 0;
+            }
+            $total_time += $score->time_end - $score->time_start;
+            $quiz_total_time[$quiz_nid] += $score->time_end - $score->time_start;
+          }
+        }
+      }
+      $lessons_[$course_nid][$quiz['vid']]->total_time=$total_time;
+    }
+  }
+  $displayinfo=array();
+  $displayinfo['courses']=$lessons_;
+  if (!empty($lessons_))
+  {
+    return theme_opigno_quiz_app_course_lessons($displayinfo);
+  }
+}
+
+
+/**
+ * Theme callback: display course quizes and results.
+ */
+function theme_opigno_quiz_app_course_lessons($vars) {
+  $rows = array();
+  if (!empty($vars['courses'])) {
+    foreach ($vars['courses'] as $course_id => $lessons) {
+      foreach ($lessons as $lesson_id => $lesson) {
+      $selected="";
+      if (strpos(current_path(),'node/'.$lesson->nid) !== false) {
+        $selected="selected";
+      }
+      $rows[] = array(
+        'class' => array(),
+        'data' => array(
+          l($lesson->title,'node/'.$lesson->nid,array('attributes' => array('class' => array($selected)))),
+          isset($lesson->percent_score) ? '<div class="opigno-quiz-app-group-status-quiz-result-'.($lesson->percent_score>=$lesson->percent_pass ? "passed" : "failed").'">'.$lesson->percent_score.'<div>' : '-',
+          (isset($lesson->total_time)&&$lesson->total_time>0) ? gmdate('H:i:s', $lesson->total_time) : '-',
+        )
+      );
+    }
+    }
+  }
+  $header = array(
+    array(
+      'data' => t('Lessons'),
+      'class' => array('opigno-quiz-app-course-name')
+    ),
+    array(
+      'data' => t('Score'),
+      'class' => array('opigno-quiz-app-course-total-score')
+    ),
+    array(
+      'data' => t('Total Time'),
+      'class' => array('opigno-quiz-app-course-total-time')
+    ),
+  );
+  return theme('table', array('header' => $header, 'rows' => $rows, 'attributes' => array('class' => array())));
+}
+
+function opigno_quiz_app_course_has_been_sorted($result,$course_nid)
+{
+  while ($record = $result->fetchAssoc())
+  {
+    $query = db_select('opigno_quiz_app_quiz_sort', 'oqs')
+      ->fields('oqs')
+      ->condition('oqs.gid', $course_nid, '=')
+      ->condition('oqs.quiz_nid', $record['nid'], '=');
+    $result=$query->execute();
+    if (!($record=$result->fetchAssoc()))
+    {
+      return false;
+    }
+  }
+  return true;
+}
+
+//////// Overwriting quiz display ///////////////////////
+function opigno_quiz_app_theme_registry_alter(&$theme_registry) {
+  if (isset($theme_registry['quiz_no_feedback'])) {
+    $theme_registry['quiz_no_feedback']['function'] = 'theme_opigno_quiz_no_feedback';
+  }
+  if (isset($theme_registry['quiz_take_summary'])) {
+    $theme_registry['quiz_take_summary']['function'] = 'theme_opigno_quiz_take_summary';
+  }
+}
+
+function theme_opigno_quiz_no_feedback() {
+  return t('Thank you for taking the lesson!');
+}
+
+function theme_opigno_quiz_take_summary($variables) {
+  $quiz = $variables['quiz'];
+  $questions = $variables['questions'];
+  $score = $variables['score'];
+  $summary = $variables['summary'];
+  $rid = $variables['rid'];
+  // Set the title here so themers can adjust.
+  drupal_set_title($quiz->title);
+
+  // Display overall result.
+  $output = '';
+  if (!empty($score['possible_score'])) {
+    if (!$score['is_evaluated']) {
+      if (user_access('score taken quiz answer')) {
+        $msg = t('Parts of this @quiz have not been evaluated yet. The score below is not final. <a class="self-score" href="!result_url">Click here</a> to give scores on your own.', array(
+          '@quiz' => QUIZ_NAME,
+          '!result_url' => url('node/' . $quiz->nid . '/results/' . $rid)
+        ));
+      }
+      else {
+        $msg = t('Parts of this @quiz have not been evaluated yet. The score below is not final.', array('@quiz' => QUIZ_NAME));
+      }
+      drupal_set_message($msg, 'warning');
+    }
+    $output .= '<div id="quiz_score_possible">' . t('You got %num_correct of %question_count possible points.', array(
+        '%num_correct' => $score['numeric_score'],
+        '%question_count' => $score['possible_score']
+      )) . '</div>' . "\n";
+    $output .= '<div id="quiz_score_percent">' . t('Your score: %score %', array('%score' => $score['percentage_score'])) . '</div>' . "\n";
+  }
+  if (isset($summary['passfail'])) {
+    $output .= '<div id="quiz_summary">' . $summary['passfail'] . '</div>' . "\n";
+  }
+  if (isset($summary['result'])) {
+    $output .= '<div id="quiz_summary">' . $summary['result'] . '</div>' . "\n";
+  }
+  // Get the feedback for all questions. These are included here to provide maximum flexibility for themers
+  if ($quiz->display_feedback) {
+    $form = drupal_get_form('quiz_report_form', $questions);
+    $output .= drupal_render($form);
+  }
+  $group = og_context('node');
+  $next = FALSE;
+  $nextlink = "";
+  if (!empty($group['gid'])) {
+    $lessons = opigno_quiz_app_course_lessons($group['gid']);
+    if (isset($lessons[$group['gid']])) {
+      foreach ($lessons[$group['gid']] as $quiz_id => $quiz_) {
+        if ($next == TRUE) {
+          $nextlink = l(t("To next lesson"), "node/" . $quiz_id . "/take", array(
+              'attributes' => array(
+                'class' => array(
+                  'opigno-quiz-action',
+                  'action-element',
+                )
+              )
+            ));
+          break;
+        }
+        if ($quiz_id == $quiz->nid) {
+          $next = TRUE;
+        }
+      }
+    }
+  }
+  if (($nextlink == "") && (!empty($group['gid']))) {
+    $nextlink = l(t("Back to course"), "node/" . $group['gid'], array(
+        'attributes' => array(
+          'class' => array(
+            'opigno-quiz-action',
+            'action-element',
+          )
+        )
+      ));
+  }
+  return $output . '<div id="nextlink">' . $nextlink . '</div>';
+}
+////////////////////////////////////////////////////////////////////////////////
+
+
+

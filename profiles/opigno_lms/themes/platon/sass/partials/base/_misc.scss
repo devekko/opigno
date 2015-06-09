@@ -1,0 +1,265 @@
+/**
+ * @file
+ * Defines all miscellaneous styles.
+ */
+
+div.messages {
+  position: relative;
+  padding: 1em 1em 1em 3em;
+  border: 0;
+  background-position: 16px center;
+
+  .messages-dismiss {
+    position: absolute;
+    right: 10px;
+    top: 5px;
+    cursor: pointer;
+  }
+}
+
+body.platon-use-custom-background {
+  @include background-size(cover);
+
+  #site-content {
+    background: transparent;
+  }
+
+  #first-sidebar {
+    background: $medium-gray;
+  }
+
+  #second-sidebar {
+    background: transparent;
+  }
+}
+
+.admin {
+
+  .left {
+    margin-left: 0;
+  }
+
+  .right {
+    margin-right: 0;
+  }
+
+  .left, .right {
+
+    .admin-panel {
+
+      .body {
+        padding: 0;
+      }
+
+      h3 {
+        padding: .5em;
+        margin-top: 0;
+        color: white;
+        background: $light-blue;
+      }
+
+      dt {
+        padding: .5em;
+        background: $medium-gray;
+
+        a {
+          text-decoration: none;
+        }
+      }
+
+      dd {
+        background: $medium-gray;
+        padding: .5em .5em .5em 1.25em;
+        margin: 0 0 .5em 0;
+      }
+
+      dt.js-processed, dd.js-processed {
+        cursor: pointer;
+      }
+
+      dt.hover, dd.hover {
+        background: $light-gray;
+      }
+    }
+  }
+}
+
+.views-exposed-form .views-exposed-widget .form-submit {
+  margin-top: 2.4em;
+}
+
+#messages-num-unread {
+  top: 25%;
+  color: white;
+  font-size: 1.4em;
+}
+
+a:hover #messages-num-unread, a.active #messages-num-unread {
+  color: $dark-blue;
+}
+
+.catalogue-class-group
+{
+  background: #5aa449;
+  display: inline;
+  float: right;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+/* to refactor axel */
+.page-node-videos .views-field.views-field-title, .page-node-videos .views-field.views-field-edit-node  {
+  display: inline;
+}
+
+.edit-small-pictogram {
+  background: url("../img/edit-element-green-icon.png") no-repeat scroll right center rgba(0, 0, 0, 0);
+}
+
+a.edit-small-pictogram, a.edit-small-pictogram:hover, .edit-small-pictogram a, .edit-small-pictogram a:hover{
+  color: transparent;
+}
+
+
+/*Interface refactor*/
+@media screen and (min-width: 1200px) {
+
+  #opigno-group-progress
+  {
+    max-width:28%;
+    min-width:28%;
+    width:28%;
+    float:left;
+  }
+
+  #opigno-group-progress th
+  {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+
+  #opigno-group-progress td
+  {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+  
+  #opigno-group-progress .opigno-group-progress-course
+  {
+    max-width:100%;
+    min-width:100%;
+    width:100%;
+  }
+
+  #opigno-group-progress .opigno-group-progress-course-quiz
+  {
+    max-width:100%;
+    min-width:100%;
+    width:100%;
+  }
+
+  #opigno-group-progress .opigno-group-progress-course-quiz table
+  {
+    max-width:100%;
+    min-width:100%;
+    width:100%;
+  }
+
+  #opigno-group-progress .opigno-group-progress-course-in-house-training
+  {
+    max-width:100%;
+    min-width:100%;
+    width:100%;
+  }
+
+  #opigno-group-progress .opigno-group-progress-course-in-house-training table
+  {
+    max-width:100%;
+    min-width:100%;
+    width:100%;
+  }
+
+  .has-group-progress
+  {
+    width:70%;
+    float:right;
+    padding-left:2%;
+  }
+
+  body.page-node-take.opigno-quiz-app-fullscreen #content
+  {
+    width:100%;
+  }
+
+  .opigno-quiz-app-course-name
+  {
+    min-width: 150px;
+  }
+}
+
+@media screen and (max-width: 1200px) {
+  #opigno-group-progress
+  {
+    display: none;
+  }
+}
+
+.has-group-progress .node-course .opigno-tools
+{
+  display:none;
+}
+
+body.page-node-take.opigno-quiz-app-fullscreen #opigno-group-progress
+{
+  display:none;
+}
+
+.opigno-quiz-app-group-status-quiz-result-passed
+{
+  color:green;
+}
+
+.opigno-quiz-app-group-status-quiz-result-failed
+{
+  color:red;
+}
+
+
+user-login-form .item-list ul li{display:inline}.training-stats-table tbody tr{height:37px}
+
+
+#opigno-in-house-training-score-form .fieldset-wrapper {
+  display: none;
+}
+
+#opigno-in-house-training-score-form .form-submits {
+  float: right;
+}
+
+#opigno-webex-attendance-form .fieldset-wrapper {
+  display: none;
+}
+
+#opigno-webex-attendance-form .form-submits {
+  float: right;
+}
+
+.iht-view-2{
+width: 40%;
+}
+
+.iht-view-4{
+width:18%;
+}
+
+.form-item.form-type-managed-file.form-item-slide-pdf-und-0
+{
+  background-image: url(/modules/file/icons/application-pdf.png);
+  background-repeat: no-repeat;
+  background-position: 0px 5px;
+}
+
+.form-item.form-type-managed-file.form-item-slide-pdf-und-0 label[for=edit-slide-pdf-und-0]
+{
+  margin-left:20px;
+}

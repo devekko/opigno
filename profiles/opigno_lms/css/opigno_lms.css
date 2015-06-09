@@ -1,0 +1,43 @@
+/**
+ * @file
+ * Stylesheet for Opigno LMS distribution
+ */
+
+body.maintenance-page, body.maintenance-page #page {
+  background: #fcfcfc;
+}
+
+body.maintenance-page #branding {
+  background-image: url(../themes/platon/img/header-background-pattern.png);
+  min-height: 50px;
+}
+
+body.maintenance-page #branding h1.page-title {
+  color: white;
+}
+
+body.maintenance-page .form-submit, body.maintenance-page button {
+  height: 2.5em;
+  border: 1px solid #d5d5d5;
+  -webkit-border-radius: 4px;
+  -moz-border-radius: 4px;
+  border-radius: 4px;
+  background-image: -webkit-linear-gradient(top, #fff 0%, #e6e6e6 100%);
+  background-image: -ms-linear-gradient(top, #fff 0%, #e6e6e6 100%);
+  background-image: -moz-linear-gradient(top, #fff 0%, #e6e6e6 100%);
+  background-image: -o-linear-gradient(top, #fff 0%, #e6e6e6 100%);
+  background-image: webkit-gradient(linear, left top, left bottom, color-stop(0, #fff), color-stop(1, #e6e6e6));
+  background-image: linear-gradient(to bottom, #fff 0%, #e6e6e6 100%);
+}
+
+body.maintenance-page #logo {
+  background: transparent url(../img/opigno_lms.png) no-repeat top left;
+  height: 0;
+  overflow: hidden;
+  padding-top: 140px; /* height of logo  */
+  width: 140px; /* width of logo  */
+}
+
+.form-item-roles-11 {
+  display: none;
+}

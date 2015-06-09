@@ -1,0 +1,73 @@
+<?php
+
+/**
+ * @file
+ * Module install logic.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function opigno_course_categories_app_install() {
+  $vocabulary = taxonomy_vocabulary_machine_name_load('course_categories');
+  if (empty($vocabulary)) {
+    $t = get_t();
+    $vocabulary = (object) array(
+      'name' => $t("Course categories"), // Taxonomy translation doesn't work well. Translate here
+      'machine_name' => 'course_categories',
+    );
+    taxonomy_vocabulary_save($vocabulary);
+  }
+  variable_set('opigno_course_categories_app_vid', $vocabulary->vid);
+
+  $field = field_info_field('opigno_course_categories');
+  if (empty($field)) {
+    field_create_field(array(
+      'cardinality' => 1,
+      'field_name' => 'opigno_course_categories',
+      'foreign keys' => array(
+        'tid' => array(
+          'columns' => array(
+            'tid' => 'tid',
+          ),
+          'table' => 'taxonomy_term_data',
+        ),
+      ),
+      'indexes' => array(
+        'tid' => array(
+          0 => 'tid',
+        ),
+      ),
+      'module' => 'taxonomy',
+      'settings' => array(
+        'allowed_values' => array(
+          0 => array(
+            'vocabulary' => 'course_categories',
+            'parent' => 0,
+          ),
+        ),
+      ),
+      'type' => 'taxonomy_term_reference',
+    ));
+  }
+
+  $instance = field_info_instance('node', 'opigno_course_categories', OPIGNO_COURSE_BUNDLE);
+  if (empty($instance)) {
+    field_create_instance(array(
+      'field_name' => 'opigno_course_categories',
+      'entity_type' => 'node',
+      'bundle' => OPIGNO_COURSE_BUNDLE,
+      'label' => "Course categories",
+      'widget' => array(
+        'active' => 0,
+        'module' => 'taxonomy',
+        'settings' => array(
+          'autocomplete_path' => 'taxonomy/autocomplete',
+          'size' => 60,
+        ),
+        'type' => 'options_select',
+        'weight' => 3,
+      ),
+    ));
+  }
+}

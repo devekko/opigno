@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Module hooks and logic.
+ */
+
+/** 
+ * Implements hook_init().
+ */
+function opigno_wt_app_init() {
+  // Add our CSS in hook_init() instead of our .info file. We want our CSS to be inside the
+  // theme group so it's picked up by the WYSIWYG editor, providing a better user experience.
+  drupal_add_css(drupal_get_path('module', 'opigno_wt_app') . '/css/opigno_wt_app.css', array('group' => CSS_THEME));
+}
+
+/**
+ * Implements hook_menu().
+ */
+function opigno_wt_app_menu() {
+  if (function_exists('opigno_simple_ui_admin_redirect')) {
+    return array(
+      'admin/opigno/content/wysiwyg-templates' => array(
+        'title' => "WYSIWYG templates",
+        'description' => "Manage WYSIWYG templates. Edit existing ones and create new templates.",
+        'access arguments' => array('administer wysiwyg templates'),
+        'page callback' => 'opigno_simple_ui_admin_redirect',
+        'page arguments' => array('admin/config/content/wysiwyg-templates'),
+      ),
+    );
+  }
+}

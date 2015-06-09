@@ -1,0 +1,93 @@
+name = Opigno LMS
+description = Install Opigno with commonly used features pre-configured.
+core = 7.x
+distribution_name = Opigno LMS
+exclusive = TRUE
+
+stylesheets[all][] = css/opigno_lms.css
+
+; Drupal core modules
+dependencies[] = block
+dependencies[] = contextual
+dependencies[] = menu
+dependencies[] = dblog
+dependencies[] = search
+dependencies[] = field_ui
+dependencies[] = image
+dependencies[] = file
+dependencies[] = text
+dependencies[] = number
+dependencies[] = options
+dependencies[] = list
+dependencies[] = filter
+dependencies[] = color
+
+; Contrib
+dependencies[] = admin_menu
+dependencies[] = admin_menu_toolbar
+dependencies[] = crumbs
+dependencies[] = apps
+dependencies[] = og
+dependencies[] = og_ui
+;dependencies[] = og_access
+dependencies[] = og_massadd
+dependencies[] = og_create_perms
+dependencies[] = views
+dependencies[] = views_ui
+dependencies[] = rules
+dependencies[] = rules_admin
+dependencies[] = rules_conditional
+dependencies[] = module_filter
+dependencies[] = date_popup_authored
+dependencies[] = entityreference_prepopulate
+dependencies[] = menu_attributes
+dependencies[] = quizfileupload
+dependencies[] = user_import
+dependencies[] = jquery_countdown
+dependencies[] = content_access
+dependencies[] = views_php
+dependencies[] = r4032login
+dependencies[] = better_exposed_filters
+dependencies[] = pdf
+
+; Opigno core
+dependencies[] = opigno
+dependencies[] = opigno_breadcrumbs
+dependencies[] = opigno_simple_ui
+dependencies[] = opigno_og_prereq
+dependencies[] = opigno_og_access
+
+; Opigno apps
+dependencies[] = opigno_class_app
+dependencies[] = opigno_sort_groups
+dependencies[] = opigno_calendar_app
+dependencies[] = opigno_forum_app
+dependencies[] = opigno_messaging_app
+dependencies[] = opigno_notifications_app
+dependencies[] = opigno_poll_app
+dependencies[] = opigno_quiz_import_app
+dependencies[] = opigno_quiz_app
+dependencies[] = opigno_pdf_viewer
+dependencies[] = opigno_quiz_helper
+dependencies[] = opigno_wt_app
+dependencies[] = opigno_course_categories_app
+dependencies[] = tft
+dependencies[] = opigno_certificate_app
+
+; Opigno features
+dependencies[] = opigno_features_roles
+dependencies[] = opigno_features_og_roles
+dependencies[] = opigno_features_field_groups
+dependencies[] = opigno_features_field_settings
+dependencies[] = opigno_features_content_type_settings
+dependencies[] = opigno_features_wysiwyg
+dependencies[] = opigno_features_homebox
+dependencies[] = opigno_features_pathauto
+dependencies[] = opigno_lms_tour
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.18"
+core = "7.x"
+project = "opigno_lms"
+datestamp = "1425249184"
+

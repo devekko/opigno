@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Opigno Features Content Type Settings feature.
+ */
+
+include_once 'opigno_features_content_type_settings.features.inc';

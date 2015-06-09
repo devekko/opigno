@@ -1,0 +1,192 @@
+/**
+ * @file
+ * Defines table styles.
+ */
+
+table {
+  width: 100%;
+  border: 0;
+  margin-bottom: 2em;
+}
+
+td {
+  background: $medium-gray;
+}
+
+table.pyramide-background, table.white {
+
+  td, th {
+    background: transparent;
+  }
+}
+
+th {
+  background: $light-blue;
+  color: white;
+
+  a {
+    color: white;
+    text-decoration: none;
+  }
+
+  a:hover {
+    color: white;
+    text-decoration: underline;
+  }
+}
+
+td, th {
+  padding: .25em 20px;
+  border: 1px solid white;
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    padding: .25em;
+    font-size: .9em;
+  }
+}
+
+td:first-child, th:first-child {
+  border-left: 0;
+}
+
+td:last-child, th:last-child {
+  border-right: 0;
+}
+
+tr:first-child {
+
+  td, th {
+    border-top: 0;
+  }
+}
+
+tr:last-child {
+
+  td, th {
+    border-bottom: 0;
+  }
+}
+
+.vertical-align-top {
+  vertical-align: top;
+}
+
+.vertical-align-middle {
+  vertical-align: middle;
+}
+
+.vertical-align-bottom {
+  vertical-align: bottom;
+}
+
+tbody {
+  border-top: 0;
+}
+
+caption {
+  background: $dark-blue;
+  color: white;
+  padding: .25em 20px;
+  text-align: left;
+  border-bottom: 1px solid white;
+
+  a {
+    color: white;
+    text-decoration: none;
+  }
+}
+
+
+.page-admin-opigno-students-teacher-results {
+
+  .opigno-quiz-app-results-table {
+    margin-bottom: 1em;
+
+    td {
+      padding: 0;
+        
+      .opigno-quiz-app-results-table {
+        border-top: 1px solid white;
+
+        td {
+          padding: .25em 20px;
+        }
+      }
+    }
+  }
+}
+
+.opigno-quiz-app-course-class-results-table {
+
+  td {
+    padding: 0;
+
+    .opigno-quiz-app-course-class-results-table {
+
+      td {
+        padding: 0;
+      
+        .opigno-quiz-app-course-class-results-table {
+
+          td {
+            padding: .25em 20px;
+          }
+        }
+      }
+    }
+  }
+}
+
+.view-opigno-my-courses, .view-opigno-course-catalgue {
+
+  .views-field-title {
+    width: 75%;
+  }
+
+  td.views-field-group-group {
+    padding: 0;
+
+    a {
+      @include action-element;
+      text-decoration: none;
+      display: block;
+      background-image: url(../img/subscribe-icon.png);
+      background-position: right center;
+      background-repeat: no-repeat;
+      padding-right: 3em;
+      padding-left: 1em;
+    }
+  }
+
+  caption > a + a {
+    @include action-element;
+    text-decoration: none;
+    display: block;
+    background-image: url(../img/subscribe-icon.png);
+    background-position: right center;
+    background-repeat: no-repeat;
+    width: 24.1%;
+    float: right;
+    margin-right: -20px;
+    margin-top: -5px;
+    margin-bottom: -5px;
+    border-left: 1px solid white;
+    padding-right: 0;
+  }
+}
+
+@media screen and (min-width: 700px) and (max-width: 1399px) {
+
+  .view-opigno-my-courses, .view-opigno-course-catalgue {
+
+    caption {
+
+      a + a {
+        margin-top: -5px;
+        padding-bottom: 10px;
+        padding-top: 6px;
+        padding-left: 18px;
+      }
+    }
+  }
+}

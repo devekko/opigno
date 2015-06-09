@@ -1,0 +1,16 @@
+name = Opigno Course Prerequisite
+description  = Allows courses to have other courses as prerequisites.
+core = 7.x
+package = Opigno
+
+dependencies[] = og
+dependencies[] = rules
+dependencies[] = rules_conditional
+dependencies[] = entityreference
+dependencies[] = opigno
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.11"
+core = "7.x"
+project = "opigno"
+datestamp = "1425246497"
+

@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Opigno Features Field Settings feature.
+ */
+
+include_once 'opigno_features_field_settings.features.inc';

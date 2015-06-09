@@ -1,0 +1,32 @@
+<?php
+
+/**
+ * @file
+ * Install logic.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function guideme_schema() {
+  return array(
+    'guideme_user_completion' => array(
+      'description' => 'Track user completion of guide paths.',
+      'fields' => array(
+        'uid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'guide_path' => array(
+          'type' => 'varchar',
+          'length' => 255,
+        ),
+      ),
+      'primary key' => array('uid', 'guide_path'),
+      'indexes' => array(
+        'list' => array('uid', 'guide_path'),
+      ),
+    ),
+  );
+}

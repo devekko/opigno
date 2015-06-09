@@ -1,0 +1,17 @@
+name = Opigno Quiz Question Import App
+description = A module import a bulk of questions for quiz using PHPExcel.
+package = Opigno Apps
+core = 7.x
+
+files[] = tests/OpignoQuizImportAppWebTestCase.test
+
+dependencies[] = quiz
+dependencies[] = multichoice
+dependencies[] = phpexcel
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.1"
+core = "7.x"
+project = "opigno_quiz_import_app"
+datestamp = "1425246503"
+

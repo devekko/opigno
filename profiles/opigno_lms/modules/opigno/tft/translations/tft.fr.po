@@ -1,0 +1,199 @@
+# $Id$
+#
+# French translation of Drupal (general)
+# Copyright YEAR NAME <EMAIL@ADDRESS>
+# Generated from files:
+#  tft.admin.inc: n/a
+#  tft.module: n/a
+#  tft.ajax.inc: n/a
+#  tft.pages.inc: n/a
+#  tft.info: n/a
+#  theme/tft-folder-explorer.tpl.php: n/a
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"POT-Creation-Date: 2011-09-15 15:19+0200\n"
+"PO-Revision-Date: 2011-09-15 15:43+0100\n"
+"Last-Translator: WA <wadmiraal@connect-i.ch>\n"
+"Language-Team: French <EMAIL@ADDRESS>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n>1);\n"
+
+#: tft.admin.inc:27
+msgid "File tree vocabulary"
+msgstr "Vocabulairede l'arborescence"
+
+#: tft.admin.inc:35
+msgid "File node type -> filefield"
+msgstr "Type de noeud fichier -> champ filefield"
+
+#: tft.admin.inc:36
+msgid "Set which node type must act as the 'file' (must contain a filefield)."
+msgstr "Définir quel type de contenu doit servir de 'fichier' (doit contenir un champ filefield)."
+
+#: tft.admin.inc:81
+msgid "Save"
+msgstr "Enregistrer"
+
+#: tft.admin.inc:85;220
+msgid "cancel"
+msgstr "annuler"
+
+#: tft.admin.inc:149;202
+#: tft.module:268
+msgid "Name"
+msgstr "Nom"
+
+#: tft.admin.inc:149
+msgid "Parent"
+msgstr "Parent"
+
+#: tft.admin.inc:149
+#: tft.module:284
+msgid "Operations"
+msgstr "Opérations"
+
+#: tft.admin.inc:158
+msgid "delete"
+msgstr "supprimer"
+
+#: tft.admin.inc:212
+msgid "Select parent"
+msgstr "Choisir le parent"
+
+#: tft.admin.inc:216
+msgid "Add"
+msgstr "Ajouter"
+
+#: tft.admin.inc:235;240
+msgid "You must select a parent folder that is part of a group you're a member of."
+msgstr "Vous devez sélectionner un répertoire parent qui fait partie d'un groupe dont vous êtes membre."
+
+#: tft.admin.inc:247
+msgid "The following characters are not allowed: ',' (comma) and +"
+msgstr "Les caractères suivants ne sont pas autorisés: ',' (virgule) et +"
+
+#: tft.ajax.inc:12
+msgid "No valid identifier received"
+msgstr "L'identifiant reçu n'est pas valide"
+
+#: tft.ajax.inc:15
+msgid "You do not have access to this folder."
+msgstr "Vous n'avez pas accès à ce répertoire."
+
+#: tft.pages.inc:30
+msgid "Root"
+msgstr "Root"
+
+#: tft.pages.inc:96
+msgid "No term was found for this group ! Please contact your system administrator."
+msgstr "Aucun tag n'a été trouvé pour ce groupe ! Contactez votre administrateur système."
+
+#: tft.module:53
+msgid "Reorder folders"
+msgstr "Gérer les répertoires"
+
+#: tft.module:152
+msgid "Create OG TFT term"
+msgstr "Créer un tag TFT pour OG"
+
+#: tft.module:272
+msgid "Loaded by"
+msgstr "Chargé par"
+
+#: tft.module:276
+msgid "Last modified"
+msgstr "Dernière modification"
+
+#: tft.module:280
+msgid "Type"
+msgstr "Type"
+
+#: tft.module:317
+msgid "Folder"
+msgstr "Répertoire"
+
+#: tft.module:354
+msgid "!type file"
+msgstr "Fichier !type"
+
+#: tft.module:362
+msgid "Configuration error. Couldn't load the data from the database. Contact your site administrator."
+msgstr "Erreur de configuration. Impossible de charger les données de la base de données. Contactez votre administrateur système."
+
+#: tft.module:402
+msgid "edit"
+msgstr "modifier"
+
+#: tft.module:405
+msgid "more info"
+msgstr "plus d'infos"
+
+#: tft.module:492
+msgid "Add a file"
+msgstr "Ajouter un fichier"
+
+#: tft.module:498;44
+msgid "Add a folder"
+msgstr "Ajouter un répertoire"
+
+#: tft.module:663
+msgid "You must first enter which vocabulary is used by Taxonomy File Tree."
+msgstr "Vous devez renseigner quel vocabulaire est utilisé par l'Arborescence de fichier Taxonomy."
+
+#: tft.module:704
+msgid "parent folder"
+msgstr "répertoire parent"
+
+#: tft.module:717;720
+msgid "edit permissions"
+msgstr "modifier les droits d'accès"
+
+#: tft.module:728
+msgid "manage sub-folders"
+msgstr "gérer les répertoires enfants"
+
+#: tft.module:361;665
+msgid "tft"
+msgstr "tft"
+
+#: tft.module:361
+msgid "The database table @table does not exist. Couldn't retreive the files."
+msgstr "La table @table n'existe pas dans la base de données. Impossible de charger les fichiers."
+
+#: tft.module:665
+msgid "TFT isn't properly configured. A valid vocabulary must be set as the TFT vocabulary."
+msgstr "TFT n'est pas configuré correctement. Un vocabulaire valide doit être assigné à TFT."
+
+#: tft.module:19;28
+#: tft.info:0
+msgid "Taxonomy File Tree"
+msgstr "Arborescence de fichier Taxonomy"
+
+#: tft.module:35
+msgid "OG Taxonomy File Tree"
+msgstr "Arborescence de fichier Taxonomy pour OG"
+
+#: tft.module:60
+msgid "Ajax callback"
+msgstr "Callback AJAX"
+
+#: tft.module:68
+msgid "Taxonomy File Tree Settings"
+msgstr "Configuration pour Arborescence de fichier Taxonomy"
+
+#: tft.info:0
+msgid "Taxonomy based file tree"
+msgstr "Arborescence de fichiers basé sur Taxonomy"
+
+#: tft.info:0
+msgid "ELS"
+msgstr "ELS"
+
+#: theme/tft-folder-explorer.tpl.php:6
+msgid "You must first <a href=\"!link\">create some taxonomy terms</a> before you can see any folders."
+msgstr "Vous devez d'abord <a href=\"!link\">créer des tags</a> avant de pouvoir utiliser TFT."
+

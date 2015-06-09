@@ -1,0 +1,86 @@
+/**
+ * @file
+ * Defines the question form styles.
+ */
+#quiz_progress {
+  padding: .25em .5em;
+  background: $light-blue;
+  color: white;
+}
+
+.quiz-question-body {
+  padding: 1em;
+  background: $medium-gray;
+}
+
+#quiz-question-answering-form {
+
+  background-color:#ececeb;
+  @media screen and (max-width: $mobile-breakpoint) {
+    font-size: .9em;
+  }
+
+  .node-teaser {
+
+    h2 a,
+    .question_type_name,
+    .links {
+      display: none;
+    }
+  }
+
+  input#edit-submit {
+    @include action-next-element;
+    float: right;
+    padding-left: 3em;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      padding-left: .5em;
+    }
+  }
+
+  input#edit-op {
+    @include action-element;
+    padding-left: 3em;
+    padding-right: 3em;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      padding-left: .5em;
+      padding-right: .5em;
+    }
+  }
+
+  input#edit-back {
+    @include action-prev-element;
+    padding-right: 3em;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      padding-right: .5em;
+    }
+  }
+
+  input#edit-op:hover {
+    text-decoration: none;
+  }
+
+  .quiz-question-navigation-wrapper {
+    overflow: hidden;
+    background: $dark-gray;
+    text-align: right;
+
+    input.form-submit {
+      margin: 0;
+      border-left: 1px solid white !important;
+    }
+  }
+}
+
+#quiz-jumper {
+  color: black;
+}
+
+.quiz-report-score.form-text
+{
+  color: black;
+}
+

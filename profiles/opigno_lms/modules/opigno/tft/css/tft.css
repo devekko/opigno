@@ -1,0 +1,189 @@
+/* Hide the page title */
+
+/* Menu */	
+
+#folder-menu-container {
+	margin-bottom: 10px;
+}
+
+	#folder-menu-container .folder-wrapper {
+		padding: 10px;	
+		overflow: hidden;
+	}
+	
+	#folder-menu-container h4 { margin: 0; float: left; }
+		
+		#tabs .tabs li.folder-menu-ops-link a.disabled {
+			background-color: #ddd;
+			cursor: default;
+		}
+	
+
+/* Folder content */
+
+.tft-admin-folder-content-item {
+    float: left;
+    margin-right: 10px;
+}
+
+#folder-content-container {
+	background-position: center center;
+	background-repeat: no-repeat;	
+	min-height: 400px;
+}
+
+	#folder-content-container .folder-wrapper {
+		padding: 10px 0;	
+	}
+	
+		#folder-content-container table {
+			width: 100%;	
+		}
+		
+			#folder-content-container tr.even { background-color: transparent; }
+			#folder-content-container tr.odd { background-color: transparent; }
+		
+			#table-th-ops { width: 25%; }
+			
+			#folder-content-container a.ops-link { padding-left: 0; display: inline; }
+			
+			th.header { cursor: pointer; }
+			
+			th.header:hover, th.headerSortDown, th.headerSortUp { background: #eee; }
+			
+				th.header span { 
+					background-position: right top;
+					background-repeat: no-repeat;
+					padding-right: 20px;
+				}
+			
+				th.headerSortDown span { background-image: url(../img/arrow-asc.png); }
+				th.headerSortUp span { background-image: url(../img/arrow-desc.png); }
+	
+			#folder-content-container a {
+				display: block;	
+				background-repeat: no-repeat;
+				padding-left: 20px;
+			}
+			
+			#folder-content-container a.file { background-image: url(../img/application-octet-stream.png); } /* Default icon */
+			#folder-content-container a.folder-folder-link { background-image: url(../img/folder.png); } /* Folder icon */
+
+	#folder-add-content-links {
+		margin: 1em 0 0 0;
+		padding: 0;
+		list-style: none;
+		overflow: hidden;
+	}
+	
+		.folder-add-content-link {
+			float: right;
+			display: block;
+		}
+		
+			.folder-add-content-link a {
+				background-color: #ddd;
+				color: #555;
+				display: block;
+				font-size: 0.833em;
+				margin: 0 0 0 7px;
+				padding: 5px 10px 5px 25px !important;
+				text-decoration: none;
+				background-position: 5px 4px;
+			}
+			
+			#add-child-folder { background-image: url(../img/add-folder.png); }
+			#add-child-file { background-image: url(../img/add-file-icon.png); }
+			
+			.folder-add-content-link a:hover {
+				background-color: #eee;
+				color: #777;
+			}
+
+/* Folder tree */
+
+.tft-hide-element { display: none; }
+
+#folder-explorer-container.tft-node-form {
+	overflow: auto;
+	height: 200px;
+	border: 1px solid #eee;
+	position: relative;
+}
+
+#folder-explorer-container ul {
+	margin: 0.5em 0;
+	list-style: none;	
+	padding: 0;
+	clear: left;
+}
+
+	#folder-explorer-container ul ul { padding-left: 1em; }
+
+	#folder-explorer-container li {
+		position: relative;
+		overflow: hidden;
+		list-style: none;
+		background: none;
+		padding: 0 0 0.2em 0.5em;
+		display: block;
+	}
+	
+		#folder-explorer-container li span.icon, #tft-outline tr.draggable span.icon {
+			background-image: url(../img/opened-closed.png);
+			background-repeat: no-repeat;
+			background-position: -10px 0;
+			display: block;
+			padding: 3px 0;
+			float: left;
+			width: 12px;
+			height: 18px;
+			position: relative;
+			z-index: 100;
+		}
+		
+		#folder-explorer-container li span.closed-icon, #tft-outline tr.draggable span.closed-icon { background-position: left 5px; cursor: pointer; }
+		#folder-explorer-container li span.opened-icon, #tft-outline tr.draggable span.opened-icon { background-position: left -12px; cursor: pointer; }
+		
+		#folder-explorer-container li span.link-wrapper {
+			display: block;
+			margin-left: -12px;
+			float: left;
+			width: 90%;
+		}
+		
+			#folder-explorer-container li a.folder-link {
+				text-decoration: none;
+				background: url(../img/folder.png) left 3px no-repeat;
+				padding: 3px 3px 3px 20px;
+				color: #353535;
+				display: block;
+				margin-left: 12px;
+				width: 90%;
+			}
+			
+			#folder-explorer-container li.active > a.folder-link {
+				font-weight: bold;
+			}
+	
+	li.closed ul {
+		display: none;	
+	}
+	
+	#folder-explorer-container.tft-node-form li.active > .link-wrapper > a {
+		background-color: #eee;
+	}
+
+		
+/* Admin */
+#tft-outline {
+  width: 85%;
+}
+
+#tft-manage-folders-form .form-item {
+	float: left;
+}
+
+.tabledrag-parent-locked .handle {
+  background-image: url(../img/draggable.png) !important;
+}

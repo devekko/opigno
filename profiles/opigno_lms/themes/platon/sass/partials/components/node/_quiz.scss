@@ -1,0 +1,157 @@
+/**
+ * @file
+ * Defines the quiz node styles.
+ */
+
+.quiz-stats-table {
+
+  th:first-child {
+    width: 50%;
+  }
+
+  th:last-child {
+    width: 25%;
+  }
+}
+
+.take-button-cell {
+  padding: 0;
+  vertical-align: top;
+
+  .form-submit, a {
+    @include action-start-element;
+    display: block;
+    text-decoration: none;
+    text-align: left;
+    background-position: right center;
+    padding-right: 3em;
+    padding-left: 1em;
+  }
+
+  .form-submit {
+    width: 100%;
+  }
+
+  a.read-more {
+    @include action-sort-element;
+    display: block;
+    background-position: right center;
+    border-top: 1px solid white;
+    padding-right: 3em;
+    padding-left: 1em;
+  }
+}
+
+/* Refactor cedric */
+/* Nouvelle classe les questions */
+.take-button-cell a.question {
+  border: 0;
+  background: #5aa449;
+  color: white;
+  display: inline-block;
+  padding: .25em 1em;
+  background-position: .5em center;
+  background-repeat: no-repeat;
+  padding-left: 2em;
+  background-image: url(../img/question-element-icon.png);
+  display: block;
+  background-position: right center;
+  border-top: 1px solid white;
+  padding-right: 3em;
+  padding-left: 1em
+}
+/* Nouvelle classe les résultats */
+.take-button-cell a.results {
+  border: 0;
+  background: #5aa449;
+  color: white;
+  display: inline-block;
+  padding: .25em 1em;
+  background-position: .5em center;
+  background-repeat: no-repeat;
+  padding-left: 2em;
+  background-image: url(../img/results-element-icon.png);
+  display: block;
+  background-position: right center;
+  border-top: 1px solid white;
+  padding-right: 3em;
+  padding-left: 1em
+}
+/* Nouvelle classe edition des leçons */
+.take-button-cell a.edit {
+  border: 0;
+  background: #5aa449;
+  color: white;
+  display: inline-block;
+  padding: .25em 1em;
+  background-position: .5em center;
+  background-repeat: no-repeat;
+  padding-left: 2em;
+  background-image: url(../img/edit-element-icon.png);
+  display: block;
+  background-position: right center;
+  border-top: 1px solid white;
+  padding-right: 3em;
+  padding-left: 1em
+}
+
+
+
+
+
+
+
+
+
+
+
+/* to refactor cedric */
+
+/* Media query pour le nouveau menu dans la leçon */
+@media screen and (max-width: 800px) {
+
+  .form-submit,input[type="submit"],input[type="button"],button
+  {
+    height:28px;
+  }
+  .action-sort-element
+  {
+    height: 21px;
+  }
+  .action-edit-element
+  {
+    height: 21px;
+  }
+  .action-question-element
+  {
+    height: 49.5px;
+  }
+  .action-results-element
+  {
+    height: 28px;
+  }
+}
+
+/* Submit */
+.node-quiz .form-submit
+,.node-quiz input[type="submit"]
+,.node-quiz input[type="button"]
+,.node-quiz button
+{
+  height: 65px;
+}
+
+.form-submit,input[type="submit"],input[type="button"],button {
+  border: 0;
+  background: #5aa449;
+  color: white;
+  display: inline-block;
+  padding: .25em 1em;
+  background-position: .5em center;
+  background-repeat: no-repeat;
+  /* Ajout d'une taille pour l'élement afin de centrer la border */
+}
+
+input[type="submit"]+input[type="submit"],input[type="submit"]+input[type="button"],input[type="submit"]+button,input[type="submit"]+a,input[type="button"]+input[type="button"],input[type="button"]+input[type="submit"],input[type="button"]+button,input[type="button"]+a,button+input[type="submit"],button+input[type="button"],button+button,button+a {
+  margin-left: .5em;
+}

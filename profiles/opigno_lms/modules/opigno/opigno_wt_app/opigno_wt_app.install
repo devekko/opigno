@@ -1,0 +1,77 @@
+<?php
+
+/**
+ * @file
+ * Module install.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function opigno_wt_app_install() {
+  $templates = array(
+    'circular_flow' => array(
+      'title' => st("Circular flow"),
+      'description' => st("A circular flow with 4 steps"),
+    ),
+    'gallery' => array(
+      'title' => st("Gallery"),
+      'description' => st("An image gallery"),
+    ),
+    'image_text' => array(
+      'title' => st("Image - Text"),
+      'description' => st("Two columns: image + text"),
+    ),
+    'matrix_2x2' => array(
+      'title' => st("Matrix 2x2"),
+      'description' => st("A matrix 2x2"),
+    ),
+    'post_it' => array(
+      'title' => st("Post-it"),
+      'description' => st("Post-it note"),
+    ),
+    'process' => array(
+      'title' => st("Process"),
+      'description' => st("Process with different steps"),
+    ),
+    'process_2' => array(
+      'title' => st("Process 2"),
+      'description' => st("Another kind of process template"),
+    ),
+    'progress' => array(
+      'title' => st("Progress"),
+      'description' => st("A progress diagram"),
+    ),
+    'pyramid' => array(
+      'title' => st("Pyramid"),
+      'description' => st("Pyramid structure of data"),
+    ),
+    'table' => array(
+      'title' => st("Table"),
+      'description' => st("An horizontal table"),
+    ),
+    'table_2' => array(
+      'title' => st("Table 2"),
+      'description' => st("Another kind of table with many cells"),
+    ),
+    'two_columns' => array(
+      'title' => st("Two columns"),
+      'description' => st("2 columns of text"),
+    ),
+    'vertical_channel' => array(
+      'title' => st("Vertical channel"),
+      'description' => st("Vertical channel with arrows"),
+    ),
+  );
+
+  // Define the logo path. We can't use drupal_get_path as we're currently installing the module.
+  $path = str_replace(DIRECTORY_SEPARATOR, '/', str_replace(DRUPAL_ROOT, '', dirname(__FILE__))) . '/img/logo.png';
+  
+  foreach ($templates as $name => $info) {
+    $html = file_get_contents(dirname(__FILE__) . DIRECTORY_SEPARATOR . 'wysiwyg_templates' . DIRECTORY_SEPARATOR . $name . '.html');
+    $info['name'] = $name;
+    $info['fid'] = 0;
+    $info['body']['value'] = str_replace('[INSERT_LOGO_PATH]', $path, $html);
+    wysiwyg_template_save_template($info);
+  }  
+}

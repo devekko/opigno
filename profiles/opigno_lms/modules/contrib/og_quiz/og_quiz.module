@@ -1,0 +1,478 @@
+<?php
+
+/**
+ * @file
+ * Module hooks and custom logic.
+ */
+
+/**
+ * Implements hook_menu_alter().
+ */
+function og_quiz_menu_alter(&$items) {
+  $items['node/%node/take']['access callback'] = 'og_quiz_take_access';
+  $items['node/%node/results']['access callback'] = 'og_quiz_access_results';
+  $items['node/%node/results/%quiz_rid']['access callback'] = 'og_quiz_access_results';
+  $items['user/%/myresults']['page callback'] = 'og_quiz_get_user_results';
+  $items['user/%/myresults']['access callback'] = 'og_quiz_user_results_access';
+  $items['user/quiz/%/userresults']['access callback'] = 'og_quiz_access_my_result';
+}
+
+/**
+ * Implements hook_node_prepare().
+ */
+function og_quiz_node_prepare($node) {
+  $question_types = array_keys(_quiz_question_get_implementations());
+  $type = is_string($node) ? $node : $node->type;
+  if (in_array($type, $question_types)) {
+    if (isset($_GET['quiz_nid'])) {
+      $quiz = node_load($_GET['quiz_nid'], isset($_GET['quiz_vid']) ? $_GET['quiz_vid'] : NULL);
+      if (!empty($quiz->og_group_ref)) {
+        $node->og_group_ref = $quiz->og_group_ref;
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_node_view().
+ */
+function og_quiz_node_view($node, $view_mode, $langcode) {
+  if ($node->type == 'quiz') {
+    if (empty($node->content['take'])) {
+      $available = quiz_availability($node);
+      if ($available) {
+        if (og_quiz_ogs_access($node, 'access quiz')) {
+          if ($view_mode == 'full') {
+            $quiz_form = drupal_get_form('quiz_start_quiz_button_form', $node);
+            $node->content['take'] = array(
+              '#markup' => drupal_render($quiz_form),
+              '#weight' => 2,
+            );
+          }
+          else {
+            $node->content['take'] = array(
+              '#markup' =>  l(t('Start quiz'), 'node/' . $node->nid . '/take'),
+              '#weight' => 2,
+            );
+          }
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_theme_registry_alter().
+ */
+function og_quiz_theme_registry_alter(&$registry) {
+  unset($registry['quiz_admin_summary']['file']);
+  $registry['quiz_admin_summary']['function'] = 'theme_og_quiz_quiz_admin_summary';
+}
+
+/**
+ * Implements hook_registry_files_alter().
+ */
+function og_quiz_registry_files_alter(&$files, $modules) {
+  if (module_exists('quiz_question')) {
+    // Replace the QuizQuestion class with our own.
+    $path = drupal_get_path('module', 'quiz_question');
+    unset($files["$path/quiz_question.core.inc"]);
+  }
+
+  if (module_exists('long_answer')) {
+    // Replace the LongAnswerResponse class with our own.
+    $path = drupal_get_path('module', 'long_answer');
+    unset($files["$path/long_answer.classes.inc"]);
+  }
+}
+
+/**
+ * Implements hook_og_permissions().
+ */
+function og_quiz_og_permission() {
+  return array(
+    'access quiz' => array(
+      'title' => t('Take quiz'),
+      'description' => t('Can access (take) all quizzes.'),
+    ),
+    'view any quiz results' => array(
+      'title' => t('View any quiz results'),
+      'description' => t('Can view results for all quizzes and users.'),
+    ),
+    'view own quiz results' => array(
+      'title' => t('View own quiz results'),
+      'description' => t('Quiz takers can view their own results, also when quiz is not passed.'),
+    ),
+    'view results for own quiz' => array(
+      'title' => t('View results for own quiz'),
+      'description' => t('Quiz makers can view results for their own quizzes.'),
+    ),
+    'delete any quiz results' => array(
+      'title' => t('Delete any quiz results'),
+    ),
+    'delete results for own quiz' => array(
+      'title' => t('Delete results for own quiz'),
+    ),
+    'score any quiz' => array(
+      'title' => t('Score any quiz'),
+    ),
+    'score own quiz' => array(
+      'title' => t('Score own quiz'),
+    ),
+    'score taken quiz answer' => array(
+      'title' => t('score taken quiz answer'),
+      'description' => t('Allows attendee to score questions needing manual evaluation.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_BASE_ID_alter() for node_form().
+ */
+function og_quiz_form_node_form_alter(&$form, $form_state, $form_id) {
+  $question_types = array_keys(_quiz_question_get_implementations());
+  $type = str_replace('_node_form', '', $form_id);
+  if (in_array($type, $question_types)) {
+    // Newer versions of OG introduce a bug with the og_group_ref. Unset the prefilled admin
+    // field.
+    if (!isset($form['#og_quiz_processed']) && !empty($form['og_group_ref'][LANGUAGE_NONE][0]['admin'])) {
+      foreach ($form['og_group_ref'][LANGUAGE_NONE][0]['admin'] as $key => $value) {
+        if (is_numeric($key)) {
+          $form['og_group_ref'][LANGUAGE_NONE][0]['admin'][$key]['target_id']['#default_value'] = '';
+        }
+      }
+      $form['#og_quiz_processed'] = TRUE;
+    }
+  }
+}
+
+/**
+ * Implements hook_form_quiz_results_manage_results_form_alter().
+ */
+function og_quiz_form_quiz_results_manage_results_form_alter(&$form, $form_state) {
+  global $user;
+  $quiz = $form_state['build_info']['args'][0];
+  if (og_quiz_ogs_access($quiz, 'delete any quiz results') || (og_quiz_ogs_access($quiz, 'delete results for own quiz') && $user->uid && $quiz->uid)) {
+    $display = isset($_GET['del']) || isset($form_state['storage']['del']) ? 'none' : 'block';
+    $form['update'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Options'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#attributes' => array(
+        'class' => array('container-inline'),
+        'id' => 'quiz-results-update',
+        'style' => "display:$display;"
+      ),
+      '#weight' => -10,
+    );
+
+    $form['update']['bulk_action'] = array(
+      '#type' => 'select',
+      '#options' => array(
+        'def' => '',
+        'del' => t('delete'),
+        // In later versions we will be adding score as a third option here
+      ),
+    );
+    $form['update']['update'] = array(
+      '#type' => 'submit',
+      '#value' => t('Update'),
+    );
+
+    // We show the delete confirmation fieldset if we are to delete results
+    $display = isset($_GET['del']) || isset($form_state['storage']['del']) ? 'block' : 'none';
+    $form['confirm_delete'] = array(
+      '#type' => 'fieldset',
+      '#title' => t('Confirm deletion'),
+      '#collapsible' => FALSE,
+      '#collapsed' => FALSE,
+      '#attributes' => array(
+        'style' => "display:$display;",
+        'id' => 'quiz-results-confirm-delete'
+      ),
+      '#weight' => -10,
+    );
+    $form['confirm_delete']['help'] = array(
+      '#type' => 'item',
+      '#value' => t('Are you sure you want to delete all of these results?'),
+      '#description' => t('This action cannot be undone'),
+    );
+    $form['confirm_delete']['confirm_delete'] = array(
+      '#type' => 'submit',
+      '#value' => t('Delete all marked results'),
+    );
+    $form['confirm_delete']['cancel'] = array(
+      '#markup' => l(t('cancel'), $_GET['q'], array('attributes' => array('id' => 'quiz-results-cancel-delete'))),
+    );
+  }
+}
+
+/**
+ * Custom access callback for accessing quiz results.
+ *
+ * @param  stdClass $node
+ * @param  int $rid
+ *
+ * @return bool
+ */
+function og_quiz_access_results($node, $rid = NULL) {
+  if ($node->type != 'quiz') {
+    if (($node->type == 'poll')&&(module_exists("poll"))) {
+      return _poll_menu_access($node, 'access content', TRUE);
+    }
+    return FALSE;
+  }
+
+  if (!$access = og_quiz_ogs_access($node, 'view any quiz results')) {
+    global $user;
+
+    if ($access = og_quiz_ogs_access($node, 'view results for own quiz')) {
+      $access = $access && $node->uid == $user->uid;
+    }
+
+    if (!$access) {
+      if ($access = og_quiz_ogs_access($node, 'score taken quiz answer')) {
+        if (isset($rid)) {
+          $res = db_query('SELECT qnr.nid, qnr.uid FROM {quiz_node_results} qnr WHERE result_id = :result_id', array(':result_id' => $rid))->fetch();
+          if ($res && $res->nid != $node->nid) {
+            return FALSE;
+          }
+        }
+
+        $access = $access && isset($rid) && $res && $res->uid == $user->uid;
+      }
+    }
+  }
+
+  return isset($access) ? $access : quiz_access_results($node, $rid);
+}
+
+/**
+ * Custom access callback for taking quiz.
+ *
+ * @param stdClass $node
+ *
+ * @return bool
+ */
+function og_quiz_take_access($node) {
+  if ($node->type != 'quiz' || !quiz_availability($node)) {
+    return FALSE;
+  }
+
+  $access = og_quiz_ogs_access($node, 'access quiz');
+
+  return isset($access) ? $access : quiz_take_access($node);
+}
+
+/**
+ * Custom access callback for viewing user results tab
+ *
+ * @param  int $uid
+ *
+ * @return bool
+ */
+function og_quiz_user_results_access($uid) {
+  global $user;
+
+  if (!$access = og_quiz_user_access($user, 'view any quiz results')) {
+    if ($access = og_quiz_user_access($user, 'view own quiz results')) {
+      $access = $access && $uid == $user->uid;
+    }
+  }
+
+  return isset($access) ? $access : _quiz_user_results_access($uid);
+}
+
+/**
+ * Custom access callback for viewing own results.
+ *
+ * @param  int $rid
+ *
+ * @return bool
+ */
+function og_quiz_access_my_result($rid) {
+  global $user;
+  $time_end = db_query('SELECT time_end FROM {quiz_node_results} WHERE result_id = :result_id AND uid = :uid', array(':result_id' => $rid, ':uid' => $user->uid))->fetchField();
+  $access = $time_end > 0;
+  
+  if ($access) {
+    if (!$access = user_access('view own quiz results')) {
+      return og_quiz_user_access($user, 'view own quiz results');
+    }
+  }
+  return $access;
+}
+
+/**
+ * Helper function to check multiple permissions on all node groups.
+ * Returns null if no groups are available.
+ *
+ * @param  stdClass $node
+ * @param  string|array $permissions
+ * @param  stdClass $account = NULL
+ *
+ * @return bool|null
+ */
+function og_quiz_ogs_access($node, $permissions, $account = NULL) {
+  $groups = og_get_entity_groups('node', $node);
+  if (!empty($groups)) {
+    if (is_string($permissions)) {
+      $permissions = array($permissions);
+    }
+
+    if (!isset($account)) {
+      global $user;
+      $account = clone $user;
+    }
+
+    foreach ($groups as $entity_type => $entity_groups) {
+      foreach ($entity_groups as $etid => $gid) {
+        foreach ($permissions as $permission) {
+          if (og_user_access($entity_type, $gid, $permission, $account)) {
+            return TRUE;
+          }
+        }
+      }
+    }
+    return FALSE;
+  }
+
+  return NULL;
+}
+
+/**
+ * Helper function to check multiple permissions on all user groups.
+ * Returns null if no groups are available.
+ *
+ * @param  stdClass $account
+ * @param  string|array $permissions
+ *
+ * @return bool|null
+ */
+function og_quiz_user_access($account, $permissions) {
+  $groups = og_get_entity_groups('user', $account);
+  if (!empty($groups)) {
+    if (is_string($permissions)) {
+      $permissions = array($permissions);
+    }
+
+    foreach ($groups as $entity_type => $entity_groups) {
+      foreach ($entity_groups as $etid => $gid) {
+        foreach ($permissions as $permission) {
+          if (og_user_access($entity_type, $gid, $permission, $account)) {
+            return TRUE;
+          }
+        }
+      }
+    }
+    return FALSE;
+  }
+
+  return NULL;
+}
+
+/**
+ * Theme the result summary. This is almost a verbatim copy of theme_quiz_admin_summary(). Add OG access
+ * control.
+ */
+function theme_og_quiz_quiz_admin_summary($variables) {
+  global $user;
+  $quiz = $variables['quiz'];
+  $questions = $variables['questions'];
+  $score = $variables['score'];
+  $summary = $variables['summary'];
+  $rid = $variables['rid'];
+  // To adjust the title uncomment and edit the line below:
+  // drupal_set_title(check_plain($quiz->title));
+  if (!$score['is_evaluated']) {
+    drupal_set_message(t('This quiz has not been scored yet.'), 'warning');
+  }
+  // Display overall result.
+  $output = '';
+  $params = array('%num_correct' => $score['numeric_score'], '%question_count' => $score['possible_score']);
+  $output .= '<div id="quiz_score_possible">' . t('This person got %num_correct of %question_count possible points.', $params) . '</div>' . "\n";
+  $output .= '<div id="quiz_score_percent">' . t('Total score: @score %', array('@score' => $score['percentage_score'])) . '</div>' . "\n";
+  $quiz_format = (isset($quiz->body[LANGUAGE_NONE][0]['format'])) ? $quiz->body[LANGUAGE_NONE][0]['format'] : NULL;
+  if (isset($summary['passfail'])) {
+    $output .= '<div id="quiz_summary">' . check_markup($summary['passfail'], $quiz_format) . '</div>' . "\n";
+  }
+  if (isset($summary['result'])) {
+    $output .= '<div id="quiz_summary">' . check_markup($summary['result'], $quiz_format) . '</div>' . "\n";
+  }
+
+  // Get the feedback for all questions.
+  require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'quiz') . '/quiz.pages.inc';
+
+  if (!$access = og_quiz_ogs_access($quiz, 'score any quiz')) {
+    if ($access = og_quiz_ogs_access($quiz, 'score own quiz')) {
+      $access = $access && $quiz->uid && $user->uid;
+    }
+  }
+  $access = isset($access) ? $access : user_access('score any quiz') || (user_access('score own quiz') && $quiz->uid && $user->uid);
+
+  $report_form = drupal_get_form('quiz_report_form', $questions, TRUE, TRUE, $access);
+  $output .= drupal_render($report_form);
+  return $output;
+}
+
+/**
+ * Page callback for viewing user results.
+ * Filter by courses the viewer is actually a member of.
+ * @see quiz_get_user_results().
+ *
+ * @param  int $uid
+ *
+ * @return string
+ */
+function og_quiz_get_user_results($uid) {
+  module_load_include('inc', 'quiz', 'quiz.pages');
+  global $user;
+
+  // In some edge-cases, we get the user object instead of the uid.
+  if (is_object($uid) && isset($uid->uid)) {
+    $uid = $uid->uid;
+  }
+
+  // This is a verbatim copy of quiz_get_user_results().
+  $results = array();
+  $dbresult = db_query('SELECT DISTINCT(n.nid), n.title, qnp.pass_rate, qnrs.result_id, qnrs.time_start, qnrs.time_end, qnrs.score, qnrs.is_evaluated
+    FROM {node} n
+    INNER JOIN {quiz_node_properties} qnp ON n.nid = qnp.nid
+    INNER JOIN {quiz_node_results} qnrs ON qnrs.vid = qnp.vid
+    INNER JOIN {users} u ON u.uid = qnrs.uid
+    WHERE n.type = :type
+      AND u.uid = :uid
+    ORDER BY qnrs.result_id DESC', array(':type' => 'quiz', ':uid' => $uid));
+
+  // Create an array out of the results.
+  foreach ($dbresult as $result) {
+    $result = (array) $result;
+
+    $access = TRUE;
+
+    // Start filtering based on access levels.
+    if (!user_access('view any quiz results')) {
+      $quiz = node_load($result['nid']);
+      if (!(user_access('view results for own quiz') && $user->uid == $quiz->uid)) {
+        // Check group permissions.
+        if (!og_quiz_ogs_access($quiz, 'view any quiz results')) {
+          if (!(og_quiz_ogs_access($quiz, 'view results for own quiz') && $user->uid == $quiz->uid)) {
+            // Is it the user herself ?
+            if (!(user_access('view own quiz results') && $user->uid == $uid)) {
+              if (!(og_quiz_ogs_access($quiz, 'view own quiz results') && $user->uid == $uid)) {
+                $access = FALSE;
+              }
+            }
+          }
+        }
+      }
+    }
+
+    // Filter by groups the user can see
+    if ($access) {
+      $results[$result['result_id']] = $result;
+    }
+  }
+  return theme('quiz_get_user_results', array('results' => $results));
+}

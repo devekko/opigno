@@ -1,0 +1,10 @@
+// Include the variables.
+@import "partials/utility";
+
+// Generate normalize.css.
+@import "normalize";
+
+// Overwrite or deactivate Bootstrap features.
+.alert .close {
+  display: none !important;
+}

@@ -1,0 +1,36 @@
+# Thanks to sonnym (https://drupal.org/user/2355898) for providing the basics.
+
+language: php
+
+php:
+  - 5.4
+
+mysql:
+  database: travis_ci_opigno_poll_app_test
+  username: root
+  encoding: utf8
+
+before_script:
+  # navigate out of module directory to prevent blown stack by recursive module lookup
+  - cd ../..
+
+  # install drush
+  - pear channel-discover pear.drush.org
+  - pear install drush/drush-5.8.0
+  - phpenv rehash
+
+  # create new site, stubbing sendmail path with true to prevent delivery errors and manually resolving drush path
+  - mysql -e 'create database travis_ci_opigno_poll_app_test'
+  - php -d sendmail_path=`which true` `pear config-get php_dir`/drush/drush.php --yes core-quick-drupal --no-server --profile=testing --db-url=mysql://root:@127.0.0.1/travis_ci_opigno_poll_app_test --enable=simpletest travis_ci_opigno_poll_app_test
+
+  # launch the PHP built in server on :8888, but run it in the background
+  - php -S localhost:8888 -t travis_ci_opigno_poll_app_test/drupal/ > /dev/null &
+
+  # reference and enable opigno_poll_app in build site
+  - ln -s $(readlink -e $(cd -)) travis_ci_opigno_poll_app_test/drupal/sites/all/modules/opigno_poll_app
+  - cd travis_ci_opigno_poll_app_test/drupal
+  - drush dl ctools views views_bulk_operations og entity entityreference rules rules_conditional opigno
+  - drush --yes pm-enable opigno_poll_app
+
+# let's do this
+script: drush test-run --uri=http://localhost:8888/ 'OpignoPollAppWebTestCase'

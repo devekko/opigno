@@ -1,0 +1,101 @@
+/**
+ * @file
+ * Defines the styles for the calendar views.
+ */
+
+.view-calendar {
+  background-color: $medium-gray;
+  padding: 2em;
+}
+
+.view-header {
+  position: relative;
+
+  .date-heading {
+
+    h3 {
+
+    }
+  }
+
+  .pager {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    margin: 0;
+
+    li {
+      position: absolute;
+      width: 14px !important;
+      height: 21px;
+      padding: 0;
+      margin: 0;
+      background-color: transparent !important;
+      background-position: left top !important;
+      background-repeat: no-repeat !important;
+      overflow: hidden;
+
+      a {
+        position: absolute;
+        top: 0;
+        left: 0;
+        padding-left: 100px;
+        margin: 0 !important;
+      }
+    }
+
+    .date-prev {
+      right: auto;
+      left: 0;
+      background-image: url(../img/pager-prev-icon.png);
+    }
+
+    .date-next {
+      right: 0;
+      background-image: url(../img/pager-next-icon.png);
+    }
+  }
+}
+
+.calendar-calendar {
+
+  th, th.days {
+    text-transform: lowercase;
+    background: $medium-gray;
+    padding-bottom: 1em;
+  }
+
+  th, td {
+    border: 0 !important;
+  }
+
+  td {
+    color: $dark-gray;
+  }
+
+  div.day {
+    float: none;
+    margin: .5em auto 1em;
+    width: 20px;
+    height: 20px;
+    padding: 2px 3px 4px;
+  }
+
+  td.today {
+    background: $medium-gray !important;
+
+    div.day {
+      border: 1px solid $dark-gray !important;
+      @include border-radius(50%);
+    }
+  }
+
+  td.empty {
+    color: inherit;
+  }
+
+  td.past {
+    // background: transparent;
+  }
+}

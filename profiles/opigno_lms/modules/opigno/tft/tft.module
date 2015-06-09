@@ -1,0 +1,1633 @@
+<?php
+
+/**
+ * @file
+ * Module hooks.
+ */
+
+// Permissions
+define('TFT_ACCESS_FULL_TREE', 'tft access file tree');
+define('TFT_ADMIN', 'aminister tft');
+define('TFT_REORDER_TERMS', 'tft reorder terms');
+define('TFT_ADD_FILE', 'tft add a file to any term');
+define('TFT_ADD_TERMS', 'tft add child terms');
+define('TFT_DELETE_TERMS', 'tft delete child terms');
+define('TFT_ARCHIVE_TERMS', 'tft archive child terms');
+
+function _tft_download_the_file($nid = NULL) {
+  $node = node_load($nid);
+  if (empty($node->tft_file[LANGUAGE_NONE][0]['fid'])) {
+    drupal_not_found();
+  }
+  elseif (node_access('view', $node)) {
+    $file = file_load($node->tft_file[LANGUAGE_NONE][0]['fid']);
+    $http_headers = array(
+      'Content-Type' => $file->filemime,
+      'Content-Disposition' => 'attachment; filename="' . $file->filename . '"',
+    );
+    if (strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')) {
+      $http_headers['Cache-Control'] = 'must-revalidate, post-check=0, pre-check=0';
+      $http_headers['Pragma'] = 'public';
+    }
+    else {
+      $http_headers['Pragma'] = 'no-cache';
+    }
+    file_transfer($file->uri, $http_headers);
+  }
+  else {
+    drupal_access_denied();
+  }
+  return '';
+}
+
+/**
+ * Implements hook_og_context_negotiation_info
+ */
+function tft_og_context_negotiation_info() {
+  $providers = array();
+
+  $providers['tft'] = array(
+    'name' => t('Taxonomy file tree urls'),
+    'description' => t("Determine context by checking all Taxonomy file tree urls."),
+    'callback' => 'tft_og_context_handler',
+    'menu path' => array(
+      'tft/term/add',
+      'tft/term/edit/%',
+      'tft/term/delete/%',
+      'tft/terms/reorder/%',  
+    ),
+  );
+
+  return $providers;
+}
+
+/**
+ * Implementation of hook_menu().
+ */
+function tft_menu() {
+  $menu = array(
+    'tft/download/file/%' => array(
+      'title' => 'Download',
+      'page callback' => '_tft_download_the_file',
+      'page arguments' => array(3),
+      'access arguments' => array('access content'),
+      'type' => MENU_CALLBACK,
+    ),
+    'tft/%' => array(
+      'title' => "Taxonomy File Tree",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array(TFT_ACCESS_FULL_TREE),
+      'page callback' => 'tft',
+      'page arguments' => array(1),
+      'file' => 'tft.pages.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'tft' => array(
+      'title' => "Taxonomy File Tree",
+      'page callback' => 'tft',
+      'access arguments' => array(TFT_ACCESS_FULL_TREE),
+      'file' => 'tft.pages.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'node/%/tft' => array(
+      'title' => "Files",
+      'access callback' => 'og_user_access',
+      'access arguments' => array('node', 1, TFT_ACCESS_FULL_TREE),
+      'page callback' => 'tft_og',
+      'page arguments' => array(1),
+      'file' => 'tft.pages.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'tft/term/add' => array(
+      'title' => "Add a folder",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array(TFT_ADD_TERMS),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('tft_add_term_form'),
+      'file' => 'tft.admin.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'tft/term/edit/%' => array(
+      'title' => "Edit a folder",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array(TFT_ADD_TERMS),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('tft_edit_term_form', 3),
+      'file' => 'tft.admin.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'tft/term/delete/%' => array(
+      'title' => "Delete a folder",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array(TFT_DELETE_TERMS),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('tft_delete_term_form', 3),
+      'file' => 'tft.admin.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'tft/term/archive/%' => array(
+      'title' => "Archive a folder",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array(TFT_ARCHIVE_TERMS),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('tft_archive_term_form', 3),
+      'file' => 'tft.admin.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'node/%/tft/term/restore/%' => array(
+      'title' => "Restore a file",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array(TFT_ARCHIVE_TERMS),
+      'page callback' => 'tft_restore_element',
+      'page arguments' => array(1, 5, 'term'),
+      'type' => MENU_CALLBACK,
+    ),
+    'tft/file/archive/%' => array(
+      'title' => "Archive a file",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array(TFT_ARCHIVE_TERMS),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('tft_archive_file_form', 3),
+      'file' => 'tft.admin.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'node/%/tft/file/restore/%' => array(
+      'title' => "Restore a file",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array(TFT_ARCHIVE_TERMS),
+      'page callback' => 'tft_restore_element',
+      'page arguments' => array(1, 5, 'node'),
+      'type' => MENU_CALLBACK,
+    ),
+    'tft/terms/reorder/%' => array(
+      'title' => t("Reorder folders"),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('tft_manage_folders_form', 3),
+      'access arguments' => array(TFT_REORDER_TERMS),
+      'file' => 'tft.admin.inc',
+    ),
+    'tft/ajax/get-folder' => array(
+      'title' => "Ajax callback",
+      'access callback' => 'tft_menu_access',
+      'access arguments' => array('access content'), // @todo
+      'page callback' => 'tft_ajax_get_folder',
+      'file' => 'tft.ajax.inc',
+      'type' => MENU_CALLBACK,
+    ),
+    'admin/config/media/tft' => array(
+      'title' => "Taxonomy File Tree Settings",
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('tft_settings_form'),
+      'access arguments' => array(TFT_ADMIN),
+      'file' => 'tft.admin.inc',
+    )
+  );
+
+  return $menu;
+}
+
+function tft_block_info() {
+  return array(
+    'tft_file_tree' => array(
+      'info' => 'TFT file explorer',
+    ),
+  );
+}
+
+function tft_block_view() {
+  $tid = 0;
+  if (arg(0) == 'node' && is_numeric(arg(1))) {
+    $tid = tft_get_og_tid(arg(1));
+  }
+  return array(
+    'subject' => 'File explorer',
+    'content' => theme('tft_folder_explorer', array('folders' => tft_output_tree(tft_folder_tree($tid)), 'vid' => variable_get('tft_vocabulary_vid', 0))),
+  );
+}
+
+/**
+ * Implements hook_opigno_tool().
+ */
+function tft_opigno_tool($node = NULL) {
+  return array(
+    'tft' => array(
+      'name' => t("Files"),
+      'path' => isset($node) ? "node/{$node->nid}/tft" : '',
+      'description' => t("Files related to the course."),
+      'actions' => array(
+        'add_file' => array(
+          'title' => t("Upload a new file"),
+          'href' => 'node/add/tft-file',
+          'access_arguments' => array('node', $node->nid, 'create tft_file content'),
+          'access_callback' => 'og_user_access',
+          'query' => array(
+            'og_group_ref' => isset($node) ? $node->nid : '',
+          )
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_permission().
+ */
+function tft_permission() {
+  return array(
+    TFT_ACCESS_FULL_TREE => array(
+      'title' => t("Access full file tree"),
+    ),
+    TFT_ADMIN => array(
+      'title' => t("Administer Taxonomy file tree"),
+    ),
+    TFT_REORDER_TERMS => array(
+      'title' => t("Reorder terms"),
+    ),
+    TFT_ADD_FILE => array(
+      'title' => t("Add file"),
+    ),
+    TFT_ADD_TERMS => array(
+      'title' => t("Add new folders"),
+    ),
+    TFT_DELETE_TERMS => array(
+      'title' => t("Remove folders"),
+    ),
+    TFT_ARCHIVE_TERMS => array(
+      'title' => t("Archive folders"),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_opigno_breadcrumbs().
+ */
+function tft_opigno_breadcrumbs($gid) {
+  $breadcrumbs = array();
+
+  $node = menu_get_object();
+  // Must we handle this page request for the breadcrumb ?
+  if ((isset($node->type) && $node->type == 'tft_file') || 
+      current_path() == 'node/add/tft-file' ||
+      preg_match('/^tft\/(term\/(add|edit|delete|archive)|terms\/reorder)/', current_path())) {
+    
+    // Add the course files link.
+    $breadcrumbs[] = l(t("Files"), "node/$gid/tft");
+  }
+
+  if (!empty($breadcrumbs)) {
+    return $breadcrumbs;
+  }
+}
+
+/**
+ * Implements hook_og_permission().
+ */
+function tft_og_permission() {
+  $permissions = tft_permission();
+  unset($permissions[TFT_ADMIN]);
+  return $permissions;
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function tft_theme() {
+  return array(
+    'tft_folder_explorer' => array(
+      'variables' => array('folders' => NULL, 'vid' => NULL),
+      'template' => 'theme/tft-folder-explorer',
+    ),
+    'tft_folder_menu' => array(
+      'variables' => array('name' => NULL, 'path' => '/', 'ops_links' => ''),
+      'template' => 'theme/tft-folder-menu',
+    ),
+    'tft_manage_folders_form' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Implementation of hook_node_prepare()
+ */
+function tft_node_prepare($node) {
+  $setting = tft_get_file_setting();
+  if ($node->type == $setting['type']) {
+    if (isset($_GET['tid']) && tft_term_access((int) $_GET['tid'])) {
+      $node->tft_folder[LANGUAGE_NONE][0]['tid'] = (int) $_GET['tid'];
+    }
+  }
+}
+
+/**
+ * Implementation of hook_form_alter()
+ */
+function tft_form_alter(&$form, &$form_state, $form_id) {
+  $setting = tft_get_file_setting();
+
+  switch ($form_id) {
+    case $setting['type'] . '_node_form':
+      $path = drupal_get_path('module', 'tft');
+      drupal_add_js("$path/js/tft.select-folder.js");
+      drupal_add_css("$path/css/tft.css");
+
+      module_load_include('inc', 'tft', 'tft.pages');
+
+      $form['tft_folder'][LANGUAGE_NONE]['#prefix'] = '<div class="tft-hide-element">' . (!empty($form['tft_folder'][LANGUAGE_NONE]['#prefix']) ? $form['tft_folder'][LANGUAGE_NONE]['#prefix'] : '');
+      $form['tft_folder'][LANGUAGE_NONE]['#suffix'] .= '</div>';
+
+      $form['og_group_ref'][LANGUAGE_NONE]['#prefix'] = '<div class="tft-hide-element">' . (!empty($form['og_group_ref'][LANGUAGE_NONE]['#prefix']) ? $form['og_group_ref'][LANGUAGE_NONE]['#prefix'] : '');
+      $form['og_group_ref'][LANGUAGE_NONE]['#suffix'] .= '</div>';
+
+      $form['tft_select_folder'] = array(
+        '#type' => 'fieldset',
+        '#title' => t("Select folder"),
+        '#collapsible' => TRUE,
+        '#collapsed' => FALSE,
+      );
+
+      if (isset($_GET['gids'])) {
+        $gid = trim($_GET['gids'][0]);
+      }
+      elseif (isset($form['#node']->og_groups) && count($form['#node']->og_groups)) {
+        $gid = reset($form['#node']->og_groups);
+      }
+
+      if (!empty($gid)) {
+        $top_tid = db_select('tft_tid_og_nid', 't')->fields('t', array('tid'))->condition('og_nid', $gid)->execute()->fetchField();
+
+        $top_tid = $top_tid ? $top_tid : 0;
+      }
+      else {
+        $top_tid = 0;
+      }
+
+      if (isset($_GET['tid'])) {
+        $tid = $_GET['tid'];
+      }
+      elseif (isset($form['#node']->tft_folder[LANGUAGE_NONE][0]['tid'])) {
+        $tid = $form['#node']->tft_folder[LANGUAGE_NONE][0]['tid'];
+      }
+
+      $tid = !empty($tid) ? $tid : 0;
+
+      // If the user can only add terms to an OG term
+      /*if (!user_access(TFT_ADD_TERMS)) {
+        if (!tft_term_access($tid)) {
+          drupal_set_message(t("You must select a parent folder that is part of a group you're a member of."), 'error');
+        }
+      }*/
+      $og_tid = tft_get_og_tid(tft_get_og_nid($tid));
+      $form['tft_select_folder']['tft_js_folder'] = array(
+        '#markup' => '<div id="folder-explorer-container" class="tft-node-form">' . tft_output_tree(tft_folder_tree($og_tid, TRUE)) . '</div>',
+      );
+
+      $form['tft_selected_folder'] = array(
+        '#type' => 'hidden',
+        '#default_value' => $tid,
+      );
+
+      $form['#validate'][] = 'tft_file_node_validate';
+
+      break;
+  }
+}
+
+/**
+ * Validate the node form.
+ * Check the taxonomy term.
+ */
+function tft_file_node_validate($form, $form_state) {
+  // If the user can only add terms to an OG term
+  /*if (!user_access(TFT_ADD_TERMS)) {
+    if (!tft_term_access(reset($form_state['values']['taxonomy'][variable_get('tft_vocabulary_vid', 0)]))) {
+      form_set_error('taxonomy][' . variable_get('tft_vocabulary_vid', 0), t("You must select a parent folder that is part of a group you're a member of."));
+    }
+  }**/
+}
+
+/**
+ * hook_action_info()
+ */
+function tft_rules_action_info() {
+  return array(
+    'tft_rules_create_og_root_folder' => array(
+      'label' => t('Create a root folder for a group'),
+      'group' => t('Taxonomy File Tree'),
+      'parameter' => array(
+        'group' => array(
+          'type' => 'node',
+          'label' => t('Group'),
+        ),
+      ),
+    )
+  );
+}
+
+function tft_rules_create_og_root_folder($group) {
+  $term = (object) array(
+    'vid' => variable_get('tft_vocabulary_vid', 0),
+    'name' => $group->title,
+  );
+  taxonomy_term_save($term);
+  db_insert('tft_tid_og_nid')->fields(array(
+      'tid' => $term->tid,
+      'og_nid' => $group->nid
+    ))->execute();
+
+  module_load_include('inc', 'tft', 'tft.admin');
+  // Add an "Archive" folder
+  $form_state = array();
+  $form_state['values']['name'] = "Archives";
+  $form_state['values']['parent'] = $term->tid;
+
+  tft_add_term_form_submit(array(), $form_state);
+}
+
+/**
+ * Create a term for in the Taxonomy File Tree vocabulary for this new OG.
+ */
+function tft_og_add_term(&$object, $context = array()) {
+  if ($object->type == 'og' && $object->nid) {
+    $tid = db_select('tft_tid_og_nid', 't')->fields('t', array('tid'))->condition('og_nid', $object->nid)->execute()->fetchField();
+
+    if (!$tid) {
+      module_load_include('inc', 'tft', 'tft.admin');
+
+      $form_state = array();
+      $form_state['values']['name'] = $object->title . ' (og/' . $object->nid . ')';
+      $form_state['values']['parent'] = 0;
+
+      $tid = tft_add_term_form_submit(array(), $form_state);
+
+      db_insert('tft_tid_og_nid')->fields(array(
+        'tid' => $tid,
+        'og_nid' => $object->nid
+      ))->execute();
+
+      // Add an "Archive" folder
+      $form_state = array();
+      $form_state['values']['name'] = "Archives";
+      $form_state['values']['parent'] = $tid;
+
+      tft_add_term_form_submit(array(), $form_state);
+    }
+  }
+}
+
+/**
+ * Custom access callback to check for multiple permissions.
+ *
+ * @param string ...
+ *        Multiple permissions. Each is passed through user_access()
+ *        If the last parameter is numeric, it will be treated as a gid.
+ *
+ * @return boolean
+ *        TRUE if at least one of the passed permissions is allowed. FALSE otherwise.
+ */
+function tft_menu_access() {
+  global $user;
+  $args = func_get_args();
+
+  if (count($args) == 1 && is_array($args[0])) {
+    $args = $args[0];
+  }
+
+  foreach ($args as $permission) {
+    if ($permission && user_access((string) $permission)) {
+      return TRUE;
+    }
+  }
+
+  $gid = array_pop($args);
+  if (!is_numeric($gid)) {
+    $groups = array($gid => $gid);
+  }
+  else {
+    $groups = og_get_groups_by_user($user, 'node');
+  }
+
+  foreach ($groups as $gid) {
+    foreach ($args as $permission) {
+      if ($permission && og_user_access('node', $gid, $permission)) {
+        return TRUE;
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Check if the user has access to the term.
+ * Will first check if the term is part of an OG term tree. If so, it will check if the user has access to the OG.
+ * If the term is not part of an OG term tree, it will check against the Tac Lite schemes.
+ *
+ * @param int $tid
+ *        The term tid
+ * @param stdClass $account = NULL
+ *        The user account to check against. If no account is given, the
+ *        current user will be used.
+ *
+ * @return boolean
+ *        TRUE if the user has access to this term. FALSE otherwise.
+ */
+function tft_term_access($tid, $account = NULL) {
+  if (!$tid && $tid != 0) {
+    return FALSE;
+  }
+
+  if (!$account) {
+    global $user;
+
+    $account = $user;
+  }
+
+  if ($account->uid == 1 || user_access(TFT_ACCESS_FULL_TREE, $account) || user_access(TFT_ADMIN, $account) || user_access('administer taxonomy', $account)) {
+    return TRUE;
+  }
+
+  // Is this part of an OG term tree ?
+  if ($og_nid = tft_get_og_nid($tid)) {
+    // Check against OG
+    return node_access('view', node_load($og_nid), $account);
+  }
+  else {
+    // Check against Tac Lite
+    for ($i = 1, $schemes = variable_get('tac_lite_schemes', 1); $i <= $schemes; $i++) {
+      $array_scheme = variable_get("tac_lite_grants_scheme_$i", array());
+
+      foreach ($array_scheme as $rid => $vids) {
+        if ($array_scheme[$rid][variable_get('tft_vocabulary_vid', 0)][$tid]) {
+          return TRUE;
+        }
+      }
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Get the folder content in HTML table form
+ *
+ * @param int $tid
+ *        The folder taxonomy term tid
+ *
+ * @return string
+ *        The HTML table
+ */
+function tft_content_table($tid, $gid = NULL) {
+  $headers = array(
+    array(
+      'data' => '<span>' . t("Name") . '</span>',
+      'id' => 'table-th-name',
+    ),
+    array(
+      'data' => '<span>' . t("Loaded by") . '</span>',
+      'id' => 'table-th-loaded-by',
+    ),
+    array(
+      'data' => '<span>' . t("Last modified") . '</span>',
+      'id' => 'table-th-date',
+    ),
+    array(
+      'data' => '<span>' . t("Type") . '</span>',
+      'id' => 'table-th-type',
+    ),
+    array(
+      'data' => '<span>' . t("Operations") . '</span>',
+      'id' => 'table-th-ops',
+    )
+  );
+
+  $rows = tft_get_content($tid, $gid);
+
+  return theme('table', array('header' => $headers, 'rows' => $rows)) . tft_add_content_links($tid, $gid);
+}
+
+/**
+ * Checks if the term is an "Archive" term.
+ * These cannot be edited or deleted.
+ *
+ * @param int $tid
+ *
+ * @return bool
+ */
+function tft_is_archive_folder($tid) {
+  // Must be a direct child.
+  if (tft_get_depth($tid) == 1) {
+    $title = db_select('taxonomy_term_data', 't')->fields('t', array('name'))->condition('tid', $tid)->execute()->fetchField();
+
+    if ($title == 'Archives') {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Finds the archive folder for the current OG term.
+ *
+ * @param int $og_tid
+ *
+ * @return int|null
+ */
+function tft_get_archive_tid($og_tid) {
+  return db_query("SELECT td.tid FROM {taxonomy_term_data} td
+                    LEFT JOIN {taxonomy_term_hierarchy} th ON th.tid = td.tid
+                   WHERE th.parent = :tid AND td.name = 'Archives'", array(':tid' => $og_tid))->fetchField();
+}
+
+/**
+ * Checks if the term is already archived.
+ *
+ * @param int $tid
+ *
+ * @return bool
+ */
+function tft_is_term_archived($tid) {
+  $og_nid = tft_get_og_nid($tid);
+
+  $og_tid = tft_get_og_tid($og_nid);
+
+  $archive_tid = tft_get_archive_tid($og_tid);
+
+  $root_tid = $tid;
+  $depth = tft_get_depth($tid);
+
+  while ($depth > 1 && $root_tid) {
+    $root_tid = db_query("SELECT parent FROM {taxonomy_term_hierarchy} WHERE tid = :tid", array(':tid' => $tid))->fetchField();
+
+    $depth--;
+  }
+
+  return ($root_tid == $archive_tid);
+}
+
+/**
+ * Checks if the file is already archived.
+ *
+ * @param int $nid
+ *
+ * @return bool
+ */
+function tft_is_file_archived($nid) {
+  $node = node_load($nid);
+  $folder_tids = array();
+
+  // Get original folder
+  foreach (array_keys($node->taxonomy) as $tid) {
+    if (variable_get('tft_vocabulary_vid', 0) == db_query("SELECT vid FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $tid))->fetchField()) {
+      $folder_tids[] = $tid;
+    }
+  }
+
+  foreach ($folder_tids as $tid) {
+    if (tft_is_term_archived($tid)) {
+      return TRUE;
+    }
+  }
+
+  return FALSE;
+}
+
+/**
+ * Get the folder content and return it in an array form for the theme_table call
+ *
+ * @param int $tid
+ *        The taxonomy term tid
+ *
+ * @return array
+ *        The folder content
+ */
+function tft_get_content($tid, $gid = NULL) {
+  $content = array();
+
+  $elements = tft_folder_content($tid, FALSE, $gid);
+
+  $setting = tft_get_file_setting();
+
+  $node_type = node_type_load($setting['type']);
+  $og_nid = tft_get_og_nid($tid);
+
+
+  $db_table = 'field_data_' . $setting['field'];
+
+  $db_table = db_escape_field($db_table);
+  $db_field = db_escape_field($setting['field'] . '_fid');
+
+  foreach ($elements as $element) {
+    if ($element['type'] == 'term') {
+      $name = db_query("SELECT name FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $element['id']))->fetchField();
+
+      $content[] = array(
+        tft_l($name, $element['id'], 'folder'),
+        '',
+        '',
+        t("Folder"),
+        tft_is_archive_folder($element['id']) ? '' : tft_operation_links('folder', $element['id'], NULL, $og_nid),
+      );
+    }
+    else {
+      if (db_table_exists($db_table)) {
+        $result = db_query("SELECT f.filemime, f.filename, v.title, n.changed, n.uid FROM {node_revision} v
+                                LEFT JOIN {node} n ON n.vid = v.vid
+                                  LEFT JOIN {".$db_table."} c ON c.revision_id = v.vid
+                                    LEFT JOIN {file_managed} f ON c.$db_field = f.fid
+                            WHERE n.nid = :nid AND n.status = 1", array(':nid' => $element['id']));
+
+        if ($row = $result->fetchAssoc()) {
+          $node = node_load($element['id']);
+
+          $content[] = array(
+            tft_l($row['title'], $element['id'], $row['filemime']),
+            tft_print_username($row['uid']),
+            date('d/m/Y H:i', $row['changed']),
+            t('!type file', array('!type' => strtoupper(end(explode('.', $row['filename']))))),
+            tft_operation_links('file', $element['id'], $node, $og_nid),
+          );
+        }
+      }
+    }
+  }
+
+  return $content;
+
+/*
+  // Get all child folders (terms)
+  $result = db_query("SELECT {taxonomy_term_data}.name, {taxonomy_term_data}.tid FROM {taxonomy_term_data}
+                        LEFT JOIN {taxonomy_term_hierarchy} ON {taxonomy_term_hierarchy}.tid = {taxonomy_term_data}.tid
+                      WHERE {taxonomy_term_hierarchy}.parent = %d AND {taxonomy_term_data}.vid = %d
+                      ORDER BY {taxonomy_term_data}.name = 'Archives' ASC, {taxonomy_term_data}.weight, {taxonomy_term_data}.name", array($tid, variable_get('tft_vocabulary_vid', 0)));
+
+  while ($row = db_fetch_array($result)) {
+    $content[] = array(
+      tft_l($row['name'], $row['tid'], 'folder'),
+      '',
+      '',
+      t("Folder"),
+      tft_is_archive_folder($row['tid']) ? '' : tft_operation_links('folder', $row['tid']),
+    );
+  }
+
+  // Get all files. First deduce the db table and column
+  $setting = tft_get_file_setting();
+
+  $node_type = content_types($setting['type']);
+
+  if (in_array('content_' . $setting['field'], $node_type['tables'])) {
+    $db_table = 'content_' . $setting['field'];
+  }
+  else {
+    $db_table = 'content_type_' . $setting['type'];
+  }
+
+  $db_table = db_escape_string($db_table);
+  $db_field = db_escape_string($setting['field'] . '_fid');
+
+  // Get the files
+  if (db_table_exists($db_table)) {
+    $result = db_query("SELECT DISTINCT({taxonomy_index}.nid), {files}.filemime, {files}.filename, {node_revisions}.title, {node}.changed, {node}.uid FROM {taxonomy_index}
+                          LEFT JOIN {node_revisions} ON {node_revisions}.nid = {taxonomy_index}.nid AND {node_revisions}.vid = {taxonomy_index}.vid
+                            LEFT JOIN {node} ON {node_revisions}.nid = {node}.nid AND {node_revisions}.vid = {node}.vid
+                              LEFT JOIN {$db_table} AS tft_table ON tft_table.vid = {node}.vid
+                                LEFT JOIN {files} ON tft_table.$db_field = {files}.fid
+                        WHERE {taxonomy_index}.tid = %d AND {node}.status = 1", array($tid));
+
+    while ($row = db_fetch_array($result)) {
+      $node = node_load($row['nid']);
+
+      if (node_access('view', $node)) {
+        $content[] = array(
+          tft_l($row['title'], $row['nid'], $row['filemime']),
+          tft_print_username($row['uid']),
+          date('d/m/Y H:i', $row['changed']),
+          t('!type file', array('!type' => strtoupper(end(explode('.', $row['filename']))))),
+          tft_operation_links('file', $row['nid'], $node),
+        );
+      }
+    }
+  }
+  else {
+    watchdog('tft', "The database table @table does not exist. Couldn't retreive the files.", array('@table' => $db_table), WATCHDOG_ERROR);
+    return t("Configuration error. Couldn't load the data from the database. Contact your site administrator.");
+  }
+
+  return $content;*/
+}
+
+/**
+ * Loads the given folder content.
+ */
+function tft_folder_content($tid, $only_terms = FALSE, $gid = NULL) {
+  $content = array();
+
+  // Get all child folders (terms)
+  $result = db_query("SELECT td.tid FROM {taxonomy_term_data} td
+                        LEFT JOIN {taxonomy_term_hierarchy} th ON th.tid = td.tid
+                      WHERE th.parent = :ptid AND td.vid = :vid", array(':ptid' => $tid, ':vid' => variable_get('tft_vocabulary_vid', 0)));
+
+  while($term = $result->fetchObject()) {
+    if ($res = db_query("SELECT weight FROM {tft_folder_content_weight} WHERE id = :tid AND type = 'term'", array(':tid' => $term->tid))) {
+      $weight = $res->fetchField();
+    }
+
+    $content[] = array(
+      'id' => $term->tid,
+      'type' => 'term',
+      'weight' => tft_is_archive_folder($term->tid) ? 1000 : $weight,
+    );
+  }
+
+  if ($only_terms) {
+    usort($content, '_tft_array_weight_sort');
+
+    return $content;
+  }
+
+  // Get the files
+  $result = db_query("SELECT DISTINCT(tn.nid) FROM {node_revision} v
+                        LEFT JOIN {node} n ON n.vid = v.vid
+                          LEFT JOIN {taxonomy_index} tn ON tn.nid = n.nid
+                      WHERE tn.tid = :tid AND n.status = 1", array(':tid' => $tid));
+
+  while ($file = $result->fetchObject()) {
+    if ($res = db_query("SELECT weight FROM {tft_folder_content_weight} WHERE id = :nid AND type = 'node'", array(':nid' => $file->nid))) {
+      $weight = $res->fetchField();
+    }
+
+    $content[] = array(
+      'id' => $file->nid,
+      'type' => 'node',
+      'weight' => !empty($weight) ? $weight : 0,
+    );
+  }
+
+  usort($content, '_tft_array_weight_sort');
+
+  return $content;
+}
+
+/**
+ * Format the operation links and check user access.
+ *
+ * @param string $type
+ *        The type of operation links. Can be 'folder' or 'file'
+ * @param int $id
+ *        Either the taxonomy term tid or the node nid
+ * @param stdClass $node = NULL
+ *        An optional node object. Used to check against node_access()
+ *
+ * @return string
+ *        HTML string with operation links
+ */
+function tft_operation_links($type, $id, $node = NULL, $og_nid = NULL) {
+  $html = '';
+
+  switch ($type) {
+    case 'folder':
+      // Hide edit link if the user has no access
+      if (tft_menu_access(TFT_ADD_TERMS, $og_nid)) {
+        $edit = TRUE;
+        $html .=  l(t("edit"), "tft/term/edit/$id", array('attributes' => array('class' => 'ops-link term-edit-link'), 'query' => array('destination' => $_SESSION['tft']['q'])));
+      }
+
+      if (tft_menu_access(TFT_DELETE_TERMS, $og_nid)) {
+        $delete = TRUE;
+        if ($edit) {
+          $html .= ' | ';
+        }
+
+        $html .= l(t("delete"), "tft/term/delete/$id", array('attributes' => array('class' => 'ops-link term-edit-link'), 'query' => array('destination' => $_SESSION['tft']['q'])));
+      }
+
+      // We must be in the OG context to archive.
+      /*if (tft_menu_access(TFT_ARCHIVE_TERMS)) {
+        if ($delete) {
+          $html .= ' | ';
+        }
+
+        if (!tft_is_term_archived($id)) {
+          $html .= l(t("archiver"), "tft/term/archive/$id", array('attributes' => array('class' => 'ops-link term-edit-link'), 'query' => array('destination' => $_SESSION['tft']['q'])));
+        }
+        else {
+          $html .= l(t("restaurer"), "og/$og_nid/tft/term/restore/$id", array('attributes' => array('class' => 'ops-link term-edit-link'), 'query' => array('destination' => $_SESSION['tft']['q'])));
+        }
+      }*/
+
+      break;
+
+    case 'file':
+      // Hide edit link if the user has no access
+      if (node_access('update', $node)) {
+        $html .= l(t("edit"), "node/$id/edit", array('attributes' => array('class' => 'ops-link node-edit-link'), 'query' => array('destination' => $_SESSION['tft']['q']))) . ' | ';
+      }
+
+      $html .= l(t("more info"), "node/$id", array('attributes' => array('class' => 'ops-link')));
+
+      // We must be in the OG context to archive.
+      /*if (tft_menu_access(TFT_ARCHIVE_TERMS)) {
+        $html .= ' | ';
+
+        if (!tft_is_file_archived($id)) {
+          $html .= l(t("archiver"), "tft/file/archive/$id", array('attributes' => array('class' => 'ops-link term-edit-link'), 'query' => array('destination' => $_SESSION['tft']['q'])));
+        }
+        else {
+          $html .= l(t("restaurer"), "og/$og_nid/tft/file/restore/$id", array('attributes' => array('class' => 'ops-link term-edit-link'), 'query' => array('destination' => $_SESSION['tft']['q'])));
+        }
+      }*/
+
+      break;
+  }
+  return $html;
+}
+
+/**
+ * Format a folder or file link.
+ *
+ * @param string $title
+ *        The link title
+ * @param int $id
+ *        Either the taxonomy term tid or the node nid
+ * @param string $mime
+ *        The mime type of the file (for a folder, use 'folder')
+ *
+ * @return string
+ *        HTML string with the formatted link
+ */
+function tft_l($title, $id, $mime) {
+  if ($mime == 'folder') {
+    return '<a href="#term/' . $id . '" class="folder-folder-link" id="tid-' . $id . '">' . $title . '</a>';
+  }
+  else {
+    // Get the filefield icon
+    $file = (object) array('filemime' => $mime);
+    $icon = file_icon_path($file);
+
+    return l($title, "tft/download/file/$id" , array('attributes' => array('class' => 'file', 'style' => "background-image: url(/$icon)", 'target' => '_blank')));
+  }
+}
+
+/**
+ * Print the username using profile values or the default username
+ *
+ * @param int $uid
+ *        The user uid
+ *
+ * @return string
+ *        The user profile values or the username
+ */
+function tft_print_username($uid) {
+  /*$profile = db_query("SELECT {profile_values}.value AS first, profile2.value AS last FROM {profile_values}
+                                          LEFT JOIN {profile_values} profile2 ON profile2.uid = {profile_values}.uid
+                                        WHERE {profile_values}.uid = :uid AND {profile_values}.fid = 1 AND profile2.fid = 2", array(':uid' => $uid))->fetchObject();
+  */
+  $profile = new stdClass();
+  $profile->name = db_query("SELECT name FROM {users} WHERE uid = :uid", array(':uid' => $uid))->fetchField();
+
+  return (!empty($profile->last) && !empty($profile->first)) ? $profile->first . ' ' . $profile->last : $profile->name;
+}
+
+/**
+ * Render the add file and add folder links.
+ *
+ * @param int $tid = 0
+ *        The term tid of the current folder, or 0 for root
+ */
+function tft_add_content_links($tid = 0, $gid = NULL) {
+  $html = '<ul id="folder-add-content-links">';
+  $add_file_query = array('destination' => $_SESSION['tft']['q']);
+  $add_term_query = array('destination' => $_SESSION['tft']['q']);
+  $setting = tft_get_file_setting();
+
+  // Do we have a tid ?
+  if ($tid) {
+    $add_file_query['tid'] = $tid;
+    $add_term_query['parent'] = $tid;
+
+    // Is this an OG term, or the child of an OG term ?
+    $og_nid = tft_get_og_nid($tid);
+  }
+
+  // Can the user create files ?
+  if (og_user_access('node', $gid, 'create ' . $setting['type'] . ' content')) {
+    if (!empty($og_nid)) {
+      $add_file_query['og_group_ref'] = $og_nid;
+    }
+
+    // Can they add files in this context ?
+    if (og_user_access('node', $gid, TFT_ADD_FILE)) {
+      $html .= '<li class="folder-add-content-link">' . l(t("Add a file"), 'node/add/' . str_replace('_', '-', $setting['type']), array('attributes' => array('id' => 'add-child-file'), 'query' => array_reverse($add_file_query))) . '</li>';
+    }
+  }
+
+  // Can the user add terms anywhere, only under OG terms or never ?
+  if (og_user_access('node', $gid, TFT_ADD_TERMS)) {
+    $html .= '<li class="folder-add-content-link">' . l(t("Add a folder"), 'tft/term/add', array('attributes' => array('id' => 'add-child-folder'), 'query' => array_reverse($add_term_query))) . '</li>';
+  }
+
+  return $html . '</ul>';
+}
+
+/**
+ * Construct the folder tree.
+ *
+ * @param int $tid = 0
+ *        The taxonomy term tid
+ * @param boolean $inclusive = FALSE
+ *        Wether the current term should be included as well
+ *
+ * @return array
+ *        The folder tree
+ */
+function tft_folder_tree($tid = 0, $inclusive = FALSE) {
+  $folders = array();
+
+  $content = tft_folder_content($tid, TRUE);
+
+  foreach ($content as $term) {
+    if (tft_term_access($term['id'])) {
+      $folders[$term['id']]['tid'] = $term['id'];
+      $folders[$term['id']]['name'] = db_query("SELECT name FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $term['id']))->fetchField();
+      $folders[$term['id']]['weight'] = $term['weight'];
+      $folders[$term['id']]['parent'] = $tid ? $tid : 0;
+
+      if ($child_terms = tft_folder_tree($term['id'])) {
+        $folders[$term['id']]['children'] = $child_terms;
+      }
+    }
+  }
+
+  if ($inclusive) {
+    if ($tid == 0) {
+      $name = t("Root");
+    }
+    else {
+      $name = db_query("SELECT name FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $tid))->fetchField();
+    }
+
+    $folders = array(
+      $tid => array(
+        'name' => $name,
+        'tid' => $tid,
+        'weight' => 0,
+        'parent' => 0,
+        'children' => $folders
+      )
+    );
+  }
+
+  return $folders;
+}
+
+function tft_tree($tid = 0, $inclusive = FALSE) {
+  $folders = array();
+
+  $content = tft_folder_content($tid);
+
+  foreach ($content as $item) {
+    $folders[$item['id']]['weight'] = isset($item['weight']) ? $item['weight'] : 0;
+    $folders[$item['id']]['parent'] = $tid ? $tid : 0;
+    $folders[$item['id']]['type'] = $item['type'];
+
+    if ($item['type'] == 'term' && tft_term_access($item['id'])) {
+      $folders[$item['id']]['tid'] = $item['id'];
+      $folders[$item['id']]['name'] = db_query("SELECT name FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $item['id']))->fetchField();
+
+      if ($child_terms = tft_tree($item['id'])) {
+        $folders[$item['id']]['children'] = $child_terms;
+      }
+    }
+    elseif ($item['type'] == 'node' && node_access('view', node_load($item['id']))) {
+      $folders[$item['id']]['nid'] = $item['id'];
+      $folders[$item['id']]['name'] = db_query("SELECT v.title FROM {node} n LEFT JOIN {node_revision} v ON v.vid = n.vid WHERE n.nid = :nid", array(':nid' => $item['id']))->fetchField();
+    }
+  }
+
+  if ($inclusive) {
+    if ($tid == 0) {
+      $name = t("Root");
+    }
+    else {
+      $name = db_query("SELECT name FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $tid))->fetchField();
+    }
+
+    $folders = array(
+      $tid => array(
+        'name' => $name,
+        'tid' => $tid,
+        'weight' => 0,
+        'parent' => 0,
+        'type' => 'term',
+        'children' => $folders
+      )
+    );
+  }
+
+  return $folders;
+}
+
+function tft_folder_list($tid = 0) {
+  $list = array();
+
+  $elements = tft_folder_content($tid);
+
+  foreach ($elements as $element) {
+    if ($element['type'] == 'term') {
+      if (tft_term_access($element['id'])) {
+        $list[] = array(
+          'tid' => $element['id'],
+          'name' => db_query("SELECT name FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $element['id']))->fetchField(),
+          'weight' => $element['weight'],
+          'type' => $element['type'],
+        );
+      }
+    }
+    else {
+      $node = node_load($element['id']);
+
+      if (node_access('view', $node)) {
+        $list[] = array(
+          'nid' => $element['id'],
+          'name' => check_plain($node->title),
+          'weight' => $element['weight'],
+          'type' => $element['type'],
+        );
+      }
+    }
+  }
+
+  return $list;
+}
+
+/**
+ * Get the parent tid based on a tid.
+ *
+ * @param int $tid
+ *        The taxonomy term tid
+ *
+ * @return int
+ *        The parent tid or 0 if there's no parent. Will return -1 if the tid is null or 0.
+ */
+function tft_get_parent_tid($tid, $gid = NULL) {
+  static $cache = array();
+
+  if (!(int) $tid) {
+    return -1;
+  }
+
+  if (isset($cache[$tid])) {
+    return $cache[$tid];
+  }
+
+  $result = db_query("SELECT `parent` FROM {taxonomy_term_hierarchy} WHERE tid = :tid", array(':tid' => $tid))->fetchField();
+
+  $cache[$tid] = is_null($result) ? -1 : $result;
+
+  return (int) $cache[$tid];
+}
+
+/**
+ * Get the depth of the term
+ *
+ * @param int $tid
+ *        The taxonomy term tid
+ *
+ * @return int
+ *        The depth of the term, or 0 if no valid term tid was given
+ */
+function tft_get_depth($tid) {
+  static $cache = array();
+
+  if (!$tid || !db_query("SELECT COUNT(tid) FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $tid))->fetchField()) {
+    return 0;
+  }
+
+  if (isset($cache[$tid])) {
+    return $cache[$tid];
+  }
+
+  $depth = 0;
+  $pid = $tid;
+
+  while($pid = db_query("SELECT parent FROM {taxonomy_term_hierarchy} WHERE tid = :tid", array(':tid' => $pid))->fetchField()) {
+    $depth++;
+  }
+
+  $cache[$tid] = $depth;
+
+  return $depth;
+}
+
+/**
+ * Get the settings for the node type used as the 'file'.
+ *
+ * @return array
+ *        An array with a 'type' key for the node type and a 'field' key for the filefield
+ */
+function tft_get_file_setting() {
+  return array('type' => 'tft_file', 'field' => 'tft_file');
+}
+
+/**
+ * Check if the current term is part of a OG term and return the OG nid. If no nid is found, return FALSE.
+ *
+ * @param int $tid
+ *        The tid (and its ancestor tree) to check against
+ *
+ * @return int|boolean
+ *        The OG nid if found, else FALSE
+ */
+function tft_get_og_nid($tid) {
+  static $cache = array();
+
+  if (is_array($tid)) {
+    $tid = $tid[0];
+  }
+
+  $tid = (int) $tid;
+
+  if (!$tid) {
+    return FALSE;
+  }
+
+  if (isset($cache[$tid])) {
+    return $cache[$tid];
+  }
+
+  $param_tid = $tid;
+  $depth = tft_get_depth($tid);
+  $og_nid = db_query("SELECT og_nid FROM {tft_tid_og_nid} WHERE tid = :tid", array(':tid' => $tid))->fetchField();
+
+  while ($depth && $tid && !$og_nid) {
+    $tid = db_query("SELECT parent FROM {taxonomy_term_hierarchy} WHERE tid = :tid", array(':tid' => $tid))->fetchField();
+
+    $depth--;
+
+    $og_nid = db_query("SELECT og_nid FROM {tft_tid_og_nid} WHERE tid = :tid", array(':tid' => $tid))->fetchField();
+  }
+
+  if ($og_nid) {
+    $cache[$param_tid] = (int) $og_nid;
+  }
+  else {
+    $cache[$param_tid] = FALSE;
+  }
+
+  return $cache[$param_tid];
+}
+
+/**
+ * Get the term tid associated with the OG.
+ *
+ * @param int $nid
+ *        The OG nid
+ *
+ * @return int|NULL
+ *        The term tid
+ */
+function tft_get_og_tid($nid) {
+  return db_query("SELECT tid FROM {tft_tid_og_nid} WHERE og_nid = :nid", array(':nid' => $nid))->fetchField();
+}
+
+/**
+ * Check that a valid vocabulary vid is set in the settings. Else, redirect to either the settings page (if the user has access)
+ * or the home page.
+ */
+function tft_check_vocabulary_setting() {
+  if (!variable_get('tft_vocabulary_vid', 0) || !db_query("SELECT COUNT(vid) FROM {taxonomy_vocabulary} WHERE vid = :vid", array(':vid' => variable_get('tft_vocabulary_vid', 0)))->fetchField()) {
+    drupal_set_message(t("You must first enter which vocabulary is used by Taxonomy File Tree."), 'error');
+
+    watchdog('tft', "TFT isn't properly configured. A valid vocabulary must be set as the TFT vocabulary.", array(), WATCHDOG_ERROR);
+
+    if (user_access(TFT_ADMIN)) {
+      drupal_goto('admin/settings/tft');
+    }
+    else {
+      drupal_goto();
+    }
+  }
+}
+
+/**
+ * Return an <ul> with links for the current folder.
+ * Links include:
+ *  - "go to parent"
+ *  - "edit permissions"
+ *  - "reorder folders"
+ *
+ * @param int $tid
+ *        The term tid
+ *
+ * @return string
+ *        The HTML string
+ */
+function tft_get_folder_operation_links($tid, $gid = NULL) {
+  $html = '<ul class="tabs primary" id="folder-menu-ops-links">';
+
+  // First link: got to parent
+  $parent_tid = tft_get_parent_tid($tid);
+
+  if ($parent_tid > -1 && $tid != $_SESSION['tft']['root_tid']) {
+    if (!tft_term_access($parent_tid)) {
+      $disabled = TRUE;
+    }
+  }
+  else {
+    $disabled = TRUE;
+  }
+
+  $og_nid = tft_get_og_nid($tid);
+
+  $html .= '<li id="tft-back" class="folder-menu-ops-link first"><a id="tft-back-link" class="' . ($disabled ? 'disabled' : '') . '" href="#' . ($disabled ? '' : "term/$parent_tid") . '">' . t("parent folder") . '</a></li>';
+
+
+  // Third link: reorder child terms
+  if (og_user_access('node', $og_nid, TFT_REORDER_TERMS)) {
+    $html .= '<li id="manage-folders" class="folder-menu-ops-link">' . l(t("reorder elements"), "tft/terms/reorder/$tid", array('query' => array('destination' => $_SESSION['tft']['q']))) . '</li>';
+  }
+
+  return $html . '</ul>';
+}
+
+/**
+ * Get an array with all the terms to which the user has no access.
+ *
+ * @param int $tid = 0
+ *        The root term tid. 0 by default (looks through the entire tree)
+ * @param array() &$forbidden
+ *        The forbidden elements array
+ * @param stdClass $account = NULL
+ *        An optional account to test access. By default, the current user is used.
+ */
+function tft_get_forbidden_terms($tid = 0, &$forbidden, $account = NULL) {
+  // Start by all root terms, and build up from there
+  $result = db_query("SELECT tid FROM {taxonomy_term_hierarchy} WHERE parent = :tid AND vid = :vid", array(':tid' => $tid, ':vid' => variable_get('tft_vocabulary_vid', 0)));
+
+  while ($tid = $result->fetchObject()) {
+    if (!tft_term_access($tid, $account)) {
+      $forbidden[] = $tid;
+    }
+    else {
+      tft_get_forbidden_terms($tid, $forbidden, $account);
+    }
+  }
+}
+
+/**
+ * Defines a batch for adding an archive folder to all groups that do not have one.
+ */
+function tft_archive_folder_batch() {
+  $batch = array(
+    'title' => t("Adding archive folders"),
+    'operations' => array(
+      array('tft_archive_folder_batch_process', array()),
+    ),
+  );
+
+  batch_set($batch);
+}
+
+/**
+ * Processes the batch logic.
+ */
+function tft_archive_folder_batch_process(&$context) {
+  module_load_include('inc', 'tft', 'tft.admin');
+
+  if (empty($context['sandbox'])) {
+    $context['sandbox']['progress'] = 0;
+    $context['sandbox']['max'] = (int) db_query("SELECT COUNT(*) FROM {node} WHERE type = 'og'")->fetchField();
+    $context['finished'] = 0;
+  }
+
+  $result = db_query("SELECT * FROM {node} WHERE type = 'og' LIMIT :limit, 10", array(':limit' => $context['sandbox']['progress']));
+
+  while($node = $result->fetchObject()) {
+    $og_tid = tft_get_og_tid($node->nid);
+
+    $archive_tid = tft_get_archive_tid($og_tid);
+
+    if (empty($archive_tid)) {
+      $form_state = array();
+      $form_state['values']['name'] = "Archives";
+      $form_state['values']['parent'] = $og_tid;
+
+      tft_add_term_form_submit(array(), $form_state);
+    }
+
+    $context['sandbox']['progress']++;
+  }
+
+  // Set the percentage for the loadbar
+  if ($context['sandbox']['progress'] < $context['sandbox']['max'] && !$stop) {
+    $context['finished'] = $context['sandbox']['progress'] / $context['sandbox']['max'];
+  }
+  else {
+    $context['finished'] = 1;
+  }
+}
+
+function _tft_array_weight_sort($a, $b) {
+  if ($a['weight'] != $b['weight']) {
+    return $a['weight'] < $b['weight'] ? -1 : 1;
+  }
+
+  return 0;
+}
+
+function tft_log_archive($id, $type, $previous_tid, $og_nid) {
+  db_insert('tft_archive_restore')->fields(array(
+    'id' => $id,
+    'type' => $type,
+    'previous_parent_tid' => $previous_tid,
+    'og_nid' => $og_nid
+  ))->execute();
+}
+
+function tft_restore_archived_element($id, $type, $og_nid) {
+  $log = db_query("SELECT * FROM {tft_archive_restore} WHERE type = :type AND id = :id", array(':type' => $type, ':id' => $id))->fetchAssoc();
+
+  $og_tid = tft_get_og_tid($og_nid);
+  $return = TRUE;
+
+  if (empty($log)) {
+    $return = FALSE;
+    $log = array(
+      'id' => $id,
+      'previous_parent_tid' => $og_tid
+    );
+  }
+  elseif (!db_query("SELECT COUNT(*) FROM {taxonomy_term_data} WHERE tid = :tid", array(':tid' => $log['previous_parent_tid']))->fetchField()) {
+    $return = FALSE;
+    $log['previous_parent_tid'] = $og_tid;
+  }
+  else {
+    if (tft_is_term_archived($log['previous_parent_tid'])) {
+      $return = FALSE;
+      $log['previous_parent_tid'] = $og_tid;
+    }
+  }
+
+  if ($type == 'node') {
+    $archive_tid = tft_get_archive_tid($og_tid);
+    $node = node_load($log['id']);
+
+    // Get original folder.
+    // Reconstruct list of terms by removing all folder terms.
+    $taxonomy = array();
+    foreach ($node->taxonomy as $term) {
+      if ($term->tid != $archive_tid) {
+        $taxonomy[] = $term->tid;
+      }
+    }
+
+    $taxonomy[] = $log['previous_parent_tid'];
+
+    $node->taxonomy = $taxonomy;
+
+    node_save($node);
+  }
+  else {
+    db_update('taxonomy_term_hierarchy')->fields(array(
+      'parent' => $log['previous_parent_tid']
+    ))
+    ->condition('tid', $log['id'])->execute();
+  }
+
+  db_delete('tft_archive_restore')->condition('id', $id)->condition('type', $type)->execute();
+
+  return $return;
+}
+
+function tft_restore_element($og_nid, $id, $type) {
+  if (tft_restore_archived_element($id, $type, $og_nid)) {
+    drupal_set_message("L'élément a été restauré à son ancien emplacement.");
+  }
+  else {
+    drupal_set_message("Impossible de restaurer l'élément à son ancien emplacement, car il n'existe plus. Il a été restauré à la racine de l'arborescence.", 'warning');
+  }
+
+  if (isset($_GET['destination'])) {
+    drupal_goto($_GET['destination']);
+  }
+  else {
+    drupal_goto();
+  }
+}
+
+
+/**
+ * Output the tree as an HTML unordered list
+ *
+ * @param array $tree
+ *        The folder tree.
+ *
+ * @return string
+ *        The HTML
+ */
+function tft_output_tree($tree) {
+  return tft_output_children($tree, TRUE);
+}
+
+/**
+ * Return the sub-tree as an unordered list
+ *
+ * @param array $tree
+ *        The folder tree.
+ * @param boolean $root = FALSE
+ *        A flag for setting this <ul> as the root <ul>.
+ *
+ * @return string
+ *        The HTML
+ */
+function tft_output_children($tree, $root = FALSE) {
+  $html = '<ul class="' . ($root ? 'root-folder' : 'sub-folder') . '">';
+  $first = TRUE;
+  $odd = TRUE;
+  $count = count($tree);
+  $i = 1;
+
+  foreach ($tree as $tid => $item) {
+    $span_class = '';
+
+    if ($odd) {
+      $odd = FALSE;
+      $class = ' odd';
+    }
+    else {
+      $odd = TRUE;
+      $class = ' even';
+    }
+
+    if ($first) {
+      $class .= ' first';
+      $first = FALSE;
+    }
+
+    if ($i == $count) {
+      $class .= ' last';
+    }
+
+    if (isset($item['children'])) {
+      $class .= ' parent-folder closed';
+      $span_class = ' closed-icon';
+    }
+
+    $html .= tft_li($item['name'], $tid, $class, $span_class);
+
+    if (isset($item['children'])) {
+      $html .= tft_output_children($item['children']);
+    }
+
+    $html .= '</li>';
+
+    $i++;
+  }
+
+  $html .= '</ul>';
+
+  return $html;
+}
+
+/**
+ * Format an <li> tag for the file explorer.
+ *
+ * @param string $name
+ *        The folder name
+ * @param int $tid
+ *        The taxonomy term tid
+ * @param string $li_class
+ *        CSS classes for the <li>
+ * @param string $span_class
+ *        CSS classes for the child <span>
+ *
+ * @return string
+ *        The formatted HTML string for the <li> tag
+ */
+function tft_li($name, $tid, $li_class, $span_class) {
+  return '<li id="tid-' . $tid . '" class="folder' . $li_class . '"><span class="icon' . $span_class . '"></span><span class="link-wrapper"><a href="#term/' . $tid . '" class="folder-link">' . $name . '</a></span>';
+}
+
+/**
+ * OG Context handler. Determine context for certain internal pages.
+ *
+ * @return array
+ */
+function tft_og_context_handler() {
+  if (preg_match('/^tft\/(term\/(edit|delete|archive)|terms\/reorder)\/[0-9]+/', current_path())) {
+    $tid = array_pop(explode('/', current_path()));
+  }
+  elseif (current_path() == 'tft/term/add' && !empty($_GET['parent'])) {
+    $tid = $_GET['parent'];
+  }
+
+  if (!empty($tid)) {
+    $gid = tft_get_og_nid($tid);
+    if (!empty($gid)) {
+      return array('node' => array($gid));
+    } 
+  }
+}

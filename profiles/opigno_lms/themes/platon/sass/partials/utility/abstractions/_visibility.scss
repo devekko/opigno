@@ -1,0 +1,15 @@
+
+
+
+@mixin responsive-table--hide-nth-cols($cols, $max-width) {
+
+  @media only screen and (max-width: $max-width) {
+
+    @each $col in $cols {
+      td:nth-child(#{$col}),
+      th:nth-child(#{$col}) {
+        display: none;
+      }
+    }
+  }
+}

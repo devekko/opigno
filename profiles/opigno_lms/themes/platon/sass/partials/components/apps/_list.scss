@@ -1,0 +1,153 @@
+/**
+ * @file
+ * Styles for the Apps list page.
+ */
+
+#apps-featured-panel {
+  padding: 0;
+  border: 0;
+  background: transparent;
+
+  .apps-featured-panel-wrapper {
+    position: relative;
+    height: 300px;
+    background: url(../img/featured-app-background.jpg);
+  }
+  
+  .app-featured-info {
+    position: absolute;
+    left: 40px;
+    top: 40px;
+    z-index: 10;
+  }
+  
+  .app-featured-label {
+    color: white;
+    font-size: 1.4em;
+  }
+
+  .app-name {
+    color: white;
+    font-size: 3.5em;
+    margin: 0;
+
+    a {
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: white;
+    }
+  }
+
+  .app-stars-holder {
+    background-image: url(../img/rating-stars-white-outline.png);
+
+    .app-stars {
+        background-image: url(../img/rating-stars-white.png);
+    }
+  }
+
+  .app-screenshot {
+    position: absolute;
+    left: 0;
+    top: 0;
+    right: 0;
+
+    img {
+      width: 100%;
+      height: auto;
+      top: 0;
+      left: 0;
+    }
+  }
+
+  .app-rating-count {
+    clear: left;
+    padding: 0;
+    margin: .5em 0;
+    color: white;    
+  }
+}
+
+#apps-list {
+  padding: 0;
+  border: 0;
+  background: transparent;
+
+  .app-teaser-wrapper {
+    margin-bottom: 1em;
+    background: white;
+  }
+
+  .app-name {
+    width: auto;
+    color: white;
+    background: $light-blue;
+    margin: 0;
+    font-size: 1.2em; 
+
+    a {
+      display: block;
+      padding: 2px 10px;
+      color: inherit;
+      text-decoration: none;
+    }
+
+    a:hover {
+      color: inherit;
+    }
+  }
+
+  .app-logo {
+    margin-right: 1em;
+    margin-left: .5em;
+  }
+
+  .app-teaser {
+    float: none;
+    width: auto;
+    padding: 0;
+    display: block;
+  }
+
+  .app-info {
+    float: left;
+    margin-top: 1.5em;
+  }
+
+  .app-status {
+    text-transform: capitalize;
+    font-size: 1em;
+    font-weight: normal;
+    color: $light-blue;
+  }
+
+  .app-stars-holder {
+    background-image: url(../img/rating-stars.png);
+
+    .app-stars {
+      background-image: url(../img/rating-stars-green.png);
+    }
+  }
+
+  .app-action {
+    font-weight: bold;
+    clear: both;
+    color: $dark-gray;
+    background: $medium-gray;
+    font-size: 1.2em; 
+
+    a {
+      display: block;
+      padding: 2px 10px;
+      text-decoration: none;
+      color: inherit;
+    }
+
+    a:hover {
+      color: inherit;
+    }
+  }
+}

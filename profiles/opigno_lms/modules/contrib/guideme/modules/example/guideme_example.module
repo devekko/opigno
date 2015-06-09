@@ -1,0 +1,43 @@
+<?php
+
+/**
+ * @file
+ * Module hooks.
+ */
+
+/**
+ * Implements hook_guideme_path().
+ */
+function guideme_example_guideme_path() {
+  return array(
+    'node_creation' => array(
+      'steps' => array(
+        'node/add' => array(
+          array(
+            'title' => t("Creating content"),
+            'description' => t("On this page, you can create content."),
+            'target' => 'h1',
+            'button_label' => t("Start"),
+          ),
+          array(
+            'title' => t("Content types"),
+            'description' => t("content....")
+          ),
+          array(
+            'title' => t("Create your first article"),
+            'description' => t("Click on the 'Article' link to create a new article."),
+            'target' => 'a[href="' . base_path() . 'node/add/article"]',
+          ),
+        ),
+        'node/add/article' => array(
+          array(
+            'title' => t("Creating an article"),
+            'description' => t("sadsad"),
+            'target' => 'input[name="title"]',
+            'button_label' => t("Got it"),
+          ),
+        ),
+      )
+    ),
+  );
+}

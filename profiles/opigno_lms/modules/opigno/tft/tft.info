@@ -1,0 +1,15 @@
+name = Taxonomy File Tree
+description = Taxonomy based file tree
+core = 7.x
+package = Opigno Apps
+
+dependencies[] = opigno
+dependencies[] = taxonomy
+dependencies[] = file
+
+
+; Information added by drush on 2015-03-01
+version = ""
+project = "tft"
+datestamp = "1425249227"
+

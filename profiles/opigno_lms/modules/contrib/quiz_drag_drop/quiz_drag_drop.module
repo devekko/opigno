@@ -1,0 +1,74 @@
+<?php
+
+/**
+ * @file
+ * The main file for quiz_drag_drop.
+ *
+ * Drag Drop question type for the Quiz module.
+ */
+
+/**
+ * Implements hook_init().
+ */
+function quiz_drag_drop_init() {
+  drupal_add_css(drupal_get_path('module', 'quiz_drag_drop') . '/quiz_drag_drop.css', array('type' => 'file', 'weight' => CSS_THEME));
+}
+
+/**
+ * Implements hook_help().
+ */
+function quiz_drag_drop_help($path, $args) {
+  if ($path == 'admin/help#quiz_drag_drop') {
+    return t("
+      <p>This module provides a drag drop question type for Quiz.</p>
+      <p>
+      <em>This module allows you to upload images for preparing drag drop type of questions.
+      Later on images will get displayed with placeholders. User need to drag images to the correct placeholder to get points.</em></p>
+    ");
+  }
+}
+
+/**
+ * Implements hook_config().
+ */
+function quiz_drag_drop_config() {
+  // No config required, returned empty array since this module uses quiz api.
+  return array();
+}
+
+/**
+ * Implements hook_quiz_question_info().
+ */
+function quiz_drag_drop_quiz_question_info() {
+  return array(
+    'quiz_drag_drop' => array(
+      'name' => t('Drag Drop question'),
+      'description' => t('This provides drag drop type of questions for Quiz module.'),
+      'question provider' => 'DragDropQuestion',
+      'response provider' => 'DragDropResponse',
+      'module' => 'quiz_question',
+    ),
+  );
+}
+
+/**
+ * Implements hook_theme().
+ */
+function quiz_drag_drop_theme($existing, $type, $theme, $path) {
+  return array(
+    'quiz_drag_drop_response' => array(
+      'variables' => array(
+        'data' => array(),
+      ),
+      'path' => drupal_get_path('module', 'quiz_drag_drop') . '/theme',
+      'file' => 'quiz_drag_drop.theme.inc',
+    ),
+    'quiz_drag_drop_answer_form' => array(
+      'variables' => array(
+        'data' => array(),
+      ),
+      'path' => drupal_get_path('module', 'quiz_drag_drop') . '/theme',
+      'file' => 'quiz_drag_drop.theme.inc',
+    ),
+  );
+}

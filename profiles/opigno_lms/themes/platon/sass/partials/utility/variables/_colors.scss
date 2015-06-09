@@ -1,0 +1,37 @@
+
+/**
+ * General colors
+ */
+$white: #fcfcfc;
+$very-light-gray: #f2f2f0;
+$light-gray: #f8f7f5;
+$medium-gray: #ececeb;
+$dark-gray: #58585a;
+$light-blue: #88c1e6;
+$dark-blue: #009ee0;
+$deep-blue: #0a71b4;
+$leaf-green: #5aa449;
+$blood-red: #ea645b;
+
+/**
+ * Font colors
+ */
+$link-color: $dark-blue;
+$link-hover-color: $light-blue;
+$link-active-color: $deep-blue;
+$link-visited-color: $deep-blue;
+$header-font-color: #fff;
+$main-menu-link-color: $dark-blue;
+$main-menu-active-link-color: #000;
+$user-menu-link-color: $light-blue;
+$alert-info-font-color: darken($leaf-green, 75%);
+
+/**
+ * Display colors
+ */
+$alert-info-background-color: $leaf-green;
+$alert-info-border-color: darken($leaf-green, 50%);
+$active-secondary-tab-background-color: $dark-blue;
+$content-background-color: $white;
+$main-menu-background-color: $light-gray;
+$main-menu-active-link-background-color: $white;

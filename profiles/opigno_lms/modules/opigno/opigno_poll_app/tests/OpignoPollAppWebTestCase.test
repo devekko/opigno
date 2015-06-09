@@ -1,0 +1,260 @@
+<?php
+
+/**
+ * @file
+ * Defines the unit tests for Opigno Poll.
+ */
+
+class OpignoPollAppWebTestCase extends OpignoWebTestCase {
+
+  /**
+   * {@inheritDoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Opigno Poll App',
+      'description' => 'Test the poll integration with Opigno.',
+      'group' => 'Opigno',
+    );
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function setUp() {
+    parent::setUp('og_access', 'og_context', 'opigno_poll_app');
+    $this->createTestRoles();
+  }
+
+  /**
+   * Test permissions.
+   */
+
+  /**
+   * Test default views and displays.
+   *
+   * Opigno Poll App ships with a view that lists all the polls for the current
+   * course (node/%/polls). Test the displays work as planned. The View requires
+   * OG Access and OG Context to work, so enable these at setup.
+   */
+  public function testDisplays() {
+    // Create a course manager. Create a course in her name.
+    $course_manager = $this->drupalCreateUser(array('access content'));
+    $course = $this->createCourse('Course 1', $course_manager, 1);
+
+    // Create one global poll, and 2 inside the course.
+    $this->createPoll('Global poll 1');
+    $this->createPoll('Course poll 1', $course->nid);
+    $this->createPoll('Course poll 2', $course->nid);
+
+    // Login the course manager.
+    // She should see the 2 polls on the course poll page, but not the global
+    // one. She should also see a link to create a new poll.
+    $this->drupalLogin($course_manager);
+    $this->drupalGet('node/' . $course->nid . '/polls');
+    $this->assertLink('Add a new poll', 0, "Found the local action for adding a new poll.");
+    $this->assertNoText('Global poll 1', "The global poll is not listed.");
+    $this->assertText('Course poll 1', "The first course poll is listed.");
+    $this->assertText('Course poll 2', "The second course poll is listed.");
+
+    // Create a member and log her in.
+    // She should see the 2 polls, but not the global one. She should not see
+    // the "Add poll" link.
+    $member = $this->drupalCreateUser(array('access content'));
+    $this->addMemberToCourse($course, $member->uid, array('member', 'can vote'));
+    $this->drupalLogin($member);
+
+    $this->drupalGet('node/' . $course->nid . '/polls');
+    $this->assertNoLink('Add a new poll', 0, "Did not find the local action for adding a new poll.");
+    $this->assertNoText('Global poll 1', "The global poll is not listed.");
+    $this->assertText('Course poll 1', "The first course poll is listed.");
+    $this->assertText('Course poll 2', "The second course poll is listed.");
+
+    // Create a non-member and log her in.
+    // She should have an "Access denied" page and not see anything.
+    $non_member = $this->drupalCreateUser(array('access content'));
+    $this->drupalLogin($non_member);
+
+    $this->drupalGet('node/' . $course->nid . '/polls');
+    $this->assertNoLink('Add a new poll', 0, "Did not find the local action for adding a new poll.");
+    $this->assertText('Access denied', "Correctly denied access to the page.");
+    $this->assertNoText('Global poll 1', "The global poll is not listed.");
+    $this->assertNoText('Course poll 1', "The first course poll is not listed.");
+    $this->assertNoText('Course poll 2', "The second course poll is not listed.");
+  }
+
+  /**
+   * Test permissions.
+   *
+   * Opigno Poll App hijacks some of core Poll access controls. Make sure they
+   * work as expected.
+   */
+  public function testAccessControl() {
+    // Test vote permissions.
+    // A user with a global "vote on poll" permission will have access to both
+    // "global" polls as well as polls belonging to a course.
+    // A user with only a course "vote on poll" permission will not be able
+    // to vote on global polls.
+    $non_member = $this->drupalCreateUser(array('access content', 'vote on polls'));
+    $member = $this->drupalCreateUser(array('access content'));
+
+    // Create a course and add the member.
+    $course = $this->createCourse();
+    $this->addMemberToCourse($course, $member->uid, array('member', 'can vote'));
+
+    // Create a global poll.
+    $global_poll = $this->createPoll('Global poll 1');
+
+    // Only the non-member should see the vote form.
+    $this->drupalLogin($non_member);
+    $this->drupalGet('node/' . $global_poll->nid);
+    $this->assertFieldById('edit-vote', '', 'Found the "Vote" button.');
+
+    $this->drupalLogin($member);
+    $this->drupalGet('node/' . $global_poll->nid);
+    $this->assertNoFieldById('edit-vote', '', 'Did not find the "Vote" button.');
+
+    // Close the voting. No-one should see the vote form.
+    $global_poll->active = 0;
+    node_save($global_poll);
+
+    $this->drupalLogin($non_member);
+    $this->drupalGet('node/' . $global_poll->nid);
+    $this->assertNoFieldById('edit-vote', '', 'Did not find the "Vote" button.');
+
+    $this->drupalLogin($member);
+    $this->drupalGet('node/' . $global_poll->nid);
+    $this->assertNoFieldById('edit-vote', '', 'Did not find the "Vote" button.');
+
+    // Create a poll for the course (the course is public).
+    $course_poll = $this->createPoll('Course poll 1', $course->nid);
+
+    // Both users should see the vote form.
+    $this->drupalLogin($non_member);
+    $this->drupalGet('node/' . $course_poll->nid);
+    $this->assertFieldById('edit-vote', '', 'Found the "Vote" button.');
+
+    $this->drupalLogin($member);
+    $this->drupalGet('node/' . $course_poll->nid);
+    $this->assertFieldById('edit-vote', '', 'Found the "Vote" button.');
+
+    // Close the voting. No-one should see the vote form.
+    $course_poll->active = 0;
+    poll_update($course_poll);
+
+    $this->drupalLogin($non_member);
+    $this->drupalGet('node/' . $course_poll->nid);
+    $this->assertNoFieldById('edit-vote', '', 'Did not find the "Vote" button.');
+
+    $this->drupalLogin($member);
+    $this->drupalGet('node/' . $course_poll->nid);
+    $this->assertNoFieldById('edit-vote', '', 'Did not find the "Vote" button.');
+
+    // Accessing votes page is not allowed.
+    $this->drupalLogin($non_member);
+    $this->drupalGet('node/' . $course_poll->nid . '/votes');
+    $this->assertText('Access denied', "User is not allowed to see the poll votes.");
+
+    $this->drupalLogin($member);
+    $this->drupalGet('node/' . $course_poll->nid . '/votes');
+    $this->assertText('Access denied', "User is not allowed to see the poll votes.");
+
+    // A user with a global "inspect all votes" permission will have access to both
+    // "global" poll results as well as poll results belonging to a course.
+    // A user with only a course "inspect all votes" permission will not be able
+    // to see global poll results.
+    $non_member = $this->drupalCreateUser(array('access content', 'vote on polls', 'inspect all votes', 'cancel own vote'));
+    $member = $this->drupalCreateUser(array('access content'));
+    $this->addMemberToCourse($course, $member->uid, array('member', 'can vote', 'can see all', 'can cancel'));
+
+    // Only non-member should be allowed to see all results.
+    $this->drupalLogin($non_member);
+    $this->drupalGet('node/' . $global_poll->nid . '/votes');
+    $this->assertNoText('Access denied', "User is allowed to see the poll votes.");
+
+    $this->drupalLogin($member);
+    $this->drupalGet('node/' . $global_poll->nid . '/votes');
+    $this->assertText('Access denied', "User is not allowed to see the poll votes.");
+
+    // Both user should see votes.
+    $this->drupalLogin($non_member);
+    $this->drupalGet('node/' . $course_poll->nid . '/votes');
+    $this->assertNoText('Access denied', "User is allowed to see the poll votes.");
+
+    $this->drupalLogin($member);
+    $this->drupalGet('node/' . $course_poll->nid . '/votes');
+    $this->assertNoText('Access denied', "User is allowed to see the poll votes.");
+
+    // A user with a global "cancel own vote" and "vote on poll" permissions will
+    // have access to vote and cancel on both "global" polls as well as polls
+    // belonging to a course.
+    // A user with only a course "cancel own vote" and "vote on poll" permissions
+    // will not be able to vote or cancel on global polls.
+    // We already checked voting access above. We only care about the actual voting
+    // storage and canceling.
+    $global_poll->active = 1;
+    poll_update($global_poll);
+    $course_poll->active = 1;
+    poll_update($course_poll);
+
+    $this->drupalLogin($non_member);
+    $this->drupalPost('node/' . $global_poll->nid, array('choice' => current(array_keys($global_poll->choice))), t("Vote"));
+    $this->assertRaw(t("Cancel your vote"), "Found the cancel button.");
+
+    $this->drupalPost('node/' . $course_poll->nid, array('choice' => current(array_keys($course_poll->choice))), t("Vote"));
+    $this->assertRaw(t("Cancel your vote"), "Found the cancel button.");
+
+    $this->drupalLogin($member);
+    $this->drupalPost('node/' . $course_poll->nid, array('choice' => current(array_keys($course_poll->choice))), t("Vote"));
+    $this->assertRaw(t("Cancel your vote"), "Found the cancel button.");
+  }
+
+  /**
+   * Create a new poll.
+   *
+   * @param  string $title = NULL
+   * @param  int $gid = NULL
+   * @param  array $choices = array('Choice 1', 'Choice 2')
+   * @param  bool $open = TRUE
+   *
+   * @return object
+   */
+  protected function createPoll($title = NULL, $gid = NULL, $choices = array('Choice 1', 'Choice 2'), $open = TRUE) {
+    $settings = array(
+      'type' => 'poll',
+      'title' => $title ? $title : $this->randomName(8),
+      'active' => (int) $open,
+      'runtime' => 0,
+    );
+
+    if (!empty($gid)) {
+      $settings['og_group_ref'][LANGUAGE_NONE][0]['target_id'] = $gid;
+    }
+
+    foreach ($choices as $i => $choice) {
+      $settings['choice'][] = array(
+        'chtext' => $choice,
+        'chvotes' => 0,
+        'weight' => 0,
+      );
+    }
+    $node = $this->drupalCreateNode($settings);
+    $this->verbose(print_r($node, 1));
+
+    $this->assertTrue(!empty($node->nid), 'Created a new course.');
+
+    $this->drupalGet('node/' . $node->nid);
+    $this->assertText($choice, 'Added last choice correctly');
+
+    return node_load($node->nid, NULL, TRUE); // Refresh choices.
+  }
+
+  /**
+   * Helper method to create 3 different OG roles for testing.
+   */
+  protected function createTestRoles() {
+    $this->createRole('can vote', array('vote on polls'));
+    $this->createRole('can cancel', array('cancel own vote'));
+    $this->createRole('can see all', array('inspect all votes'));
+  }
+}

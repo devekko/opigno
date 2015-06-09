@@ -1,0 +1,141 @@
+<?php
+
+/**
+ * @file
+ * Guideme module unit tests.
+ */
+
+class GuideMeUnitTestCase extends DrupalUnitTestCase {
+
+  public static function getInfo() {
+    return array(
+      'name' => 'Guide Me functionality',
+      'description' => 'Test Guide Me functions.',
+      'group' => 'Guide Me'
+    );
+  }
+
+  /**
+   * Test adding default settings. Some keys like weight are not
+   * required. Add them on behalf of the module if missing.
+   */
+  public function testDefaultAttributes() {
+    $paths = array(
+      'path 1' => array(
+        'weight' => 100,
+      ),
+      'path 2' => array(),
+      'path 3' => array(
+        'weight' => 2,
+      ),
+    );
+    $expected_paths = array(
+      'path 1' => array(
+        'weight' => 100,
+      ),
+      'path 2' => array(
+        'weight' => 0,
+      ),
+      'path 3' => array(
+        'weight' => 2,
+      ),
+    );
+    $this->assertIdentical(guideme_add_defaults($paths), $expected_paths, "Defaults got added correctly.");
+  }
+
+  /**
+   * When given the entire array of registered paths, the function should extract
+   * the URIs and map them to the path id. Each path should also be ordered
+   * by weight.
+   */
+  public function testMapExtraction() {
+    $paths = $this->getFixture();
+    $expected_map = array(
+      'path 3' => array('<front>'),
+      'path 2' => array('admin/content', 'admin', 'admin/people', 'admin/configuration'),
+      'path 1' => array('<front>', 'node/add'),
+    );
+    $this->assertIdentical(guideme_map_guide_paths($paths), $expected_map, "Paths and URIs got correctly mapped.");
+  }
+
+  /**
+   * Test testing a url. When a url is registered in the map, returns the path id.
+   */
+  public function testURL() {
+    $map = array(
+      'path 1' => array('<front>', 'admin'),
+      'path 2' => array('node/add', 'config'),
+      'path 3' => array('system', 'admin')
+    );
+    $this->assertEqual(guidemap_fetch_appropriate_guide_path($map, '<front>'), 'path 1', "Matched path correctly.");
+    $this->assertEqual(guidemap_fetch_appropriate_guide_path($map, 'admin'), 'path 1', "Matched path correctly.");
+    $this->assertEqual(guidemap_fetch_appropriate_guide_path($map, 'system'), 'path 3', "Matched path correctly.");
+    $this->assertEqual(guidemap_fetch_appropriate_guide_path($map, 'config'), 'path 2', "Matched path correctly.");
+    $this->assertNull(guidemap_fetch_appropriate_guide_path($map, 'other/path'), "Matched no path.");
+  }
+
+  protected function getFixture() {
+    return array(
+      'path 1' => array(
+        'weight' => 100,
+        'steps' => array(
+          '<front>' => array(
+            'title' => 'Title',
+            'description' => 'Description here',
+            'target' => '.submit',
+          ),
+          'node/add' => array(
+            'title' => 'Title',
+            'description' => 'Description here',
+          ),
+        ),
+      ),
+      'path 3' => array(
+        'weight' => -10,
+        'steps' => array(
+          '<front>' => array(
+            array(
+              'title' => 'Title',
+              'description' => 'Description here',
+              'target' => '.submit',
+            ),
+          ),
+        ),
+      ),
+      'path 2' => array(
+        'weight' => 10,
+        'steps' => array(
+          'admin/content' => array(
+            array(
+              'title' => 'Title',
+              'description' => 'Description here',
+            ),
+          ),
+          'admin' => array(
+            array(
+              'title' => 'Title',
+              'description' => 'Description here',
+            ),
+            array(
+              'title' => 'Title',
+              'description' => 'Description here',
+            ),
+          ),
+          'admin/people' => array(
+            array(
+              'title' => 'Title',
+              'description' => 'Description here',
+            ),
+          ),
+          'admin/configuration' => array(
+            array(
+              'title' => 'Title',
+              'description' => 'Description here',
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+}

@@ -1,0 +1,121 @@
+diff --git a/quiz.admin.inc b/quiz.admin.inc
+old mode 100644
+new mode 100755
+index 97ca043..cb87fee
+--- a/quiz.admin.inc
++++ b/quiz.admin.inc
+@@ -1885,6 +1885,7 @@ function theme_question_selection_table($variables) {
+  *   FAPI-array
+  */
+ function quiz_results_manage_results_form($form, &$form_state, $quiz) {
++  global $user;
+   if ($form_state['rebuild']) {
+     // We remember the filters for the next time the same user visits the result browser
+     _quiz_results_mr_store_filters($form_state);
+@@ -1900,56 +1901,58 @@ function quiz_results_manage_results_form($form, &$form_state, $quiz) {
+   }
+ 
+   // We hide the update fieldset if we are to delete results
+-  $display = isset($_GET['del']) || isset($form_state['storage']['del']) ? 'none' : 'block';
+-  $form['update'] = array(
+-    '#type' => 'fieldset',
+-    '#title' => t('Options'),
+-    '#collapsible' => FALSE,
+-    '#collapsed' => FALSE,
+-    '#attributes' => array(
+-      'class' => array('container-inline'),
+-      'id' => 'quiz-results-update',
+-      'style' => "display:$display;"
+-    ),
+-  );
++  if (user_access('delete any quiz results') || (user_access('delete results for own quiz') && $user->uid && $quiz->uid)) {
++    $display = isset($_GET['del']) || isset($form_state['storage']['del']) ? 'none' : 'block';
++    $form['update'] = array(
++      '#type' => 'fieldset',
++      '#title' => t('Options'),
++      '#collapsible' => FALSE,
++      '#collapsed' => FALSE,
++      '#attributes' => array(
++        'class' => array('container-inline'),
++        'id' => 'quiz-results-update',
++        'style' => "display:$display;"
++      ),
++    );
+ 
+-  $form['update']['bulk_action'] = array(
+-    '#type' => 'select',
+-    '#options' => array(
+-      'def' => '',
+-      'del' => t('delete'),
+-      // In later versions we will be adding score as a third option here
+-    ),
+-  );
+-  $form['update']['update'] = array(
+-    '#type' => 'submit',
+-    '#value' => t('Update'),
+-  );
++    $form['update']['bulk_action'] = array(
++      '#type' => 'select',
++      '#options' => array(
++        'def' => '',
++        'del' => t('delete'),
++        // In later versions we will be adding score as a third option here
++      ),
++    );
++    $form['update']['update'] = array(
++      '#type' => 'submit',
++      '#value' => t('Update'),
++    );
+ 
+-  // We show the delete confirmation fieldset if we are to delete results
+-  $display = isset($_GET['del']) || isset($form_state['storage']['del']) ? 'block' : 'none';
+-  $form['confirm_delete'] = array(
+-    '#type' => 'fieldset',
+-    '#title' => t('Confirm deletion'),
+-    '#collapsible' => FALSE,
+-    '#collapsed' => FALSE,
+-    '#attributes' => array(
+-      'style' => "display:$display;",
+-      'id' => 'quiz-results-confirm-delete'
+-    ),
+-  );
+-  $form['confirm_delete']['help'] = array(
+-    '#type' => 'item',
+-    '#value' => t('Are you sure you want to delete all of these results?'),
+-    '#description' => t('This action cannot be undone'),
+-  );
+-  $form['confirm_delete']['confirm_delete'] = array(
+-    '#type' => 'submit',
+-    '#value' => t('Delete all marked results'),
+-  );
+-  $form['confirm_delete']['cancel'] = array(
+-    '#markup' => l(t('cancel'), $_GET['q'], array('attributes' => array('id' => 'quiz-results-cancel-delete'))),
+-  );
++    // We show the delete confirmation fieldset if we are to delete results
++    $display = isset($_GET['del']) || isset($form_state['storage']['del']) ? 'block' : 'none';
++    $form['confirm_delete'] = array(
++      '#type' => 'fieldset',
++      '#title' => t('Confirm deletion'),
++      '#collapsible' => FALSE,
++      '#collapsed' => FALSE,
++      '#attributes' => array(
++        'style' => "display:$display;",
++        'id' => 'quiz-results-confirm-delete'
++      ),
++    );
++    $form['confirm_delete']['help'] = array(
++      '#type' => 'item',
++      '#value' => t('Are you sure you want to delete all of these results?'),
++      '#description' => t('This action cannot be undone'),
++    );
++    $form['confirm_delete']['confirm_delete'] = array(
++      '#type' => 'submit',
++      '#value' => t('Delete all marked results'),
++    );
++    $form['confirm_delete']['cancel'] = array(
++      '#markup' => l(t('cancel'), $_GET['q'], array('attributes' => array('id' => 'quiz-results-cancel-delete'))),
++    );
++  }
+ 
+   $form['special_filters'] = array(
+     '#type' => 'fieldset',

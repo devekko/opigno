@@ -1,0 +1,214 @@
+<?php
+
+/**
+ * @file
+ * Module hooks.
+ */
+
+/**
+ * Implements hook_menu_alter().
+ */
+function opigno_poll_app_menu_alter(&$items) {
+  $items['node/%node/votes']['access callback'] = 'opigno_poll_app_poll_menu_access';
+}
+
+/**
+ * Implements hook_og_permission().
+ */
+function opigno_poll_app_og_permission() {
+  return poll_permission();
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function opigno_poll_app_views_api() {
+  return array(
+    'api' => '3.0',
+  );
+}
+
+/**
+ * Implements hook_opigno_tool().
+ */
+function opigno_poll_app_opigno_tool($node = NULL) {
+  return array(
+    'poll' => array(
+      'name' => t("Poll"),
+      'path' => isset($node) ? "node/{$node->nid}/polls" : '',
+      'description' => t("Create polls for your course users."),
+      'actions' => array(
+        'add_quiz' => array(
+          'title' => t("Add a new poll"),
+          'href' => 'node/add/poll',
+          'access_arguments' => array('node', isset($node) ? $node->nid : 0, 'create poll content'),
+          'access_callback' => 'og_user_access',
+          'query' => array(
+            'og_group_ref' => isset($node) ? $node->nid : '',
+          )
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Implements hook_opigno_breadcrumbs().
+ */
+function opigno_poll_app_opigno_breadcrumbs($gid) {
+  $breadcrumbs = array();
+
+  $node = menu_get_object();
+  // Must we handle this page request for the breadcrumb ?
+  if ((isset($node->type) && $node->type == 'poll') || current_path() == 'node/add/poll') {
+    
+    // Add the Opigno Polls view link.
+    $breadcrumbs[] = l(opigno_poll_app_get_polls_view_title(), "node/$gid/polls");
+
+    // Is this a sub page of the poll (like node/%/votes) ? Add the poll itself.
+    if (isset($node->nid) && preg_match('/^node\/[0-9]+\/.+/', current_path())) {
+      $breadcrumbs[] = l($node->title, "node/{$node->nid}");
+    }
+  }
+
+  if (!empty($breadcrumbs)) {
+    return $breadcrumbs;
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function opigno_poll_app_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if ($root_path == 'node/%/polls') {
+    $gid = arg(1);
+    if (og_user_access('node',$gid,'create poll content')) {
+      $item = menu_get_item('node/add/poll');
+      $item['title'] = "Add a new poll";
+      $item['options']['query']['og_group_ref'] = $gid;
+      $item['localized_options']['query']['og_group_ref'] = $gid;
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements hook_node_load().
+ */
+function opigno_poll_app_node_load($nodes, $types) {
+  global $user;
+  if (in_array('poll', $types)) {
+    foreach ($nodes as $node) {
+      if (!user_access('vote on polls')) {
+        /**
+         * This part is a verbatim copy from poll_load().
+         */
+        $poll = db_query("SELECT runtime, active FROM {poll} WHERE nid = :nid", array(':nid' => $node->nid))->fetchObject();
+        if (empty($poll)) {
+          $poll = new stdClass();
+        }
+        if ($poll->active && !empty($node->og_group_ref)) {
+          $access = FALSE;
+          foreach ($node->og_group_ref as $lang => $items) {
+            foreach ($items as $item) {
+              if ($access = og_user_access('node', $item['target_id'], 'vote on polls')) {
+                break 2;
+              }
+            }
+          }
+
+          if ($access) {
+            if ($user->uid) {
+              // If authenticated, find existing vote based on uid.
+              $poll->vote = db_query('SELECT chid FROM {poll_vote} WHERE nid = :nid AND uid = :uid', array(':nid' => $node->nid, ':uid' => $user->uid))->fetchField();
+              if (empty($poll->vote)) {
+                $poll->vote = -1;
+                $poll->allowvotes = TRUE;
+              }
+            }
+            elseif (!empty($_SESSION['poll_vote'][$node->nid])) {
+              // Otherwise the user is anonymous. Look for an existing vote in the
+              // user's session.
+              $poll->vote = $_SESSION['poll_vote'][$node->nid];
+            }
+            else {
+              // Finally, query the database for an existing vote based on anonymous
+              // user's hostname.
+              $poll->allowvotes = !db_query("SELECT 1 FROM {poll_vote} WHERE nid = :nid AND hostname = :hostname AND uid = 0", array(':nid' => $node->nid, ':hostname' => ip_address()))->fetchField();
+            }
+          }
+        }
+        foreach ($poll as $key => $value) {
+          $nodes[$node->nid]->$key = $value;
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_preprocess_poll_results().
+ */
+function opigno_poll_app_preprocess_poll_results(&$variables) {
+  $node = node_load($variables['nid']);
+  if (isset($variables['vote']) && $variables['vote'] > -1 && !user_access('cancel own vote') && !empty($node->og_group_ref)) {
+    $access = FALSE;
+    foreach ($node->og_group_ref as $lang => $items) {
+      foreach ($items as $item) {
+        if ($access = og_user_access('node', $item['target_id'], 'cancel own vote')) {
+          break 2;
+        }
+      }
+    }
+    if ($access) {
+      $elements = drupal_get_form('poll_cancel_form', $variables['nid']);
+      $variables['cancel_form'] = drupal_render($elements);
+    }
+  }
+}
+
+/**
+ * Callback function to see if a node is acceptable for poll menu items.
+ */
+function opigno_poll_app_poll_menu_access($node, $perm, $inspect_allowvotes) {
+  $access = _poll_menu_access($node, $perm, $inspect_allowvotes);
+  if (!$access && ($node->type == 'poll') && ($node->allowvotes || !$inspect_allowvotes)) {
+    foreach ($node->og_group_ref as $lang => $items) {
+      foreach ($items as $item) {
+        if ($access = og_user_access('node', $item['target_id'], $perm)) {
+          break 2;
+        }
+      }
+    }
+  }
+  return $access;
+}
+
+/**
+ * Helper function to get the Opigno Polls View title.
+ *
+ * As the title might change depending on individual configuration,
+ * fetch it here and cache it for better performance.
+ *
+ * @return string
+ */
+function opigno_poll_app_get_polls_view_title() {
+  $cache = cache_get('opigno_poll_app:view_title:opigno_polls');
+  if ($cache) {
+    return $cache->data;
+  }
+  else {
+    $view = views_get_view('opigno_polls');
+    if (!empty($view->display['default']->display_options['title'])) {
+      $view_title = $view->display['default']->display_options['title'];
+    }
+    else {
+      $view_title = t("Polls");
+    }
+    cache_set('opigno_poll_app:view_title:opigno_polls', $view_title, 'cache', CACHE_TEMPORARY);
+    return $view_title;
+  }
+}

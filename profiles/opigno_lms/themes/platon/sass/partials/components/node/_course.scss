@@ -1,0 +1,70 @@
+/**
+ * @file
+ * Defines the course node styles.
+ */
+
+.node-course-other-fields {
+  float: right;
+  width: 25%;
+  padding: 1em;
+  font-size: .9em;
+  background: url(../img/information-icon.png) right top no-repeat $light-blue;
+  color: white;
+  margin: 0 0 1em 1em;
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    float: none;
+    width: auto;
+    margin: 0;
+    padding: .5em;
+    margin-bottom: 1em;
+  }
+
+  .field {
+    margin: .5em 0;
+  }
+
+  .field-name-group-group {
+    display: block;
+  }
+
+  .field-name-commerce-price,
+  .field-name-catalogue-visibility,
+  .field-name-og-roles-permissions {
+    display: none !important;
+  }
+
+  .field-name-course-quota,
+  .field-name-opigno-commerce-price,
+  .field-name-anomymous-visibility,
+  .field-name-requires-validation {
+    overflow: hidden;
+
+    .field-label,
+    .field-items {
+      float: left;
+      margin-right: .25em;
+    }
+  }
+}
+
+.opigno-tools {
+  clear: both;
+}
+
+.node.is-admin,
+.node.manager,
+.node.teacher {
+
+  .node-course-other-fields {
+
+    .field {
+      display: block;
+    }
+  }
+}
+
+.action-links a.opigno-quiz-app-course-start
+{
+  background-image: url(../img/start-element-icon.png);
+}

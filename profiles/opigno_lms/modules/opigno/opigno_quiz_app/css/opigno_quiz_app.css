@@ -1,0 +1,101 @@
+/**
+ * @file
+ * Module specific styles.
+ */
+
+.opigno-quiz-app-results-collapsible-table thead tr.js-processed {
+  cursor: pointer;
+}
+
+.opigno-quiz-app-course-total-score {
+  width: 15%;
+}
+
+.opigno-quiz-app-course-total-time {
+  width: 15%;
+}
+
+.opigno-quiz-app-results-table .opigno-quiz-app-quiz-result-passed {
+  background: #D7FFD8;
+}
+
+.opigno-quiz-app-results-table .opigno-quiz-app-quiz-result-failed {
+  background: #FFECE8;
+}
+
+.opigno-quiz-app-results-table .opigno-quiz-app-quiz-result-pending {
+  background: #FFFFDD;
+}
+
+.opigno-quiz-app-fullscreen-link {
+  display: block;
+  float: right;
+  cursor: pointer;
+}
+
+.opigno-quiz-app-exit-fullscreen-link {
+  display: none;
+}
+
+.opigno-quiz-app-fullscreen .opigno-quiz-app-go-fullscreen-link {
+  display: none;
+}
+
+.opigno-quiz-app-fullscreen .opigno-quiz-app-exit-fullscreen-link {
+  display: block;
+}
+
+/**
+ * This part ONLY WORKS with the Platon theme.
+ * If users use a different theme, they will have to add some custom CSS to make this work.
+ */
+body.page-node-take.opigno-quiz-app-fullscreen #site-header,
+body.page-node-take.opigno-quiz-app-fullscreen #site-footer,
+body.page-node-take.opigno-quiz-app-fullscreen #breadcrumb,
+body.page-node-take.opigno-quiz-app-fullscreen #title-wrapper,
+body.page-node-take.opigno-quiz-app-fullscreen #tabs,
+body.page-node-take.opigno-quiz-app-fullscreen #first-sidebar {
+  display: none;
+}
+
+body.page-node-take.opigno-quiz-app-fullscreen #site-content
+{
+    margin-top:0px;
+}
+
+body.page-node-take.opigno-quiz-app-fullscreen #second-sidebar {
+  width: 100%;
+}
+
+body.page-node-take.opigno-quiz-app-fullscreen .row {
+  max-width: none;
+}
+
+#nextlink {
+    margin-top: 30px;
+    float: right;
+}
+
+.mark-doubtful
+{
+    padding-bottom: 5px;
+    background: #ececeb;
+}
+
+.mark-doubtful .toggle
+{
+    margin-right: 5px;
+}
+
+.form-item-is-doubtful
+{
+    display: none;
+}
+
+.mark-doubtful .toggle {
+    background-image: -ms-linear-gradient(left, white 0%, white 0%, white 50%, green 50%);
+}
+
+.mark-doubtful .toggle.off {
+    background-image: -ms-linear-gradient(right, white 0%, white 0%, white 50%, red 50%);
+}

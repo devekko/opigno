@@ -1,0 +1,198 @@
+<?php
+
+/**
+ * @file
+ * Module install logic.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function tft_install() {
+  $vocabulary = taxonomy_vocabulary_machine_name_load('tft_tree');
+  if (empty($vocabulary)) {
+    $vocabulary = (object) array(
+      'name' => "Opigno file tree",
+      'machine_name' => 'tft_tree',
+    );
+    taxonomy_vocabulary_save($vocabulary);
+  }
+  variable_set('tft_vocabulary_vid', $vocabulary->vid);
+
+  $type = node_type_load('tft_file');
+  if (empty($type)) {
+    $type = node_type_set_defaults(array(
+      'type' => 'tft_file',
+      'name' => st('File'),
+      'base' => 'node_content',
+      'description' => '',
+      'custom' => 1,
+      'modified' => 1,
+      'locked' => 1,
+      'promoted' => 0,
+    ));
+    node_type_save($type);
+    node_add_body_field($type);
+  }
+
+  // Add the quiz weight field.
+  $field = field_info_field('tft_file');
+  if (empty($field)) {
+    field_create_field(array(
+      'field_name' => 'tft_file',
+      'type' => 'file'
+    ));
+  }
+
+  $field = field_info_field('tft_folder');
+  if (empty($field)) {
+    field_create_field(array(
+      'cardinality' => 1,
+      'field_name' => 'tft_folder',
+      'foreign keys' => array(
+        'tid' => array(
+          'columns' => array(
+            'tid' => 'tid',
+          ),
+          'table' => 'taxonomy_term_data',
+        ),
+      ),
+      'indexes' => array(
+        'tid' => array(
+          0 => 'tid',
+        ),
+      ),
+      'locked' => 0,
+      'module' => 'taxonomy',
+      'settings' => array(
+        'allowed_values' => array(
+          0 => array(
+            'vocabulary' => 'tft_tree',
+            'parent' => 0,
+          ),
+        ),
+      ),
+      'translatable' => 0,
+      'type' => 'taxonomy_term_reference',
+    ));
+  }
+
+  $instance = field_info_instance('node', 'tft_file', 'tft_file');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'field_name' => 'tft_file',
+      'entity_type' => 'node',
+      'bundle' => 'tft_file',
+      'label' => "File",
+      'required' => 1,
+      'settings' => array(
+        'file_extensions' => 'jpg jpeg gif png txt doc docx xls xlsx pdf ppt pptx pps odt ods odp',
+      ),
+    ));
+  }
+
+  $instance = field_info_instance('node', 'tft_folder', 'tft_file');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'bundle' => 'tft_file',
+      'description' => '',
+      'entity_type' => 'node',
+      'field_name' => 'tft_folder',
+      'label' => 'Folder',
+      'required' => 0,
+      'widget' => array(
+        'active' => 1,
+        'module' => 'options',
+        'settings' => array(),
+        'type' => 'options_select',
+        'weight' => -2,
+      ),
+    ));
+  }
+
+  include_once drupal_get_path('module', 'og') . '/og_ui/og_ui.module';
+  if (function_exists('og_ui_node_type_save')) {
+    variable_set('og_group_content_type_tft_file', TRUE);
+    og_ui_node_type_save('tft_file');
+  }
+
+  // Add the OG content access field.
+  if (module_exists('og_access')) {
+    og_create_field(OG_CONTENT_ACCESS_FIELD, 'node', 'tft_file');
+  }
+
+  // Disable comments by default.
+  if (module_exists('comment')) {
+    variable_get('comment_tft_file', COMMENT_NODE_CLOSED);
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function tft_schema() {
+  return array(
+    'tft_tid_og_nid' => array(
+      'description' => 'Relationship between a term and an og',
+      'fields' => array(
+        'tid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'og_nid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+      ),
+    ),
+    'tft_folder_content_weight' => array(
+      'description' => 'Weights of folder child items',
+      'fields' => array(
+        'id' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'type' => array(
+          'type' => 'varchar',
+          'length' => 10,
+        ),
+        'parent_tid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'weight' => array(
+          'type' => 'int',
+          'not null' => TRUE,
+        ),
+      ),
+    ),
+    'tft_archive_restore' => array(
+      'description' => 'Logs previous element position before being archived',
+      'fields' => array(
+        'id' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'type' => array(
+          'type' => 'varchar',
+          'length' => 10,
+        ),
+        'previous_parent_tid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'og_nid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+      )
+    )
+  );
+}

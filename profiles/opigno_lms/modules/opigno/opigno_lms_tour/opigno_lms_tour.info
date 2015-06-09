@@ -1,0 +1,12 @@
+name = Opigno LMS Tour
+description = Tour the different functionality of the LMS
+core = 7.x
+package = Opigno Apps
+dependencies[] = guideme
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.18"
+core = "7.x"
+project = "opigno_lms"
+datestamp = "1425249184"
+

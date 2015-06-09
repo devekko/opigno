@@ -1,0 +1,49 @@
+<?php
+
+function opigno_certificate_app_install() {
+
+  //Removes default html Printer-friendly page links
+  variable_set('print_html_link_pos','{}');
+  //Removes default pdf page links
+  variable_set('print_pdf_link_pos', '{}');
+
+  /// Sets course content type as certifiable
+  $type = node_type_load("course");
+  if (!empty($type)) {
+    variable_set("certificate_certifiable_course", 1);
+  }
+  ///////////////////////////////////////////
+
+  /// Sets class content type as certifiable
+  $type = node_type_load("class");
+  if (!empty($type)) {
+    variable_set("certificate_certifiable_class", 1);
+  }
+  //////////////////////////////////////////
+
+  //Course Certificate
+  $node = new stdClass();
+  $node->type = 'certificate';
+  node_object_prepare($node);
+  $node->title = 'Course Certificate';
+  $node->language = LANGUAGE_NONE;
+  $body_text = '<table width="100%" cellspacing="0" cellpadding="0" border="0" align="center"><tbody><tr><td width="100%" valign="middle" nowrap="nowrap" height="200" bgcolor="016083" rowspan="1" colspan="1" style="text-align: left;">&nbsp; &nbsp;&nbsp; <img src="' . $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'opigno_certificate_app') . '/images/logo_positive.png" width="161" height="52" alt="" />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</td></tr></tbody></table><p style="text-align: center;">&nbsp;</p><h2 style="text-align: center;"><span style="font-size: x-large;"><span style="font-family: Arial;">Certificate of Completion<br /></span></span><span style="font-family: Arial; font-size: large; line-height: 1.538em;">awarded to<br /></span><a title="Insert this token into your form"><span style="font-size: x-large;">[user:name]<br /></span></a><span style="font-size: small;">to certify the completion of the course<br /></span><a title="Insert this token into your form">[node:title]</a></h2><p style="text-align: center;">APPROVED<br /><a title="Insert this token into your form" style="font-size: 10.909090995788574px; line-height: 20px; text-align: start; white-space: nowrap; background-color: rgb(243, 244, 238);">[node:certificate_granted_node]<br /></a>&nbsp;<img width="88" height="88" src="' . $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'opigno_certificate_app') . '/images/chucknorrisapprovedg.jpg" alt="" /></p><p style="text-align: center;">&nbsp;</p>';
+  $node->body[$node->language][0]['value'] = $body_text;
+  $node->body[$node->language][0]['format'] = 'html';
+  $node->certificate['orientation'] = "portrait";
+  node_save($node);
+  ///////////////////////////
+
+  //Class Certificate
+  $node = new stdClass();
+  $node->type = 'certificate';
+  node_object_prepare($node);
+  $node->title = 'Class Certificate';
+  $node->language = LANGUAGE_NONE;
+  $body_text = '<table width="100%" cellspacing="0" cellpadding="0" border="0" align="center"><tbody><tr><td width="100%" valign="middle" nowrap="nowrap" height="200" bgcolor="016083" rowspan="1" colspan="1" style="text-align: left;">&nbsp; &nbsp;&nbsp; <img src="' . $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'opigno_certificate_app') . '/images/logo_positive.png" width="161" height="52" alt="" />&nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp; &nbsp;</td></tr></tbody></table><p style="text-align: center;">&nbsp;</p><h2 style="text-align: center;"><span style="font-size: x-large;"><span style="font-family: Arial;">Certificate of Completion<br /></span></span><span style="font-family: Arial; font-size: large; line-height: 1.538em;">awarded to<br /></span><a title="Insert this token into your form"><strong><span style="font-size: x-large;">[user:name]</span></strong><span style="font-size: x-large;"><br /></span></a><span style="font-size: small;">to certify the completion of the class<br /></span><a title="Insert this token into your form"><strong>[node:title]<br /></strong></a>having passed all the following courses<br /><a title="Insert this token into your form" style="font-size: 10.909090995788574px; line-height: 20px; text-align: start; white-space: nowrap; background-color: rgb(243, 244, 238);"><strong><span style="font-size: large;">[node:list_of_courses]<br /></span></strong></a></h2><p style="text-align: center;">APPROVED<br /><a title="Insert this token into your form" style="font-size: 10.909090995788574px; line-height: 20px; text-align: start; white-space: nowrap; background-color: rgb(243, 244, 238);">[node:certificate_granted_node]<br /></a>&nbsp;<img width="88" height="88" src="' . $GLOBALS['base_url'] . '/' . drupal_get_path('module', 'opigno_certificate_app') . '/images/chucknorrisapprovedg.jpg" alt="" /></p><p style="text-align: center;">&nbsp;</p>';
+  $node->body[$node->language][0]['value'] = $body_text;
+  $node->body[$node->language][0]['format'] = 'html';
+  $node->certificate['orientation'] = "portrait";
+  node_save($node);
+  //////////////////////////////
+}

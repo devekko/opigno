@@ -1,0 +1,118 @@
+<?php
+
+/**
+ * @file
+ * drag drop Install (a quiz question type)
+ */
+
+/**
+ * Implements hook_install().
+ */
+function quiz_drag_drop_install() {
+  // Add body field to multichoice node.
+  quiz_question_add_body_field('quiz_drag_drop');
+
+  cache_clear_all('autoload:', 'cache');
+
+  // At this point quiz core has created the drag drop node type.
+  // Now it's time to add the image field to the node:
+  if (!field_info_field('field_dragdrop_image')) {
+    $field = array(
+      'field_name' => 'field_dragdrop_image',
+      'type' => 'image',
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+    );
+    field_create_field($field);
+  }
+
+  $instance = field_info_instance('node', 'field_dragdrop_image', 'quiz_drag_drop');
+  if (empty($instance)) {
+    $t = get_t();
+    $help_text = $t("<p>Upload images for drag drop question. Give each image a title.</p>
+                       <p><em>This image title will appear in placeholder box. So make sure title is not more than 18 characters.
+                       Otherwise it will be trimmed to 18 characters.</em></p>");
+
+    $instance = array(
+      'field_name' => 'field_dragdrop_image',
+      'entity_type' => 'node',
+      'bundle' => 'quiz_drag_drop',
+      'label' => 'Quiz image',
+      'description' => $help_text,
+      'required' => TRUE,
+      'settings' => array(
+        'no_ui' => FALSE,
+        'title_field' => TRUE,
+      ),
+      'widget' => array(
+        'settings' => array(
+          'no_ui' => FALSE,
+          'max_filesize'          => '1M',
+          'preview_image_style'   => 'thumbnail',
+        ),
+      ),
+    );
+
+    field_create_instance($instance);
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function quiz_drag_drop_schema() {
+  // Stores the users answers to a question.
+  $schema['quiz_drag_drop_user_answers'] = array(
+    'fields' => array(
+      'question_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'question_vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'result_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'score' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array(
+      'result_id', 'question_nid', 'question_vid',
+    ),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implements hook_uninstall().
+ */
+function quiz_drag_drop_uninstall() {
+  // Delete instance.
+  field_delete_field('field_dragdrop_image');
+  $instance = field_info_instance('node', 'field_dragdrop_image', 'quiz_drag_drop');
+  field_delete_instance($instance);
+
+  $t = get_t();
+  drupal_set_message($t("The drag drop module has been uninstalled. Drag drop nodes may still exist, but they will not function properly."));
+}
+
+/**
+ * Droping primary key if any, Adding indexes on question nid, result id and question vid.
+ */
+function quiz_drag_drop_update_101() {
+   //Removing primary fields.
+  db_drop_primary_key('quiz_drag_drop_user_answers');
+  
+  //Adding indexes.
+  db_add_index('quiz_drag_drop_user_answers', 'nid_vid_rid', array('question_nid', 'question_vid', 'result_id'));
+}

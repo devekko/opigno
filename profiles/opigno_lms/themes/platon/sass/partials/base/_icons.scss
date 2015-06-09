@@ -1,0 +1,116 @@
+@font-face {
+  font-family: 'entypo';
+  font-style: 'normal';
+  font-weight: 'normal';
+  src: url('https://www.opigno.org/fonts/entypo/entypo.eot');
+  src: url('https://www.opigno.org/fonts/entypo/entypo.eot?#iefix') format('eot'),
+    url('https://www.opigno.org/fonts/entypo/entypo.woff') format('woff'),
+    url('https://www.opigno.org/fonts/entypo/entypo.ttf') format('truetype'),
+    url('https://www.opigno.org/fonts/entypo/entypo.svg#entypo') format('svg');
+}
+//@import url(http://weloveiconfonts.com/api/?family=entypo);
+
+.icon:before {
+  font-family: 'entypo', sans-serif;
+  font-weight: normal;
+}
+
+.icon-list:before {
+  content: "\E005";
+}
+
+.icon-home:before {
+  content: "\2302";
+}
+
+.icon-settings:before {
+  content: "\2699";
+}
+
+.icon-users:before {
+  content: "\1F465";
+}
+
+.icon-tools:before {
+  content: "\2692";
+}
+
+.icon-check:before {
+  content: "\2713";
+}
+
+.icon-collaborate:before {
+  content: "\1F56A";
+  content: "\e792"; // On the website
+}
+
+.icon-courses:before {
+  content: "\1F4D5";
+}
+
+.icon-directions:before {
+  content: "\E723";
+}
+
+.icon-catalogue:before {
+  content: "\1F4D6";
+}
+
+.icon-forum:before {
+  content: "\E720";
+}
+
+.icon-upload:before {
+  content: "\E711";
+}
+
+.icon-dashboard:before {
+  content: "\E74E";
+}
+
+.icon-calendar:before {
+  content: "\1F4C5";
+}
+
+.icon-messages:before {
+  content: "\2709";
+}
+
+.icon-files:before {
+  content: "\1F4C1";
+}
+
+.icon-certificates:before {
+  content: "\1F393";
+}
+
+.icon-install:before {
+  content: "\E778";
+}
+
+.icon-question:before {
+  content: "\2753";
+}
+
+.icon-monitor:before {
+  content: "\1F4BB";
+}
+
+.icon-fullscreen:before {
+  content: "\e744";
+}
+
+.icon-smallscreen:before {
+  content: "\e746";
+}
+
+
+// Overwrite Open Framework icon settings.
+[class^="icon-"], [class*=" icon-"] {
+  font-family: 'Source Sans Pro', sans-serif;
+}
+
+li [class^="icon-"], .nav li [class^="icon-"], li [class*=" icon-"], .nav li [class*=" icon-"] {
+  width: auto;
+  text-align: left;
+}

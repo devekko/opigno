@@ -1,0 +1,459 @@
+<?php
+
+/**
+ * @file
+ * The og_massadd module file
+ */
+
+/**
+ * Implements of hook_permission().
+ */
+function og_massadd_permission() {
+  return array(
+    'mass add and create users' => array(
+      'title' => t('OG mass add and create users'),
+      'description' => t('OG mass add and create users'),
+    ),
+  );
+}
+
+
+/**
+ * Implements hook_menu().
+ */
+function og_massadd_menu() {
+
+  $items['admin/config/group/og_massadd'] = array(
+    'title' => 'Og Mass Add',
+    'description' => 'Configure og_massadd',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('og_massadd_admin_settings'),
+    'access callback' => 'user_access',
+    'access arguments' => array('administer site configuration'),
+    'type' => MENU_NORMAL_ITEM,
+    'file' => 'og_massadd.admin.inc',
+  );
+
+  $items['group/%/%/admin/people/mass-add-user'] = array(
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('og_massadd_massadd_form', 1, 2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 5,
+    'title' => 'Mass upload of user',
+    'access callback' => 'og_ui_user_access_group',
+    'access arguments' => array('add user', 1, 2),
+  );
+
+  $items['group/%/%/admin/people/mass-add-user-filter'] = array(
+    'page callback' => 'ogmass_add_user_filter',
+    'page arguments' => array(1, 2),
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 4,
+    'title' => 'Find and Add Members',
+    'access callback' => 'og_ui_user_access_group',
+    'access arguments' => array('add user', 1, 2),
+  );
+
+  return $items;
+}
+
+/**
+ * Callback to show the needed view to add users using VBO.
+ */
+function ogmass_add_user_filter($group_type, $group_id) {
+
+  // check if user has access to view user profiles which is needed
+  if( !user_access('View user profiles')) {
+    drupal_set_message(t('You need to have access to view user profiles in
+      order to add users to groups. Please configure the needed permission'),
+    'error');
+    return '';
+  }
+  else if (is_numeric($group_id)) {
+    og_context($group_type, node_load($group_id));
+    $view = views_get_view('og_massadd');
+    $view->set_arguments(array($group_id));
+    $view->set_display('block_1');
+    $view->pre_execute();
+    $view->execute();
+    $content = $view->render();
+    return $content;
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function og_massadd_views_api() {
+  return array(
+    'api' => 3,
+    'path' => drupal_get_path('module', 'og_massadd') . '/includes',
+  );
+}
+
+
+/* implements of hook_og_ui_get_group_admin_alter(). */
+function og_massadd_og_ui_get_group_admin_alter(&$data, $gid) {
+  // Hijack the add people to use a custom implementation.
+  $data['add_people']['href'] = 'admin/people/mass-add-user-filter';
+}
+
+
+/**
+ * Mass adding users form
+ */
+function og_massadd_massadd_form($form, &$form_state, $group_type, $group_id) {
+
+  global $user;
+
+  $form['group_type'] = array(
+    '#type' => 'value',
+    '#value' => $group_type,
+  );
+
+  $form['group_ids'] = array(
+    '#type' => 'value',
+    '#title' => t('Groups to add the user to'),
+    '#value' => array($group_id),
+    '#required' => TRUE,
+  );
+
+  $form['massadd'] = array(
+    '#type' => 'textarea',
+    '#title' => t('List of users to add'),
+    '#description' => t('A list of users to add. The contents can either be lines consiting of FIRSTNAME, LASTNAME, EMAIL or FIRSTNAME, LASTNAME, EMAIL, USERNAME or a list of email addresses (one on each line).'),
+    '#rows' => 20,
+    '#default_value' => '',
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Add users'),
+  );
+
+  return $form;
+}
+
+/**
+ * Mass adding users validation
+ */
+function og_massadd_massadd_form_validate($form, &$form_state) {
+  $gotfile = (isset($_FILES['files']) && $_FILES['files']['name']['massadd_csv'] && is_uploaded_file($_FILES['files']['tmp_name']['massadd_csv']));
+  if (!trim($form_state['values']['massadd']) && !$gotfile) {
+    form_set_error('massadd', t("No users to add!"));
+  }
+  elseif (trim($form_state['values']['massadd']) && !_og_massadd_textareavalidate($form_state['values']['massadd'])) {
+    form_set_error('massadd', t("Unknown format of userlist!"));
+  }
+}
+
+/**
+ * Validate text area contents
+ */
+function _og_massadd_textareavalidate($input) {
+  $data = explode("\n", $input);
+  foreach ($data as $i => $line) {
+    if (trim($line)) {
+      $line = array_map("trim", explode(",", $line));
+      if (!(count($line) > 0 && count($line) < 5)) {// Check number of fields 1-5
+        return FALSE;
+      }
+      if (count($line) == 5) {
+        $email = $line[3];
+      }
+      else {
+        $email = end($line);
+      }
+
+      if ((!valid_email_address($email) || empty($email)) &&  !user_load_by_name($email)) {
+        return FALSE;
+      }
+    }
+  }
+  return TRUE;
+}
+
+/**
+ * Mass adding users submit function
+ */
+function og_massadd_massadd_form_submit($form, &$form_state) {
+  _og_massadd_fromstring($form_state['values']['massadd'], $form_state['values']['group_type'], $form_state['values']['group_ids']);
+}
+
+/**
+ * Mass adding users from string input
+ */
+function _og_massadd_fromstring($input, $group_type, $group_ids) {
+
+  // Fill our data array
+  $data = explode("\n", $input);
+  foreach ($data as $i => $line) {
+    if (trim($line)) {
+      $data[$i] = array_map("trim", explode(",", $line));
+    }
+    else {
+      unset($data[$i]);
+    }
+  }
+
+  $status = array("new" => array(), "failed" => array(), "existing" => array());
+  foreach ($data as $line) {
+    $address = _og_massadd_adduser($line, $group_type, $group_ids);
+    if ($address === FALSE) {
+      $status['failed'][] = implode(",", $line);
+    }
+    elseif ($address == 0) {
+      $status['existing'][] = implode(",", $line);
+    }
+    elseif ($address == 1) {
+      $status['new'][] = implode(",", $line);
+    }
+  }
+
+  if (count($status['new'])) {
+    drupal_set_message(t("The following users were created and added to the group(s):") . "<br />" . implode("<br />", $status['new']));
+  }
+
+  if (count($status['existing'])) {
+    drupal_set_message(t("The following users already had an account and were added to the group(s):") . "<br />" . implode("<br />", $status['existing']));
+  }
+
+  if (count($status['failed'])) {
+    drupal_set_message(t("The following users could not be added:") . "<br />" . implode("<br />", $status['failed']), 'error');
+  }
+
+}
+
+
+/**
+ * Actually adding something
+ * Returns FALSE if the user couldn't be created, 0 if the user existed and 1 if it was created.
+ */
+function _og_massadd_adduser($user, $group_type, $group_ids) {
+
+  $newuser = array();
+  if (count($user) == 1) {
+    $firstname = "";
+    $lastname = "";
+    $mail = reset($user);
+    $desiredname = "";
+  }
+  elseif (count($user) == 2) {
+    $firstname = reset($user);
+    $lastname = "";
+    $mail = end($user);
+    $desiredname = "";
+  }
+  elseif (count($user) == 3) {
+    $firstname = reset($user);
+    $lastname = next($user);
+    $mail = end($user);
+    $desiredname = "";
+  }
+  elseif (count($user) >= 4) {
+    $firstname = reset($user);
+    $lastname = next($user);
+    $mail = next($user);
+    $desiredname = end($user);
+  }
+  else {
+//dpm('Unable to count fields');
+    return FALSE;
+  }
+
+  $didcreate = 0;
+
+  // If it looks like a mail address, try to look up user
+  if (valid_email_address($mail)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'user')
+          ->propertyCondition('mail', check_plain($mail));
+    $result = $query->execute();
+
+    if (!empty($result)) {
+      $uids = array_keys($result['user']);
+      $account = user_load_multiple($uids);
+      $account = array_shift($account);
+    }
+  }
+
+  // If not, try to check for usernames
+  if (!isset($account) && drupal_strlen($mail)) {
+    $query = new EntityFieldQuery();
+    $query->entityCondition('entity_type', 'user')
+          ->propertyCondition('name', check_plain($mail));
+    $result = $query->execute();
+
+    if (!empty($result)) {
+      $uids = array_keys($result['user']);
+      $account = user_load_multiple($uids);
+      $account = array_shift($account);
+    }
+  }
+
+  // Create user if necessary
+  if (!isset($account) && !valid_email_address($mail)) {
+//dpm($mail, 'Not valid email address');
+    return FALSE;
+  }
+  elseif (!isset($account) && valid_email_address($mail)) {
+    if (!user_access('mass add and create users') || !variable_get("og_massadd_createunknowns", FALSE)) {
+//dpm('Not allowed to create unknowns');
+      return FALSE;
+    }
+
+    $newuser['mail'] = $mail;
+    $newuser['pass'] = user_password();
+    $newuser['init'] = $newuser['mail'];
+    $newuser['status'] = 1;
+    // 20 attempts should be enough for anybody (tm)
+
+    for ($attempt = 0 ; $attempt <= 20 ; $attempt++) {
+      $newuser['name'] = _og_massadd_createusername($mail, $firstname, $lastname, $desiredname, $attempt);
+
+      if ($newuser['name'] !== FALSE && !db_query("SELECT count(*) FROM {users} WHERE name = :name", array(':name' => check_plain($newuser['name'])))->fetchField()) {
+        $account = user_save(NULL, $newuser);
+        if ($account !== FALSE) {
+          $account->password = $newuser['pass'];
+          _user_mail_notify('register_no_approval_required', $account);
+          $didcreate = 1;
+          break; // Got user, end tries
+        }
+      }
+    }
+
+    if (!$account) {  // Exhausted attempts, give up
+//dpm('Unable to find available username');
+      return FALSE;
+    }
+  }
+
+  if (variable_get('og_massadd_createunknowns', '')) {
+    $fname = variable_get('og_massadd_profilefname', '');
+    $lname = variable_get('og_massadd_profilelname', '');
+
+    if (drupal_strlen($fname) && field_info_field($fname)) {
+      $account->{$fname}['und'][0]['value'] = $firstname;
+    }
+    if (drupal_strlen($lname) && field_info_field($lname)) {
+      $account->{$lname}['und'][0]['value'] = $lastname;
+    }
+
+    user_save($account); // Actually, we don't care if this fails for now. We need better field-handling first.
+  }
+
+  // Add user to groups
+  foreach ($group_ids as $gid) {
+    if ($gid) {
+      $field_names = og_get_group_audience_fields();
+      $field_name = !empty($form_state['values']['field_name']) ? $form_state['values']['field_name'] : key($field_names);
+
+      /* user already belongs to the group */
+      if (og_get_membership($group_type, $gid, 'user', $account->uid)) {
+        return FALSE;
+      }
+
+      $ret = og_membership_create($group_type, $gid, 'user', $account->uid, $field_name);
+      $ret->save();
+
+/*
+      $groupnode = node_load($gid);
+      $variables = array(
+        '@title' => $groupnode->title,
+        '!group_url' => url("node/$groupnode->nid", array('absolute' => TRUE))
+      );
+      drupal_mail('og', 'approve_user', $account->mail, user_preferred_language($account), $variables);
+ */
+    }
+  }
+
+  return $didcreate;
+}
+
+/**
+ * Generate a preferred username
+ */
+function _og_massadd_createusername($email, $firstname = '', $lastname = '', $suggestion = '', $attempt = 0) {
+
+/*
+The following combinations are tried in order:
+
+1: If one is provided, the suggested username
+2. The first part of the email address (everything before the @)
+3. If both firstname and lastname is provided, "F.L".
+   F is x number of letters from firstname, where x starts at 1 and goes up to the full length of firstname.
+   L is lastname.
+4. If firstname is provided without lastname, firstname only.
+5. If lastname is provided without firstname, lastname only.
+6. If both firstname and lastname is provided, try adding numbers 1 and up to a name formatted as F.Lastname where F is the first letter of firstname.
+7. Last (only performed if the previous combination didn't) add numbers 1 and up to the first part of the email address.
+ */
+
+  $usernames = array();
+  $numbered = array();
+
+  // First, create the verbatim names to try
+
+  // #1 pri: suggested username
+  if (!empty($suggestion)) {
+    $usernames[] = $suggestion;
+  }
+
+  // #2 pri: first part of email address (always present)
+  preg_match('/^(.+)(?:@)/', $email, $matches);
+  if (!empty($matches[1])) {
+    $usernames[] = $matches[1];
+  }
+  else {
+    return FALSE; // We DO need a valid mail address
+  }
+
+  // #3 pri: username on the form of [x number of letters from first name, starting from 1 and up].[lastname]
+  if (!empty($firstname) && !empty($lastname)) {
+    for ($i = 1 ; $i < drupal_strlen($firstname) ; $i++) {
+      $username = '';
+      if (!empty($firstname)) { // Add firstname if present
+        $username .= drupal_substr($firstname, 0, ($i));
+      }
+      if (!empty($firstname) && !empty($lastname)) // Add divider between first and last name
+        $username .= '.';
+      if (!empty($lastname)) { // Add lastname
+        $username .= $lastname;
+      }
+      $usernames[] = $username;
+    }
+  }
+
+  // #4 pri: if no lastname, use firstname only
+  if (!empty($firstname) && empty($lastname)) {
+    $usernames[] = $firstname;
+  }
+
+  // #5 pri: if no firstname, use lastname only
+  if (empty($firstname) && !empty($lastname)) {
+    $usernames[] = $lastname;
+  }
+
+  // Create names to add numbers to as last resort. Different priorities than the verbatim names
+
+  // #1 pri: [first letter of first name].[lastname]
+  if (!empty($firstname) && !empty($lastname)) {
+    $numbered[] = drupal_substr($firstname, 0, 1) . '.' . $lastname;
+  }
+
+  // #2 pri: first part of email address (always present)
+  preg_match('/^(.+)(?:@)/', $email, $matches);
+  if (!empty($matches[1])) {
+    $numbered[] = $matches[1];
+  }
+
+  // If our attempt exists in the verbatim table, return it
+  if (isset($usernames[$attempt])) {
+    return $usernames[$attempt];
+  }
+
+  // Generate a numbered attempt using the first entry in the numbered table.
+  $attempt = $attempt - count($usernames);
+  return reset($numbered) . ($attempt + 1 );
+
+}

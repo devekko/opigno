@@ -1,0 +1,89 @@
+<?php
+
+/**
+ * @file
+ * Module hooks and API.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function opigno_course_categories_app_menu() {
+  if (function_exists('opigno_simple_ui_admin_redirect')) {
+    $vocabulary = taxonomy_vocabulary_machine_name_load('course_categories');
+    return array(
+      'admin/opigno/content/course-categories' => array(
+        'title' => "Course categories",
+        'description' => "Manage course categories.",
+        'access arguments' => array('edit terms in ' . $vocabulary->vid),
+        'page callback' => 'opigno_simple_ui_admin_redirect',
+        'page arguments' => array('admin/structure/taxonomy/course_categories'),
+      ),
+    );
+  }
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function opigno_course_categories_app_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if (!empty($data['actions']['output'][0]['#link']['href']) && $data['actions']['output'][0]['#link']['href'] == 'admin/structure/taxonomy/course_categories/add') {
+    $data['actions']['output'][0]['#link']['title'] = t("Add category");
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function opigno_course_categories_app_views_api() {
+  return array(
+    'api' => '3.0',
+  );
+}
+
+/**
+ * Implementation of hook_views_default_views_alter().
+ */
+function opigno_course_categories_app_views_default_views_alter(&$views) {
+  // Alter the catalogue view and add a taxonomy filter.
+  if (array_key_exists('opigno_course_catalgue', $views)) {
+    $display = $views['opigno_course_catalgue']->display['default'];
+    $display->display_options['filters']['opigno_course_categories_tid']['id'] = 'opigno_course_categories_tid';
+    $display->display_options['filters']['opigno_course_categories_tid']['table'] = 'field_data_opigno_course_categories';
+    $display->display_options['filters']['opigno_course_categories_tid']['field'] = 'opigno_course_categories_tid';
+    $display->display_options['filters']['opigno_course_categories_tid']['exposed'] = TRUE;
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['operator_id'] = 'opigno_course_categories_tid_op';
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['label'] = 'Course category';
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['operator'] = 'opigno_course_categories_tid_op';
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['identifier'] = 'opigno_course_categories_tid';
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['remember_roles'] = array(
+      2 => '2',
+      1 => 0,
+      3 => 0,
+      4 => 0,
+    );
+    $display->display_options['filters']['opigno_course_categories_tid']['type'] = 'select';
+    $display->display_options['filters']['opigno_course_categories_tid']['vocabulary'] = 'course_categories';
+  }
+
+  if (array_key_exists('opigno_my_courses', $views)) {
+    $display = $views['opigno_my_courses']->display['default'];
+    $display->display_options['filters']['opigno_course_categories_tid']['id'] = 'opigno_course_categories_tid';
+    $display->display_options['filters']['opigno_course_categories_tid']['table'] = 'field_data_opigno_course_categories';
+    $display->display_options['filters']['opigno_course_categories_tid']['field'] = 'opigno_course_categories_tid';
+    $display->display_options['filters']['opigno_course_categories_tid']['relationship'] = 'og_membership_related_node_group';
+    $display->display_options['filters']['opigno_course_categories_tid']['exposed'] = TRUE;
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['operator_id'] = 'opigno_course_categories_tid_op';
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['label'] = 'Course category';
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['operator'] = 'opigno_course_categories_tid_op';
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['identifier'] = 'opigno_course_categories_tid';
+    $display->display_options['filters']['opigno_course_categories_tid']['expose']['remember_roles'] = array(
+      2 => '2',
+      1 => 0,
+      3 => 0,
+      4 => 0,
+    );
+    $display->display_options['filters']['opigno_course_categories_tid']['type'] = 'select';
+    $display->display_options['filters']['opigno_course_categories_tid']['vocabulary'] = 'course_categories';
+  }
+}

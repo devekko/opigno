@@ -1,0 +1,18 @@
+name = Opigno Calendar App
+description = Opigno Calendar functionality and default displays.
+core = 7.x
+package = Opigno Apps
+
+dependencies[] = calendar
+dependencies[] = views
+dependencies[] = date
+dependencies[] = date_popup
+
+
+
+; Information added by Drupal.org packaging script on 2014-10-19
+version = "7.x-1.0"
+core = "7.x"
+project = "opigno_calendar_app"
+datestamp = "1413751433"
+

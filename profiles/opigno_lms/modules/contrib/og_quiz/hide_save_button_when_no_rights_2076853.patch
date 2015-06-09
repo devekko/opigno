@@ -1,0 +1,23 @@
+diff --git a/quiz.admin.inc b/quiz.admin.inc
+old mode 100644
+new mode 100755
+index 97ca043..07baf64
+--- a/quiz.admin.inc
++++ b/quiz.admin.inc
+@@ -1802,6 +1802,7 @@ function theme_quiz_node_form($variables) {
+  * @ingroup themeable
+  */
+ function theme_quiz_admin_summary($variables) {
++  global $user;
+   $quiz = $variables['quiz'];
+   $questions = $variables['questions'];
+   $score = $variables['score'];
+@@ -1827,7 +1828,7 @@ function theme_quiz_admin_summary($variables) {
+ 
+   // Get the feedback for all questions.
+   require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'quiz') . '/quiz.pages.inc';
+-  $report_form = drupal_get_form('quiz_report_form', $questions, TRUE, TRUE, TRUE);
++  $report_form = drupal_get_form('quiz_report_form', $questions, TRUE, TRUE, user_access('score any quiz') || (user_access('score own quiz') && $quiz->uid && $user->uid));
+   $output .= drupal_render($report_form);
+   return $output;
+ }

@@ -1,0 +1,42 @@
+diff --git a/quiz.admin.inc b/quiz.admin.inc
+old mode 100644
+new mode 100755
+index 97ca043..39f4a6f
+--- a/quiz.admin.inc
++++ b/quiz.admin.inc
+@@ -1113,7 +1113,7 @@ function _quiz_add_questions_to_form(&$form, &$questions, &$quiz, &$question_typ
+       'attributes' => array('class' => array('handle-changes')),
+     );
+ 
+-    $form[$fieldset]['titles'][$id] = array('#markup' => l($question->title, 'node/' . $question->nid, $link_options));
++    $form[$fieldset]['titles'][$id] = array('#markup' => user_access('view quiz question outside of a quiz') ? l($question->title, 'node/' . $question->nid, $link_options) : $question->title);
+ 
+ 
+     $form[$fieldset]['types'][$id] = array(
+diff --git a/theme/quiz-questions-browser-body.tpl.php b/theme/quiz-questions-browser-body.tpl.php
+old mode 100644
+new mode 100755
+index 5e588eb..d8c01fb
+--- a/theme/quiz-questions-browser-body.tpl.php
++++ b/theme/quiz-questions-browser-body.tpl.php
+@@ -28,11 +28,15 @@ foreach ($form['titles']['#options'] as $key => $value): ?>
+   <tr class="quiz-question-browser-row" id="browser-<?php print $key ?>">
+     <td width="35"><?php print drupal_render($full_options[$key]) ?> </td>
+     <td>
+-      <?php print l($value, "node/$quest_nid", array(
+-        'html' => TRUE,
+-        'query' => array('destination' => $_GET['q']),
+-        'attributes' => array('target' => 'blank')
+-      )); ?>
++      <?php if (user_access('view quiz question outside of a quiz')): ?>
++        <?php print l($value, "node/$quest_nid", array(
++          'html' => TRUE,
++          'query' => array('destination' => $_GET['q']),
++          'attributes' => array('target' => 'blank')
++        )); ?>
++      <?php else: ?>
++        <?php print check_plain($value); ?>
++      <?php endif; ?>
+     </td>
+     <td><?php print $form['types'][$key]['#value'] ?></td>
+     <td><?php print $form['changed'][$key]['#value'] ?></td>

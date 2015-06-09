@@ -1,0 +1,29 @@
+/**
+ * @file
+ * Video view list.
+ */
+
+.view-id-videos.view-display-id-page {
+  overflow: hidden;
+
+  .views-row {
+    float: left;
+    text-align: center;
+    margin: 1em;
+    height: 320px;
+
+    .views-field-title {
+
+      a {
+        text-decoration: none;
+        font-size: 1.2em;
+      }
+    }
+
+    // Play button is a bit off.
+    .vjs-default-skin .vjs-big-play-button {
+      top: 30%;
+      left: 29%;
+    }
+  }
+}

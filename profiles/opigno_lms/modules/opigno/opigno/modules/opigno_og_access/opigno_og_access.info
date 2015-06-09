@@ -1,0 +1,23 @@
+name = Opigno Og access control
+description = "Enables opigno og access control, do not enable with og_access at the same time"
+core = 7.x
+package = Opigno Apps
+dependencies[] = og
+core = 7.x
+version = VERSION
+files[] = opigno_og_access.module
+files[] = opigno_og_access.install
+
+; Information added by drush on 2014-04-09
+version = "7.x-1.3+5-dev"
+core = "7.x"
+project = "opigno"
+datestamp = "1397034870"
+
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.11"
+core = "7.x"
+project = "opigno"
+datestamp = "1425246497"
+

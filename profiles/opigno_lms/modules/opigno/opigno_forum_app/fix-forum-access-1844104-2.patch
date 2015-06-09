@@ -1,0 +1,75 @@
+diff --git a/og_forum.module b/og_forum.module
+index 4e37b94..5fc1b82 100644
+--- a/og_forum.module
++++ b/og_forum.module
+@@ -88,8 +88,10 @@ function og_forum_query_term_access_alter(QueryAlterableInterface $query) {
+   // Load all the groups of the user for which the query is executed.
+   $group_gids = array();
+   $groups = og_get_entity_groups('user', $account);
+-  foreach ($groups as $gid => $value) {
+-    $group_gids[] = $gid;
++  foreach ($groups as $group) {
++    foreach ($group as $gid) {
++      $group_gids[] = $gid;
++    }
+   }
+ 
+   // Find all instances of the {taxonomy_term_data} table being joined --
+@@ -106,7 +108,7 @@ function og_forum_query_term_access_alter(QueryAlterableInterface $query) {
+                                           AND %alias.field_name = :field_name',
+                                         array(
+                                           ':entity_type' => 'taxonomy_term',
+-                                          ':field_name' => 'og_group_access',
++                                          ':field_name' => 'og_group_ref',
+                                         ));
+       $condition = db_or();
+       $condition->isNull($audience_alias . '.gid');
+@@ -130,11 +132,11 @@ function og_forum_node_presave($node) {
+ 
+   if (_forum_node_check_node_type($node)) {
+ 
+-    $gids = og_get_entity_groups('taxonomy_term', taxonomy_term_load($node->taxonomy_forums[LANGUAGE_NONE][0]['tid']));
++    $groups = og_get_entity_groups('taxonomy_term', taxonomy_term_load($node->taxonomy_forums[LANGUAGE_NONE][0]['tid']));
+ 
+-    if (!empty($gids)) {
++    if (!empty($groups)) {
+       $node->{OG_AUDIENCE_FIELD}[LANGUAGE_NONE] = array();
+-      foreach ($gids as $group) {
++      foreach ($groups as $group) {
+         foreach ($group as $gid) {
+           $node->{OG_AUDIENCE_FIELD}[LANGUAGE_NONE][] = array('target_id' => $gid);
+         }
+@@ -171,12 +173,12 @@ function og_forum_node_access($node, $op, $account) {
+       $node_group = og_get_entity_groups('node', $node);
+       $access = NODE_ACCESS_DENY;
+ 
+-      if (count($node_group) == 0) {
++      if (count($node_group['node']) == 0) {
+         return NODE_ACCESS_ALLOW;
+       }
+ 
+-      foreach ($node_group as $gid) {
+-        if (in_array($gid, $user_group)) {
++      foreach ($node_group['node'] as $gid) {
++        if (in_array($gid, $user_group['node'])) {
+           $access = NODE_ACCESS_ALLOW;
+         }
+       }
+@@ -311,7 +313,7 @@ function og_forum_og_membership_insert(OgMembership $og_membership) {
+     $rids = og_forum_get_roles_by_permission($og_membership->group_type, $node->type, $og_membership->gid, 'moderate');
+     $acl_id = _forum_access_get_acl($og_membership->etid);
+ 
+-    $users = og_get_users_by_roles($og_membership->gid, array_keys($roles));
++    $users = og_forum_get_users_by_roles($og_membership->gid, array_keys($roles));
+     $new_user = array($node->uid);
+     foreach ($users as $user) {
+       $new_user[] = $user->uid;
+@@ -340,7 +342,7 @@ function og_forum_og_membership_delete(OgMembership $og_membership) {
+     $rids = og_forum_get_roles_by_permission($og_membership->group_type, $node->type, $og_membership->gid, 'moderate');
+     $acl_id = _forum_access_get_acl($og_membership->etid);
+ 
+-    $users = og_get_users_by_roles($og_membership->gid, array_keys($roles));
++    $users = og_forum_get_users_by_roles($og_membership->gid, array_keys($roles));
+     $old_user = array($node->uid);
+     foreach ($users as $user) {
+       $old_user[] = $user->uid;

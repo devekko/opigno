@@ -1,0 +1,16 @@
+name = Opigno Simplified UI
+description = Simplifies the UI to enhance the user experience
+core = 7.x
+package = Opigno
+dependencies[] = opigno
+dependencies[] = multiselect
+dependencies[] = apps
+; We depend on image so we are sure the Apps installation page shows logos and screenshots.
+dependencies[] = image
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.11"
+core = "7.x"
+project = "opigno"
+datestamp = "1425246497"
+

@@ -1,0 +1,16 @@
+diff --git a/question_types/quiz_question/quiz_question.module b/question_types/quiz_question/quiz_question.module
+index 935daa0..0d38e2d 100644
+--- a/question_types/quiz_question/quiz_question.module
++++ b/question_types/quiz_question/quiz_question.module
+@@ -97,11 +97,6 @@ function quiz_question_node_access($node, $op, $account) {
+          return NODE_ACCESS_DENY;
+       }
+       break;
+-    case 'create':
+-      if (!user_access('create quiz content', $account)) {
+-        return NODE_ACCESS_DENY;
+-      }
+-      break;
+     case 'update':
+       if (user_access('edit any quiz content', $account) || (user_access('edit own quiz content', $account) && ($account->uid == $node->uid))) {
+         return NODE_ACCESS_ALLOW;

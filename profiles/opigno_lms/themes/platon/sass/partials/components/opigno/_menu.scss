@@ -1,0 +1,22 @@
+/**
+ * @file
+ * Defines the icons for the main navigation.
+ */
+
+$menu-items-collection: (home, my-courses, training-catalogue, forum, calendar, my-achievements, messages, administration);
+@each $menu-item in $menu-items-collection {
+  #main-navigation-item-#{$menu-item} {
+
+    a {
+      background-image: url(../img/main-navigation-#{$menu-item}-icon-inactive.png);
+    }
+
+    a.active, a:hover {
+      background-image: url(../img/main-navigation-#{$menu-item}-icon-active.png);
+    }
+  }
+}
+
+.action-links li a.opigno-quiz-app-sort-quizzes {
+  @include action-sort-element;
+}

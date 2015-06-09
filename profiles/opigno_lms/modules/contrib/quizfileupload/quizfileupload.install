@@ -1,0 +1,211 @@
+<?php
+
+/**
+ * Code: logicmedia
+ *
+ * @file
+ * quizfileupload Install (a quiz question type)
+ */
+
+
+/**
+ * Implementation of hook_install()
+ */
+function quizfileupload_install() {
+  // Add body field to long answer node
+  quiz_question_add_body_field('quizfileupload');
+
+  cache_clear_all('autoload:', 'cache');
+  variable_set('node_options_quizfileupload', array('status'));
+
+  $field = field_info_field('quizfileupload_scoring');
+  if (empty($field)) {
+  field_create_field(array(
+    'translatable' => '0',
+    'entity_types' => array(),
+    'settings' => array(
+      'allowed_values' => array(
+        '0' => 'None',
+        '1' => 'Manual',
+      ),
+      'allowed_values_function' => '',
+    ),
+    'storage' => array(
+      'type' => 'field_sql_storage',
+      'settings' => array(),
+      'module' => 'field_sql_storage',
+      'active' => '1',
+      'details' => array(
+        'sql' => array(
+          'FIELD_LOAD_CURRENT' => array(
+            'field_data_field_scoring' => array(
+              'value' => 'field_scoring_value',
+            ),
+          ),
+          'FIELD_LOAD_REVISION' => array(
+            'field_revision_field_scoring' => array(
+              'value' => 'field_scoring_value',
+            ),
+          ),
+        ),
+      ),
+    ),
+    'foreign keys' => array(),
+    'indexes' => array(
+      'value' => array(
+        'value',
+      ),
+    ),
+    'field_name' => 'quizfileupload_scoring',
+    'type' => 'list_text',
+    'module' => 'list',
+    'active' => '1',
+    'locked' => '0',
+    'cardinality' => '1',
+    'deleted' => '0',
+    'columns' => array(
+      'value' => array(
+        'type' => 'varchar',
+        'length' => 255,
+        'not null' => FALSE,
+      ),
+    ),
+    'bundles' => array(
+      'node' => array(
+        'quizfileupload',
+      ),
+    ),
+  ));}
+
+    $instance = field_info_instance('node', 'quizfileupload_scoring', 'quizfileupload');
+    if (empty($instance)) {
+  field_create_instance(array(
+    'label' => 'Scoring',
+    'widget' => array(
+      'weight' => '-2',
+      'type' => 'options_buttons',
+      'module' => 'options',
+      'active' => 1,
+      'settings' => array(),
+    ),
+    'settings' => array(
+      'user_register_form' => FALSE,
+    ),
+    'display' => array(
+      'default' => array(
+        'label' => 'above',
+        'type' => 'list_default',
+        'settings' => array(),
+        'module' => 'list',
+        'weight' => 1,
+      ),
+      'teaser' => array(
+        'type' => 'hidden',
+        'label' => 'above',
+        'settings' => array(),
+        'weight' => 0,
+      ),
+    ),
+    'required' => 1,
+    'description' => '',
+    'default_value' => array(
+      array(
+        'value' => 'None',
+      ),
+    ),
+    'field_name' => 'quizfileupload_scoring',
+    'entity_type' => 'node',
+    'bundle' => 'quizfileupload',
+    'deleted' => '0',
+  ));}
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function quizfileupload_schema() {
+  // Stores the users answers to a question.
+  $schema['quiz_fileupload_user_answers'] = array(
+    'fields' => array(
+      'answer_id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'is_evaluated' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'result_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'question_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'question_vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'score' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'fid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'answer_feedback' => array(
+        'type' => 'text'
+      ),
+    ),
+    'primary key' => array('answer_id'),
+    'indexes' => array(
+      'answer_id' => array('result_id', 'question_nid', 'question_vid'),
+    ),
+  );
+  // store node properties
+  $schema['quiz_fileupload_node_properties'] = array(
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'filetypes' => array(
+        'type' => 'text',
+      ),
+      'type' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+    ),
+    'primary key' => array(
+      'nid', 'vid'
+    ),
+  );  
+  return $schema;
+}
+
+/**
+ * Implementation of hook_uninstall()
+ */
+function quizfileupload_uninstall() {
+  cache_clear_all('variables', 'cache'); 
+  drupal_set_message(t('The quiz file upload module has been uninstalled. Quiz file upload nodes may still exist, but they will not function properly.'));
+}

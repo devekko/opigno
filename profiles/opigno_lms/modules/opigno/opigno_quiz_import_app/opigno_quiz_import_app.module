@@ -1,0 +1,294 @@
+<?php
+
+/**
+ * @file
+ * Module hooks.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function opigno_quiz_import_app_menu() {
+  return array(
+    'admin/quiz/import/xls' => array(
+      'title' => 'Import Quiz',
+      'access arguments' => array('import quiz questions xls'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('opigno_quiz_import_app_import_form'),
+    ),
+    'node/%/import-quiz' => array(
+      'title' => 'Import Quiz',
+      'access_arguments' => isset($node) ? array('node', $node->nid, 'import quiz questions xls') : array('import quiz questions xls'),
+      'access_callback' => isset($node) ? 'og_user_access' : 'user_access',
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('opigno_quiz_import_app_import_form', 1),
+    ),
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function opigno_quiz_import_app_permission() {
+  return array(
+    'import quiz questions xls' => array(
+      'title' => t("Import Quiz questions in an Excel file"),
+    ),
+  );
+}
+
+/**
+ * Implements hook_og_permissions().
+ */
+function opigno_quiz_import_app_og_permission() {
+  return array(
+    'import quiz questions xls' => array(
+      'title' => t("Import Quiz questions in an Excel file"),
+    ),
+  );
+}
+
+/**
+ * Implements hook_opigno_tool().
+ */
+function opigno_quiz_import_app_opigno_tool($node = NULL) {
+  return array(
+    'quiz_import' => array(
+      'name' => t("Quiz import"),
+      'path' => isset($node) ? "node/{$node->nid}/import-quiz" : 'admin/quiz/import/xls',
+      'access_arguments' => array('node', $node->nid, 'import quiz questions xls'),
+      'access_callback' => 'og_user_access',
+      'description' => t("Import Excel files containing multiple choice questions as a quiz."),
+      'actions' => array(
+        'import_quiz' => array(
+          'title' => t("Import a new Quiz"),
+          'href' => isset($node) ? "node/{$node->nid}/import-quiz" : 'admin/quiz/import/xls',
+          'access_arguments' => array('import quiz questions xls'),
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Import form.
+ */
+function opigno_quiz_import_app_import_form($form, $form_state, $nid = NULL) {
+  $form['import_file'] = array(
+    '#type' => 'file',
+    '#title' => t("File"),
+    '#description' => t("Only Excel files are allowed."),
+  );
+
+  $form['title'] = array(
+    '#type' => 'textfield',
+    '#title' => t("Quiz title"),
+    '#required' => TRUE,
+  );
+
+  if (isset($nid)) {
+    $form['group_nid'] = array(
+      '#type' => 'value',
+      '#value' => trim($nid),
+    );
+  }
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t("Import"),
+  );
+
+  return $form;
+}
+
+/**
+ * Import form validate callback.
+ */
+function opigno_quiz_import_app_import_form_validate($form, &$form_state) {
+  if (isset($_FILES['files']) && is_uploaded_file($_FILES['files']['tmp_name']['import_file'])) {
+    $scheme = 'private://';
+
+    if (!file_stream_wrapper_valid_scheme(file_uri_scheme($scheme))) {
+      $scheme = 'public://';
+    }
+
+    $file = file_save_upload('import_file', array('file_validate_extensions' => array('xls xlsx')), $scheme);
+
+    // Set error if file was not uploaded
+    if (!$file) {
+      form_set_error('import_file', t("Error saving uploaded file."));
+    }
+    else {
+      if (!empty($file->fid)) {
+        $form_state['values']['validation_handler']['import_file'] = $file->fid;
+      }
+      else {
+        form_set_error('import_file', t("Error saving uploaded file as a permanent file."));
+      }
+    }
+  }
+}
+
+/**
+ * Import form submit callback.
+ */
+function opigno_quiz_import_app_import_form_submit($form, $form_state) {
+  global $user;
+  module_load_include('inc', 'phpexcel');
+
+  $file = file_load($form_state['values']['validation_handler']['import_file']);
+
+  $data = phpexcel_import(drupal_realpath($file->uri), FALSE);
+  if (is_array($data)) {
+    $data = array_shift($data); // Get first worksheet data.
+    array_shift($data); // Remove headers row.
+    $choice_multi = $max_score = $id = NULL;
+    $question_nodes = array();
+
+    // First, create all the questions.
+    foreach ($data as $row) {
+      $question = trim($row[0]);
+
+      if (!empty($question)) {
+        if (!empty($node)) {
+          // Save node.
+          $node->max_score = $max_score;
+          $node->choice_multi = $choice_multi > 0 ? 1 : 0;
+          $node->choice_boolean = $choice_multi <= 0 && $max_score == 1 ? 1 : 0;
+          //*
+          node_save($node);
+          $question_nodes[] = array(
+            'nid' => $node->nid,
+            'vid' => $node->vid,
+            'max_score' => $max_score,
+          );
+          //*/
+        }
+
+        // Start a new one.
+        $node = (object) array(
+          'title' => $question,
+          'type' => 'multichoice',
+          'language' => LANGUAGE_NONE,
+          'uid' => $user->uid,
+          'is_new' => TRUE,
+          'body' => array(
+            LANGUAGE_NONE => array(
+              array('value' => $question),
+            )
+          ),
+          'choice_random' => 0,
+          'add_directly' => array(
+            'new' => '',
+          ),
+          'alternatives' => array(),
+        );
+
+        $id = 1;
+        $choice_multi = -1;
+        $max_score = 0;
+      }
+
+      if (empty($node)) {
+        drupal_set_message(t("No question was found. Make sure the first line contains a question."), 'error');
+        break;
+      }
+
+      $alternative = trim($row[1]);
+      if (!empty($alternative)) {
+        $is_correct = (int) trim($row[2]);
+        $feedback_if_chosen = trim($row[5]);
+        $feedback_if_not_chosen = trim($row[6]);
+        $score_if_chosen = (float) trim($row[3]);
+        $score_if_not_chosen = (float) trim($row[4]);
+
+        $node->alternatives[] = array(
+          'id' => $id,
+          'correct' => $is_correct,
+          'answer' => array(
+            'value' => $alternative,
+            'format' => 'plain_text',
+          ),
+          'feedback_if_chosen' => array(
+            'value' => !empty($feedback_if_chosen) ? $feedback_if_chosen : '',
+            'format' => 'plain_text',
+          ),
+          'feedback_if_not_chosen' => array(
+            'value' => !empty($feedback_if_not_chosen) ? $feedback_if_not_chosen : '',
+            'format' => 'plain_text',
+          ),
+          'score_if_chosen' => !empty($score_if_chosen) ? $score_if_chosen : 0,
+          'score_if_not_chosen' => !empty($score_if_not_chosen) ? $score_if_not_chosen : 0,
+        );
+        if ($is_correct) {
+          $choice_multi++;
+          $max_score += $score_if_chosen;
+        }
+        else {
+          $max_score += $score_if_not_chosen;
+        }
+        $id++;
+      }
+    }
+
+    // Save the last question, if any.
+    if (!empty($node)) {
+      // Save node.
+      $node->max_score = $max_score;
+      $node->choice_multi = $choice_multi > 0 ? 1 : 0;
+      $node->choice_boolean = $choice_multi <= 0 && $max_score == 1 ? 1 : 0;
+      //*
+      node_save($node);
+      $question_nodes[] = array(
+        'nid' => $node->nid,
+        'vid' => $node->vid,
+        'max_score' => $max_score,
+      );
+      //*/
+    }
+
+    // If any question was created, create the container quiz.
+    if (!empty($question_nodes)) {
+      $node = (object) array(
+        'title' => $form_state['values']['title'],
+        'type' => 'quiz',
+        'uid' => $user->uid,
+        'language' => LANGUAGE_NONE,
+        'is_new' => TRUE,
+      );
+
+      if (!empty($form_state['values']['group_nid'])) {
+        $node->og_group_ref[LANGUAGE_NONE][0]['target_id'] = $form_state['values']['group_nid'];
+      }
+
+      //*
+      node_save($node);
+
+      // Add the relationships.
+      $weight = 0;
+      foreach ($question_nodes as $info) {
+        db_insert('quiz_node_relationship')
+          ->fields(array(
+            'parent_nid' => $node->nid,
+            'parent_vid' => $node->vid,
+            'child_nid' => $info['nid'],
+            'child_vid' => $info['vid'],
+            'question_status' => 1,
+            'weight' => $weight,
+            'max_score' => $info['max_score'],
+            'auto_update_max_score' => 0,
+          ))
+          ->execute();
+        $weight++;
+      }
+      //*/
+      drupal_set_message(t("Your new quiz was imported. You can view it <a href='!view'>here</a>. You can edit its settings <a href='!edit'>here</a>.", array('!view' => url("node/{$node->nid}"), '!edit' => url("node/{$node->nid}/edit"))));
+    }
+    else {
+      drupal_set_message(t("No question was found. Make sure the first line contains a question."), 'error');
+    }
+  }
+  else {
+    drupal_set_message(t("An error occured when parsing the data. Contact the site administrator."), 'error');
+  }
+}

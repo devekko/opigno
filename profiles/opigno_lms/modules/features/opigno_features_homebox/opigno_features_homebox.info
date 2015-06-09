@@ -1,0 +1,19 @@
+name = Opigno Features Homebox
+core = 7.x
+package = Opigno Features
+project = opigno_features_homebox
+dependencies[] = homebox
+dependencies[] = views
+datestamp = 1379503745
+features[ctools][] = views:views_default:3.0
+features[features_api][] = api:2
+features[homebox][] = dashboard
+features[views_view][] = dashboard_new_content
+features_exclude[dependencies][ctools] = ctools
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.18"
+core = "7.x"
+project = "opigno_lms"
+datestamp = "1425249184"
+

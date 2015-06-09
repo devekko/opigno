@@ -1,0 +1,617 @@
+<?php
+
+/**
+ * @file
+ * Defines module install  logic.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function opigno_quiz_app_install() {
+  // Add the quiz weight field.
+  $field = field_info_field('quiz_weight');
+  if (empty($field)) {
+    field_create_field(array(
+      'field_name' => 'quiz_weight',
+      'type' => 'number_float'
+    ));
+  }
+
+  // Add the quiz type field.
+  $field = field_info_field('quiz_type');
+  if (empty($field)) {
+    field_create_field(array(
+      'field_name' => 'quiz_type',
+      'type' => 'list_text',
+      'cardinality' => 1,
+      'settings' => array(
+        'allowed_values' => array(
+          'quiz' => 'Quiz',
+          'theory' => 'Theory',
+          'mix' => 'Mix',
+        ),
+        'allowed_values_function' => '',
+      ),
+    ));
+  }
+
+  // Add the og required quiz field.
+  $field = field_info_field('course_required_quiz_ref');
+  if (empty($field)) {
+    field_create_field(array(
+      'cardinality' => FIELD_CARDINALITY_UNLIMITED,
+      'field_name' => 'course_required_quiz_ref',
+      'foreign keys' => array(
+        'node' => array(
+          'columns' => array(
+            'target_id' => 'nid',
+          ),
+          'table' => 'node',
+        ),
+      ),
+      'indexes' => array(
+        'target_id' => array(
+          0 => 'target_id',
+        ),
+      ),
+      'module' => 'entityreference',
+      'settings' => array(
+        'handler' => 'views',
+        'handler_settings' => array(
+          'behaviors' => array(
+            'views-select-list' => array(
+              'status' => 0,
+            ),
+          ),
+          'view' => array(
+            'args' => array(),
+            'display_name' => 'entityreference_1',
+            'view_name' => 'opigno_quizzes',
+          ),
+        ),
+        'target_type' => 'node',
+      ),
+      'type' => 'entityreference',
+    ));
+  }
+
+  $instance = field_info_instance('node', 'quiz_weight', 'quiz');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'field_name' => 'quiz_weight',
+      'entity_type' => 'node',
+      'bundle' => 'quiz',
+      'label' => "Quiz weight",
+      'description' => "Sets the weight of this quiz for the final course assessment. Leave at 0 if this quiz should not be taken into account for the final grade.",
+      'required' => TRUE,
+      'default_value' => array(
+        0 => array(
+          'value' => 1,
+        ),
+      ),
+    ));
+  }
+
+  $instance = field_info_instance('node', 'quiz_type', 'quiz');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'field_name' => 'quiz_type',
+      'entity_type' => 'node',
+      'bundle' => 'quiz',
+      'label' => "Quiz type",
+      'description' => "Sets the type of this lesson. Can be <em>theory</em> (containing theoretical slides), <em>quiz</em> (assessment, exam) and <em>mix</em> (containing both theoretical slides, SCORM packages, H5P rich contents, and assessments)",
+      'required' => TRUE,
+      'default_value' => array(
+        0 => array(
+          'value' => 1,
+        ),
+      ),
+    ));
+  }
+
+  if (module_exists('opigno_calendar_app')) {
+    opigno_quiz_app_enable_calendar_integration();
+  }
+
+  // Add the OG audience field.
+  include_once drupal_get_path('module', 'og') . '/og_ui/og_ui.module';
+  if (function_exists('og_ui_node_type_save')) {
+    $types = array();
+    if (function_exists('_quiz_question_get_implementations')) {
+      $types += array_keys(_quiz_question_get_implementations());
+    }
+    array_unshift($types, "quiz");
+    foreach ($types as $type) {
+      variable_set('og_group_content_type_' . $type, TRUE);
+      og_ui_node_type_save($type);
+      variable_set('node_submitted_'.$type, 0);
+
+      // Disable comments by default.
+      if (module_exists('comment')) {
+        variable_set('comment_' . $type, COMMENT_NODE_CLOSED);
+      }
+
+      // Make the body field be displayed fully on question.
+      $instance = field_info_instance('node', 'body', $type);
+      if (!empty($instance)) {
+        if ($type=="cloze")
+        {
+          $instance['display']['question']=array();
+          $instance['display']['question']['label']="hidden";
+          $instance['display']['question']['type']="hidden";
+          $instance['display']['question']['weight']=0;
+          $instance['display']['question']['settings']=array();
+        }
+        else
+        {
+          $instance['display']['question']['type'] = 'text_default';
+        }
+        field_update_instance($instance);
+      }
+
+      $instance = field_info_instance('node', 'og_group_ref', $type);
+      if (!empty($instance)) {
+        foreach($instance['display'] as $index => $display_mode)
+        {
+          $instance['display'][$index]=array();
+          $instance['display'][$index]['label']="hidden";
+          $instance['display'][$index]['type']="hidden";
+          $instance['display'][$index]['weight']=3;
+          $instance['display'][$index]['settings']=array();
+          field_update_instance($instance);
+        }
+      }
+    }
+  }
+
+  //For scorm display the specific field
+  $instance = field_info_instance('node', 'opigno_scorm_package', 'opigno_scorm_quiz_question');
+  if (!empty($instance)) {
+    $instance['display']['question']=array();
+    $instance['display']['question']['label']="hidden";
+    $instance['display']['question']['type']="opigno_scorm_player";
+    $instance['display']['question']['weight']=10;
+    $instance['display']['question']['settings']=array();
+    $instance['display']['question']['module']="opigno_scorm_ui";
+    field_update_instance($instance);
+  }
+
+  // Add the OG content access field.
+  if (module_exists('og_access')) {
+    og_create_field(OG_CONTENT_ACCESS_FIELD, 'node', 'quiz');
+  }
+
+  // If a OG course exists.
+  if (defined('OPIGNO_COURSE_BUNDLE')) {
+    $instance = field_info_instance('node', 'course_required_quiz_ref', OPIGNO_COURSE_BUNDLE);
+    if (empty($instance)) {
+      field_create_instance(array(
+        'field_name' => 'course_required_quiz_ref',
+        'entity_type' => 'node',
+        'bundle' => OPIGNO_COURSE_BUNDLE,
+        'label' => "Required quiz",
+        'description' => "Defines a required quiz for this course. Users cannot finish the course without passing this quiz.",
+        'required' => FALSE,
+        'default_value' => 0,
+      ));
+    }
+  }
+}
+
+/**
+ * Implements hook_schema().
+ */
+function opigno_quiz_app_schema() {
+  return array(
+    'opigno_quiz_app_quiz_sort' => array(
+      'fields' => array(
+        'gid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'quiz_nid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'weight' => array(
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => '0',
+        ),
+      ),
+      'indexes' => array(
+        'group_id' => array('gid'),
+        'quiz_id' => array('quiz_nid'),
+      ),
+    ),
+  );
+}
+
+/**
+ * Enable Calendar App integration.
+ */
+function opigno_quiz_app_enable_calendar_integration() {
+  $field = field_info_field('field_add_to_calendar');
+  if (empty($field)) {
+    field_create_field(array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings' => array(
+        'allowed_values' => array(
+          '0',
+          '1',
+        ),
+        'allowed_values_function' => '',
+      ),
+      'storage' => array(
+        'type' => 'field_sql_storage',
+        'settings' => array(),
+        'module' => 'field_sql_storage',
+        'active' => '1',
+        'details' => array(
+          'sql' => array(
+            'FIELD_LOAD_CURRENT' => array(
+              'field_data_field_add_to_calendar' => array(
+                'value' => 'field_add_to_calendar_value',
+              ),
+            ),
+            'FIELD_LOAD_REVISION' => array(
+              'field_revision_field_add_to_calendar' => array(
+                'value' => 'field_add_to_calendar_value',
+              ),
+            ),
+          ),
+        ),
+      ),
+      'foreign keys' => array(),
+      'indexes' => array(
+        'value' => array(
+          'value',
+        ),
+      ),
+      'field_name' => 'field_add_to_calendar',
+      'type' => 'list_boolean',
+      'module' => 'list',
+      'active' => '1',
+      'locked' => '0',
+      'cardinality' => '1',
+      'deleted' => '0',
+      'columns' => array(
+        'value' => array(
+          'type' => 'int',
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles' => array(
+        'node' => array(
+          'quiz',
+        ),
+      ),
+    ));
+  }
+
+  $instance = field_info_instance('node', 'field_add_to_calendar', 'quiz');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'label' => 'Add to calendar',
+      'widget' => array(
+        'weight' => '31',
+        'type' => 'options_onoff',
+        'module' => 'options',
+        'active' => 1,
+        'settings' => array(
+          'display_label' => 1,
+        ),
+      ),
+      'settings' => array(
+        'user_register_form' => FALSE,
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'type' => 'hidden',
+          'weight' => '3',
+          'settings' => array(),
+        ),
+        'teaser' => array(
+          'type' => 'hidden',
+          'label' => 'above',
+          'settings' => array(),
+          'weight' => 0,
+        ),
+      ),
+      'required' => 0,
+      'description' => 'Add reminder to calendar',
+      'default_value' => array(
+        array(
+          'value' => 0,
+        ),
+      ),
+      'field_name' => 'field_add_to_calendar',
+      'entity_type' => 'node',
+      'bundle' => 'quiz',
+      'deleted' => '0',
+    ));
+  }
+
+  $instance = field_info_instance('node', 'opigno_calendar_date', 'quiz');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'label' => 'Calendar Date',
+      'widget' => array(
+        'weight' => '33',
+        'type' => 'date_popup',
+        'module' => 'date',
+        'active' => 1,
+        'settings' => array(
+          'input_format' => 'm/d/Y - H:i:s',
+          'input_format_custom' => '',
+          'year_range' => '-3:+3',
+          'increment' => '15',
+          'label_position' => 'above',
+          'text_parts' => array(),
+        ),
+      ),
+      'settings' => array(
+        'default_value' => 'now',
+        'default_value_code' => '',
+        'default_value2' => 'same',
+        'default_value_code2' => '',
+        'user_register_form' => FALSE,
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'type' => 'hidden',
+          'weight' => '4',
+          'settings' => array(),
+        ),
+        'teaser' => array(
+          'type' => 'hidden',
+          'label' => 'above',
+          'settings' => array(),
+          'weight' => 0,
+        ),
+      ),
+      'required' => 0,
+      'description' => '',
+      'field_name' => 'opigno_calendar_date',
+      'entity_type' => 'node',
+      'bundle' => 'quiz',
+      'deleted' => '0',
+    ));
+  }
+  variable_set('node_submitted_quiz_drag_drop', 0);
+}
+
+/**
+ * Enable h5p module
+ */
+function opigno_quiz_app_update_7101(&$sandbox) {
+  if (!module_exists('h5p')) {
+    module_enable(array('h5p'));
+  }
+  if (!module_exists('quiz_h5p')) {
+    module_enable(array('quiz_h5p'));
+  }
+  if (module_exists("quiz"))
+  {
+    $instance = field_info_instance('node', 'quiz_type', 'quiz');
+    if (!empty($instance)) {
+      $instance['description']="Sets the type of this lesson. Can be <em>theory</em> (containing theoretical slides), <em>quiz</em> (assessment, exam) and <em>mix</em> (containing both theoretical slides, SCORM packages, H5P rich contents, and assessments)";
+      field_update_instance($instance);
+    }
+    $types = array_keys(_quiz_question_get_implementations());
+    foreach ($types as $type)
+    {
+      variable_set('node_submitted_'.$type, 0);
+      // makes sure all question types are og group content
+      if (module_exists("og_ui"))
+      {
+        include_once drupal_get_path('module', 'og') . '/og_ui/og_ui.module';
+        $og_content_type=variable_get('og_group_content_type_' . $type, FALSE);
+        if ($og_content_type==FALSE)
+        {
+          variable_set('og_group_content_type_' . $type, TRUE);
+          og_ui_node_type_save($type);
+        }
+      }
+
+      // makes all questions to have the body displaying for the question display mode
+      $instance = field_info_instance('node', 'body', $type);
+      if (!empty($instance)) {
+        if ($type=="cloze")
+        {
+          $instance['display']['question']=array();
+          $instance['display']['question']['label']="hidden";
+          $instance['display']['question']['type']="hidden";
+          $instance['display']['question']['weight']=0;
+          $instance['display']['question']['settings']=array();
+        }
+        else
+        {
+          $instance['display']['question']['type'] = 'text_default';
+        }
+        field_update_instance($instance);
+      }
+
+      $instance = field_info_instance('node', 'og_group_ref', $type);
+      if (!empty($instance)) {
+        foreach($instance['display'] as $index => $display_mode)
+        {
+          $instance['display'][$index]=array();
+          $instance['display'][$index]['label']="hidden";
+          $instance['display'][$index]['type']="hidden";
+          $instance['display'][$index]['weight']=3;
+          $instance['display'][$index]['settings']=array();
+          field_update_instance($instance);
+        }
+      }
+    }
+    //For scorm display the specific field
+    $instance = field_info_instance('node', 'opigno_scorm_package', 'opigno_scorm_quiz_question');
+    if (!empty($instance)) {
+      $instance['display']['question']=array();
+      $instance['display']['question']['label']="hidden";
+      $instance['display']['question']['type']="opigno_scorm_player";
+      $instance['display']['question']['weight']=10;
+      $instance['display']['question']['settings']=array();
+      $instance['display']['question']['module']="opigno_scorm_ui";
+      field_update_instance($instance);
+    }
+
+    //For slide display pdf
+    $instance = field_info_instance('node', 'slide_pdf', 'quiz_directions');
+    if (!empty($instance)) {
+      $instance['display']['question']['label']="hidden";
+      $instance['display']['question']['module']="pdf";
+      $instance['display']['question']['settings']['height']="600px";
+      $instance['display']['question']['settings']['keep_pdfjs']=1;
+      $instance['display']['question']['settings']['width']="100%";
+      $instance['display']['question']['type']="pdf_default";
+      $instance['display']['question']['weight']=10;
+    }
+  }
+
+  /* Default permission */
+  og_invalidate_cache();
+  $roles = og_roles("node", "course", $gid = 0, $force_group = FALSE, $include_all = TRUE);
+  foreach ($roles as $index => $role) {
+    switch ($role) {
+      case "manager":
+        og_role_grant_permissions($index, array(
+          'create h5p_content content',
+        ));
+        og_role_grant_permissions($index, array(
+          'update own h5p_content content',
+        ));
+        og_role_grant_permissions($index, array(
+          'update any h5p_content content',
+        ));
+        og_role_grant_permissions($index, array(
+          'delete own h5p_content content',
+        ));
+        og_role_grant_permissions($index, array(
+          'delete any h5p_content content',
+        ));
+        og_role_grant_permissions($index, array(
+          'create opigno_scorm_quiz_question content',
+        ));
+        og_role_grant_permissions($index, array(
+          'update own opigno_scorm_quiz_question content',
+        ));
+        og_role_grant_permissions($index, array(
+          'update any opigno_scorm_quiz_question content',
+        ));
+        og_role_grant_permissions($index, array(
+          'delete own opigno_scorm_quiz_question content',
+        ));
+        og_role_grant_permissions($index, array(
+          'delete any opigno_scorm_quiz_question content',
+        ));
+        break;
+      case "teacher":
+        og_role_grant_permissions($index, array(
+          'create h5p_content content',
+        ));
+        og_role_grant_permissions($index, array(
+          'update own h5p_content content',
+        ));
+        og_role_grant_permissions($index, array(
+          'delete own h5p_content content',
+        ));
+        og_role_grant_permissions($index, array(
+          'create opigno_scorm_quiz_question content',
+        ));
+        og_role_grant_permissions($index, array(
+          'update own opigno_scorm_quiz_question content',
+        ));
+        og_role_grant_permissions($index, array(
+          'delete own opigno_scorm_quiz_question content',
+        ));
+        break;
+    }
+  }
+
+  /* Existing group permissions */
+  $existing_courses = node_load_multiple(array(), array('type' => "course"));
+  foreach ($existing_courses as $courseid => $course) {
+    $roles = og_roles("node", "course", $courseid, $force_group = FALSE, $include_all = TRUE);
+    foreach ($roles as $index => $role) {
+      switch ($role) {
+        case "manager":
+          og_role_grant_permissions($index, array(
+            'create h5p_content content',
+          ));
+          og_role_grant_permissions($index, array(
+            'update own h5p_content content',
+          ));
+          og_role_grant_permissions($index, array(
+            'update any h5p_content content',
+          ));
+          og_role_grant_permissions($index, array(
+            'delete own h5p_content content',
+          ));
+          og_role_grant_permissions($index, array(
+            'delete any h5p_content content',
+          ));
+          og_role_grant_permissions($index, array(
+            'create opigno_scorm_quiz_question content',
+          ));
+          og_role_grant_permissions($index, array(
+            'update own opigno_scorm_quiz_question content',
+          ));
+          og_role_grant_permissions($index, array(
+            'update any opigno_scorm_quiz_question content',
+          ));
+          og_role_grant_permissions($index, array(
+            'delete own opigno_scorm_quiz_question content',
+          ));
+          og_role_grant_permissions($index, array(
+            'delete any opigno_scorm_quiz_question content',
+          ));
+          break;
+        case "teacher":
+          og_role_grant_permissions($index, array(
+            'create h5p_content content',
+          ));
+          og_role_grant_permissions($index, array(
+            'update own h5p_content content',
+          ));
+          og_role_grant_permissions($index, array(
+            'delete own h5p_content content',
+          ));
+          og_role_grant_permissions($index, array(
+            'create opigno_scorm_quiz_question content',
+          ));
+          og_role_grant_permissions($index, array(
+            'update own opigno_scorm_quiz_question content',
+          ));
+          og_role_grant_permissions($index, array(
+            'delete own opigno_scorm_quiz_question content',
+          ));
+          break;
+      }
+    }
+  }
+  $distpath=drupal_get_path("profile","opigno_lms");
+  if (!empty($distpath))
+  {
+  // Installs H5P Library
+  $path = file_get_contents($distpath."/h5plib/libraries.h5p");
+  $temporary_file_path = 'public://' . variable_get('h5p_default_path', 'h5p') . '/temp/' . uniqid('h5p-');
+  file_prepare_directory($temporary_file_path, FILE_CREATE_DIRECTORY);
+  $temporary_file_name=$temporary_file_path."/libraries.h5p";
+  $file=file_save_data($path,$temporary_file_name,FILE_EXISTS_REPLACE);
+  $_SESSION['h5p_upload'] = drupal_realpath($file->uri);
+  $_SESSION['h5p_upload_folder'] = drupal_realpath($temporary_file_path);
+  $validator = _h5p_get_instance('validator');
+  $validator->isValidPackage(TRUE, FALSE);
+  $h5p_core = _h5p_get_instance('storage');
+  $h5p_core->savePackage(NULL, NULL, TRUE);
+  unset($_SESSION['h5p_upload'], $_SESSION['h5p_upload_folder']);
+  }
+}

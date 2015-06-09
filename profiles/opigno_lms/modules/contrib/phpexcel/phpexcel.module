@@ -1,0 +1,183 @@
+<?php
+
+/**
+ * @file
+ * The module file.
+ *
+ * Defines the settings callback and form for phpexcel.
+ *
+ * To use PHPExcel, include phpexcel.api.inc in your module for exporting to
+ * excel:
+ * @code
+ *   module_load_include('inc', 'phpexcel');
+ * @endcode
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function phpexcel_menu() {
+  return array(
+    'admin/config/system/phpexcel' => array(
+      'title' => 'PHPExcel settings',
+      'description' => 'Manage PHPExcel settings.',
+      'access arguments' => array('administer phpexcel'),
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('phpexcel_settings_form'),
+    )
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function phpexcel_permission() {
+  return array(
+    'administer phpexcel' => array(
+      'title' => t('Administer the PHPExcel module settings'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function phpexcel_libraries_info() {
+  return array(
+    'PHPExcel' => array(
+      'name' => 'PHPExcel',
+      'vendor url' => 'http://phpexcel.codeplex.com/',
+      'download url' => 'https://github.com/PHPOffice/PHPExcel',
+      'version arguments' => array(
+        'file' => 'changelog.txt',
+        'pattern' => "/@version\s+([0-9\.]+)/",
+        'lines' => 25,
+      ),
+      'path' => 'Classes',
+      'files' => array(
+        'php' => array(
+          'PHPExcel.php',
+        ),
+      ),
+    ),
+  );
+}
+
+/**
+ * Settings form.
+ */
+function phpexcel_settings_form() {
+  $form = array();
+
+  $form['phpexcel_cache_mechanism'] = array(
+    '#type' => 'radios',
+    '#title' => t("Cache mechanism"),
+    '#description' => t("The PHPExcel library uses an average of 1k of memory for <em>each cell</em>. This can quickly use up available memory. This can be reduced, however, by specifiying a caching method. This will cache each cell, reducing memory usage. Note, however, that all caching methods are slower than the default <em>Cache in memory</em> method."),
+    '#options' => array(
+      'cache_in_memory' => t("Cache in memory. Default method. Fastest, but uses a lot of memory"),
+      'cache_in_memory_serialized' => t("Cache in memory, serialized. Fast, uses slightly less memory than the previous option."),
+      'cache_in_memory_gzip' => t("Cache in memory, GZipped. Fast, uses slightly less memory that the previous option."),
+      'cache_to_phpTemp' => t("Cache to php://temp. Slow. Will still cache to memory up to a certain limit (default 1MB) to speed up the process."),
+      'cache_to_apc' => t("Cache to APC. Fast."),
+      'cache_to_memcache' => t("Cache to Memcache. Fast."),
+      'cache_to_sqlite3' => t("Cache to SQLite 3. Slowest, but most memory-efficient."),
+    ),
+    '#default_value' => variable_get('phpexcel_cache_mechanism', 'cache_in_memory'),
+  );
+
+  // PHPTemp settings.
+  $form['phptemp'] = array(
+    '#type' => 'fieldset',
+    '#title' => t("PHPTemp options"),
+    '#collapsible' => TRUE,
+    '#collapsed' => variable_get('phpexcel_cache_mechanism') != 'cache_to_phpTemp',
+  );
+  $form['phptemp']['phpexcel_phptemp_limit'] = array(
+    '#title' => t("PHPTemp memory cache size"),
+    '#description' => t("The limit before which PHPExcel will still use memory instead of disk for cell caching. Value in MB (only give a numerical value)."),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('phpexcel_phptemp_limit', 1),
+  );
+
+  // APC settings.
+  $form['apc'] = array(
+    '#type' => 'fieldset',
+    '#title' => t("APC options"),
+    '#collapsible' => TRUE,
+    '#collapsed' => variable_get('phpexcel_cache_mechanism') != 'cache_to_apc',
+  );
+  $form['apc']['phpexcel_apc_cachetime'] = array(
+    '#title' => t("APC cache timeout"),
+    '#description' => t("The time the cell data remains valid in APC. Defaults to 600 seconds. Data is automatically cleared from the cache when the script terminates."),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('phpexcel_apc_cachetime', '600'),
+  );
+
+  // Memcache settings.
+  $form['memcache'] = array(
+    '#type' => 'fieldset',
+    '#title' => t("Memcache options"),
+    '#collapsible' => TRUE,
+    '#collapsed' => variable_get('phpexcel_cache_mechanism') != 'cache_to_memcache',
+  );
+  $form['memcache']['phpexcel_memcache_host'] = array(
+    '#title' => t("Memcache server"),
+    '#description' => t("If you use Memcache, specify it's host here (e.g. 'localhost')."),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('phpexcel_memcache_host', 'localhost'),
+  );
+  $form['memcache']['phpexcel_memcache_port'] = array(
+    '#title' => t("Memcache port"),
+    '#description' => t("If you use Memcache, specify it's port here."),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('phpexcel_memcache_port', '11211'),
+  );
+  $form['memcache']['phpexcel_memcache_cachetime'] = array(
+    '#title' => t("Memcache cache timeout"),
+    '#description' => t("The time the cell data remains valid in Memcache. Defaults to 600 seconds. Data is automatically cleared from the cache when the script terminates."),
+    '#type' => 'textfield',
+    '#default_value' => variable_get('phpexcel_memcache_cachetime', '600'),
+  );
+
+  return system_settings_form($form);
+}
+
+/**
+ * Validate the settings form.
+ */
+function phpexcel_settings_form_validate($form, $form_state) {
+  switch ($form_state['values']['phpexcel_cache_mechanism']) {
+    case 'cache_to_phpTemp':
+      if (!preg_match('/^[0-9]+$/', $form_state['values']['phpexcel_phptemp_limit'])) {
+        form_set_error(
+          'phpexcel_phptemp_limit',
+          t("You must provide an integer value. The unit is in megabytes. Defaults to 1 (recommended).")
+        );
+      }
+      break;
+
+    case 'cache_to_apc':
+      if (!preg_match('/^[0-9]+$/', $form_state['values']['phpexcel_apc_cachetime'])) {
+        form_set_error(
+          'phpexcel_apc_cachetime',
+          t("You must provide an integer value. The unit is in seconds. Defaults to 600 (recommended). Remember that all cells cached in APC will get cleared at the end of the script run.")
+        );
+      }
+      break;
+
+    case 'cache_to_memcache':
+      if (empty($form_state['values']['phpexcel_memcache_host'])) {
+        form_set_error('phpexcel_memcache_host', t("You must provide a host for Memcache. Defaults to 'localhost'."));
+      }
+      if (!preg_match('/^[0-9]+$/', $form_state['values']['phpexcel_memcache_port'])) {
+        form_set_error('phpexcel_memcache_port', t("You must provide a port for Memcache. Defaults to '11211'."));
+      }
+      if (!preg_match('/^[0-9]+$/', $form_state['values']['phpexcel_memcache_cachetime'])) {
+        form_set_error(
+          'phpexcel_memcache_cachetime',
+          t("You must provide an integer value. The unit is in seconds. Defaults to 600 (recommended). Remember that all cells cached in Memcache will get cleared at the end of the script run.")
+        );
+      }
+      break;
+  }
+}

@@ -1,0 +1,87 @@
+/**
+ * @file
+ * Defines the styles for homebox.
+ */
+
+#homebox-add-link {
+  @include action-add-element;
+  text-decoration: none;
+}
+
+#homebox-add {
+
+  .item-list {
+    background: $medium-gray;
+    overflow: hidden;
+    padding: 0.25em;
+
+    li {
+      margin: 0;
+    }
+
+    a {
+      @include action-add-element;
+      text-decoration: none;
+      margin-right: .5em;
+      font-weight: normal;
+      font-size: .9em;
+      background-color: lighten($leaf-green, 20%);
+    }
+
+    a:hover {
+      background-color: $leaf-green;
+    }
+
+    a.used {
+      display: none;
+    }
+
+    a.restore {
+      @include action-prev-element;
+      background-color: $blood-red;
+    }
+  }
+}
+
+#homebox {
+
+  .homebox-column-wrapper {
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      float: none;
+      width: auto !important;
+    }
+  }
+
+  .homebox-column {
+    padding: 0;
+    margin: 0;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      height: auto !important;
+    }
+  }
+
+  .homebox-portlet {
+    border: 0;
+    margin: 5px 5px 20px 5px;
+    background: $medium-gray;
+
+    .homebox-portlet-inner {
+      border: 0;
+    }
+
+    .portlet-header {
+      background: $dark-blue;
+      color: white;
+      border: 0;
+    }
+  }
+
+  #homebox-column-1 {
+
+    .homebox-portlet {
+      margin-left: 0;
+    }
+  }
+}

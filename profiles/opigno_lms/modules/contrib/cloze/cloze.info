@@ -1,0 +1,16 @@
+name = Cloze
+package = Quiz Question
+description = Question with certain words removed the participant will have to fill-in the missing words.
+core = 7.x
+php = 5.1
+dependencies[] = quiz
+dependencies[] = quiz_question
+files[] = cloze.classes.inc
+files[] = cloze.admin.inc
+
+; Information added by drush on 2015-03-01
+version = "7.x-1.0-alpha3+5-dev"
+core = "7.x"
+project = "cloze"
+datestamp = "1425249212"
+

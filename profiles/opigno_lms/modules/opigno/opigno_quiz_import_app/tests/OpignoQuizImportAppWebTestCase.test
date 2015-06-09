@@ -1,0 +1,205 @@
+<?php
+
+/**
+ * @file
+ * Defines the unit tests for the Opigno Quiz Import app.
+ */
+
+class OpignoQuizImportAppWebTestCase extends OpignoWebTestCase {
+
+  /**
+   * {@inheritDoc}
+   */
+  public static function getInfo() {
+    return array(
+      'name' => 'Opigno Quiz Import App',
+      'description' => 'Test the quiz import integration with Opigno.',
+      'group' => 'Opigno',
+    );
+  }
+
+  /**
+   * {@inheritDoc}
+   */
+  public function setUp() {
+    parent::setUp('opigno_quiz_import_app', 'opigno', 'og_ui');
+    $this->_setUpQuizContentType();
+  }
+
+  /**
+   * Test importing a quiz in global context.
+   */
+  public function testGlobalImport() {
+    // Create an admin to simplify checking.
+    $admin = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
+    $course = $this->createCourse('Course', $admin);
+
+    // Create a user for checking the import.
+    $importer = $this->drupalCreateUser(array('import quiz questions xls'));
+
+    // Login importer.
+    $this->drupalLogin($importer);
+
+    // Check import.
+    $title = "imported quiz";
+    $this->drupalPost('admin/quiz/import/xls', array(
+      'files[import_file]' => realpath(drupal_get_path('module', 'opigno_quiz_import_app') . '/tests/fixture/quiz.xlsx'),
+      'title' => $title,
+    ), t("Import"));
+    $this->assertText(t("Your new quiz was imported."));
+
+    // Check the questions. Make sure their settings are correct.
+    $this->clickLink(t("here"));
+    $this->assertText($title);
+    $questions_url = $this->getUrl();
+
+    // Check Quiz was assigned to correct author.
+    $nid = $this->_getNid($questions_url);
+    $this->_checkNodeAuthor($nid, $importer->uid);
+
+    // Login admin - will make checking question settings much simpler.
+    $this->drupalLogin($admin);
+
+    // Check OG ref field.
+    $this->drupalGet($questions_url . '/edit');
+    $this->assertNoOptionSelected('edit-og-group-ref-und-0-default', $course->nid, "Was not linked to any group.");
+
+    // Check the questions.
+    $this->drupalGet($questions_url . '/questions');
+    $this->assertText("Who is Shröder ?", "The first question was correctly linked.");
+    $this->assertText("Who is Einstein ?", "The second question was correctly linked.");
+
+    // Check the first question settings.
+    $this->clickLink("Who is Shröder ?");
+
+    // Check question was assigned to correct author.
+    $nid = $this->_getNid($this->getUrl());
+    $this->_checkNodeAuthor($nid, $importer->uid);
+
+    // Check question settings.
+    $this->drupalGet($this->getUrl() . '/edit');
+    $this->_testFirstQuestionSettings();
+
+    $this->drupalGet($questions_url . '/questions');
+    $this->clickLink("Who is Einstein ?");
+
+    // Check question was assigned to correct author.
+    $nid = $this->_getNid($this->getUrl());
+    $this->_checkNodeAuthor($nid, $importer->uid);
+
+    // Check question settings.
+    $this->drupalGet($this->getUrl() . '/edit');
+    $this->_testSecondQuestionSettings();
+  }
+
+  /**
+   * Test importing a quiz in course context.
+   */
+  public function tsestCourseImport() {
+    // Create an admin for the course to simplify checking.
+    $admin = $this->drupalCreateUser(array('access content'));
+    $course = $this->createCourse('Course', $admin);
+
+    // Create a user for checking the import.
+    $importer = $this->drupalCreateUser(array('access content'));
+    $this->createRole('can import', array('import quiz questions xls'));
+    $this->addMemberToCourse($course, $importer->uid, array('member', 'can import'));
+
+    // Check import.
+    $title = "imported quiz";
+    $this->drupalPost('admin/quiz/import/xls', array(
+      'files[import_file]' => realpath(drupal_get_path('module', 'opigno_quiz_import_app') . '/tests/fixture/quiz.xlsx'),
+      'title' => $title,
+    ), t("Import"));
+    $this->assertText(t("Your new quiz was imported."));
+
+  }
+
+  /**
+   * Helper function to test the second question settings.
+   */
+  protected function _testSecondQuestionSettings() {
+    $default_score_not_chosen = -1; // Value from multichoice.
+    $this->assertFieldByName('alternatives[0][answer][value]', 'A guy', "The first option label is correctly set.");
+    $this->assertFieldChecked('edit-alternatives-0-correct', "The first option is correctly set as correct.");
+    $this->assertFieldByName('alternatives[0][feedback_if_chosen][value]', 'Hard to disagree with that', "Feedback is correctly set if chosen.");
+    $this->assertFieldByName('alternatives[0][feedback_if_not_chosen][value]', 'Sigh', "Feedback is correctly set if not chosen.");
+    $this->assertFieldByName('alternatives[0][score_if_chosen]', 3, "Score was correctly set to 3 if chosen.");
+    $this->assertFieldByName('alternatives[0][score_if_not_chosen]', 0, "Score was correctly set to 0 if not chosen.");
+
+    $this->assertFieldByName('alternatives[1][answer][value]', 'A gall', "The second option label is correctly set.");
+    $this->assertNoFieldChecked('edit-alternatives-1-correct', "The first option is correctly set as correct.");
+    $this->assertFieldByName('alternatives[1][feedback_if_chosen][value]', '"Albert"…', "Feedback is correctly set if chosen.");
+    $this->assertFieldByName('alternatives[1][feedback_if_not_chosen][value]', "Don't brag", "Feedback is correctly set if not chosen.");
+    $this->assertFieldByName('alternatives[1][score_if_chosen]', 0, "Score was correctly set to 0 if chosen.");
+    $this->assertFieldByName('alternatives[1][score_if_not_chosen]', 2, "Score was correctly set to 2 if not chosen.");
+
+    $this->assertFieldByName('alternatives[2][answer][value]', 'A brilliant scientist', "The third option label is correctly set.");
+    $this->assertFieldChecked('edit-alternatives-2-correct', "The first option is correctly set as incorrect.");
+    $this->assertFieldByName('alternatives[2][feedback_if_chosen][value]', '', "Feedback is correctly set if chosen.");
+    $this->assertFieldByName('alternatives[2][feedback_if_not_chosen][value]', '', "Feedback is correctly set if not chosen.");
+    $this->assertFieldByName('alternatives[2][score_if_chosen]', 5, "Score was correctly set to 5 if chosen.");
+    $this->assertFieldByName('alternatives[2][score_if_not_chosen]', 0, "Score was correctly set to 0 if not chosen.");
+
+    $this->assertFieldByName('alternatives[3][answer][value]', 'A lawyer', "The fourth option label is correctly set.");
+    $this->assertNoFieldChecked('edit-alternatives-3-correct', "The first option is correctly set as incorrect.");
+    $this->assertFieldByName('alternatives[3][feedback_if_chosen][value]', '', "Feedback is correctly set if chosen.");
+    $this->assertFieldByName('alternatives[3][feedback_if_not_chosen][value]', '', "Feedback is correctly set if not chosen.");
+    $this->assertFieldByName('alternatives[3][score_if_chosen]', $default_score_not_chosen, "Score was correctly set to $default_score_not_chosen if chosen.");
+    $this->assertFieldByName('alternatives[3][score_if_not_chosen]', 0, "Score was correctly set to 0 if not chosen.");
+  }
+
+  /**
+   * Helper function to test the first question settings.
+   */
+  protected function _testFirstQuestionSettings() {
+    $this->assertFieldByName('alternatives[0][answer][value]', 'A nice chap', "The first option label is correctly set.");
+    $this->assertFieldChecked('edit-alternatives-0-correct', "The first option is correctly set as correct.");
+    $this->assertFieldByName('alternatives[0][feedback_if_chosen][value]', '', "Feedback is correctly set if chosen.");
+    $this->assertFieldByName('alternatives[0][feedback_if_not_chosen][value]', 'Who do you think you are ?', "Feedback is correctly set if not chosen.");
+    $this->assertFieldByName('alternatives[0][score_if_chosen]', 1, "Score was correctly set to 1 if chosen.");
+    $this->assertFieldByName('alternatives[0][score_if_not_chosen]', 0, "Score was correctly set to 0 if not chosen.");
+
+    $this->assertFieldByName('alternatives[1][answer][value]', 'A scientist', "The second option label is correctly set.");
+    $this->assertFieldChecked('edit-alternatives-1-correct', "The first option is correctly set as correct.");
+    $this->assertFieldByName('alternatives[1][feedback_if_chosen][value]', 'Everything is relative', "Feedback is correctly set if chosen.");
+    $this->assertFieldByName('alternatives[1][feedback_if_not_chosen][value]', 'Wrong you are', "Feedback is correctly set if not chosen.");
+    $this->assertFieldByName('alternatives[1][score_if_chosen]', 4, "Score was correctly set to 4 if chosen.");
+    $this->assertFieldByName('alternatives[1][score_if_not_chosen]', 0, "Score was correctly set to 0 if not chosen.");
+
+    $this->assertFieldByName('alternatives[2][answer][value]', 'My neighbour', "The third option label is correctly set.");
+    $this->assertNoFieldChecked('edit-alternatives-2-correct', "The first option is correctly set as incorrect.");
+    $this->assertFieldByName('alternatives[2][feedback_if_chosen][value]', 'I doubt it', "Feedback is correctly set if chosen.");
+    $this->assertFieldByName('alternatives[2][feedback_if_not_chosen][value]', 'Of course not', "Feedback is correctly set if not chosen.");
+    $this->assertFieldByName('alternatives[2][score_if_chosen]', -5, "Score was correctly set to -5 if chosen.");
+    $this->assertFieldByName('alternatives[2][score_if_not_chosen]', 4, "Score was correctly set to 4 if not chosen.");
+  }
+
+  /**
+   * Set up the quiz node type to be an OG content type.
+   */
+  protected function _setUpQuizContentType() {
+    $admin = $this->drupalCreateUser(array_keys(module_invoke_all('permission')));
+    $this->drupalLogin($admin);
+    $this->drupalPost('admin/structure/types/manage/quiz', array('og_group_content_type' => 1), t("Save content type"));
+    $this->drupalLogout($admin);
+  }
+
+  /**
+   * Helper function to test the node was assigned to the correct user.
+   */
+  protected function _checkNodeAuthor($nid, $uid) {
+    $node = node_load($nid);
+    $this->assertEqual($node->uid, $uid, "Node was assigned to the correct user.");
+  }
+
+  /**
+   * Extract the node nid from the URL.
+   */
+  protected function _getNid($path) {
+    if (preg_match('/node\/[0-9]+/', $path)) {
+      $parts = explode('node/', $path);
+      return array_shift(explode('/', $parts[1]));
+    }
+  }
+}

@@ -1,0 +1,199 @@
+/* to refactor jma */
+
+.view-opigno-course-catalgue .opigno-group
+{
+  background: white;
+  margin-bottom: 30px;
+}
+.view-opigno-course-catalgue .opigno-group h3
+{
+  padding: 10px;
+  background: $dark-blue;
+  margin-bottom: 0px;
+}
+
+.view-opigno-course-catalgue .opigno-group .views-row
+{
+  margin-left: 10px;
+  margin-bottom: 10px;
+  padding: 10px;
+  background: #ececeb;
+}
+
+.view-opigno-course-catalgue .opigno-group h3 a
+{
+  color: white;
+  text-decoration: none;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-group-group
+{
+  float: right;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-opigno-course-image .field-content img
+{
+  width: 100px;
+  display: inline;
+}
+.view-opigno-course-catalgue .views-field.views-field-opigno-course-image .field-content
+{
+  width: 100px;
+  display: inline;
+}
+.view-opigno-course-catalgue .views-field.views-field-opigno-course-image
+{
+  height: 100px;
+  width: 100px;
+  display: inline;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-title
+{
+  font-size: 150%;
+}
+@media screen and (min-width: 600px) {
+  .view-opigno-course-catalgue .views-field.views-field-title
+  {
+    display: inline;
+    margin-left: 35px;
+    position: relative;
+    height:100px;
+    top:-50px;
+    width: 200px;
+  }
+}
+
+.view-opigno-course-catalgue .views-field-body span
+{
+  width: 140px;
+  float: left;
+}
+
+
+.view-opigno-course-catalgue .views-field-body p
+{
+  margin:0px;
+}
+
+.view-opigno-course-catalgue .views-field-body
+{
+  min-height: 30px;
+  max-width: 600px;
+}
+.view-opigno-course-catalgue .views-field-body .field-content
+{
+  margin-left:140px;
+}
+
+.view-opigno-course-catalgue .views-field-teachers span.views-label
+{
+  width: 140px;
+  float: left;
+  height:100%;
+}
+
+.view-opigno-course-catalgue .views-field-teachers p
+{
+  margin:0px;
+}
+
+.view-opigno-course-catalgue .views-field-teachers
+{
+  min-height: 110px;
+  max-width: 600px;
+}
+
+.view-opigno-course-catalgue .views-field-teachers .teacher
+{
+  padding-left: 140px;
+  height:110px;
+  min-height: 110px;
+  max-width: 600px;
+}
+
+.view-opigno-course-catalgue .views-field-teachers .field-content .user-picture
+{
+  float: left;
+}
+
+.view-opigno-course-catalgue .views-field-teachers .field-content .username
+{
+  margin-left:10px
+}
+
+
+.view-opigno-course-catalgue .views-field-available-places
+{
+  max-width: 600px;
+  min-height: 30px;
+}
+
+.view-opigno-course-catalgue .views-field-available-places span.views-label
+{
+  float: left;
+  width: 140px;
+}
+
+
+.view-opigno-course-catalgue .views-field.views-field-in-house-trainings
+{
+  max-width: 600px;
+  min-height: 60px;
+}
+
+
+.view-opigno-course-catalgue .views-field.views-field-in-house-trainings span.views-label
+{
+  width: 140px;
+  float: left;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-in-house-trainings .iht-title,.iht-date
+{
+  display: inline;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-in-house-trainings .iht-date
+{
+  padding-left: 10px;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-in-house-trainings .iht-dates
+{
+  padding-left:140px;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-webex span.views-label
+{
+  width: 140px;
+  float: left;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-webex .webex-title,.webex-date
+{
+  display: inline;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-webex .webex-date
+{
+  padding-left: 10px;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-webex .webex-dates
+{
+  padding-left:140px;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-group-group{
+  background: #5aa449;
+  display: inline;
+  float: right;
+  padding-left: 10px;
+  padding-right: 10px;
+}
+
+.view-opigno-course-catalgue .views-field.views-field-group-group a{
+  color: white;
+  text-decoration: none;
+}

@@ -1,0 +1,257 @@
+@import "grid/grid";
+
+/**
+ * @file
+ * Defines the site layout and structure.
+ * Defines the styles for the structure elements. For more specific styles, though,
+ * look into partials/base or partials/components.
+ *
+ * - Header
+ *   - Account information
+ *   - Search
+ * - Content
+ *   - First sidebar
+ *   - Second sidebar
+ * - Footer
+ */
+
+/**
+ * Header
+ */
+#site-header {
+  background: url(../img/header-background.jpg) left top $deep-blue;
+  padding: 10px 0;
+  color: white;
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    position: fixed;
+    width: 100%;
+    z-index: 200;
+    box-shadow: 0 0 10px black;
+    top: 0;
+  }
+
+  a {
+    color: white;
+    text-decoration: none;
+  }
+
+  .mobile-link-icon {
+    float: right;
+    padding-top: 0.75em;
+    display: none;
+    margin-right: 1em;
+    height: 30px;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      display: block;
+    }
+  }
+
+  .mobile-link-icon:first-of-type {
+    margin-right: 0;
+  }
+}
+
+#logo {
+
+  img {
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      max-height: 40px;
+    }
+  }
+}
+
+#user-account-information {
+  float: right;
+  max-width: 230px;
+
+  #user-account-information-picture, #user-account-information-name {
+    float: left;
+    margin-right: 1em;
+  }
+
+  #user-account-information-name {
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      display: none;
+    }
+  }
+
+  #user-account-information-picture {
+    padding-top: .55em;
+  }
+}
+
+.search-form  input[type="text"]{
+  color: #000000;
+}
+
+#header-search {
+  float: right;
+  border-left: 1px solid white;
+  width: 40px;
+  height: 30px;
+  margin: .55em 0 0 1em;
+  overflow: hidden;
+  position: relative;
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    display: none;
+  }
+
+  form {
+    position: absolute;
+    right: 0;
+    white-space: nowrap;
+    width: 170px;
+  }
+
+  h2, label {
+    display: none;
+  }
+
+  .form-text {
+    float: left;
+    padding: 5px;
+    border: 0;
+    outline: 0;
+    margin-right: 10px;
+    width: 120px;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      width: auto;
+    }
+  }
+
+  .form-submit {
+    border: 0;
+    outline: 0;
+    background: url(../img/search-submit.png) center center no-repeat;
+    float: left;
+    text-indent: -9999px;
+    cursor: pointer;
+    width: 30px;
+    height: 30px;
+  }
+}
+
+
+/**
+ * Content
+ */
+#site-content {
+  background: url(../img/body-background.png) center top repeat-y;
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    margin-top: 65px;
+    background: $light-gray;
+  }
+}
+
+#first-sidebar {
+  padding-top: 1.5em;
+  padding-bottom: 1em;
+  position: relative;
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    padding-top: 0;
+    padding-bottom: 0;
+  }
+
+  #first-sidebar-toggle {
+    position: absolute;
+    right: 5px;
+    width: 13px;
+    height: 22px;
+    background: url(../img/collapse-menu-icon.png) center bottom no-repeat;
+    top: 48%;
+    cursor: pointer;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      display: none;
+    }
+  }
+}
+
+#first-sidebar.collapsed {
+  width: 0;
+  overflow: hidden;
+
+  .region {
+    display: none;
+  }
+
+  #first-sidebar-toggle {
+    background-position: center top;
+
+    @media screen and (max-width: $mobile-breakpoint) {
+      display: none;
+    }
+  }
+}
+
+#second-sidebar {
+  background-color: $light-gray;
+  padding-top: 1.5em;
+  padding-bottom: 1em;
+  min-height: 680px;
+}
+
+@media screen and (max-width: $mobile-breakpoint) {
+
+  #first-sidebar.collapsed,
+  #first-sidebar.collapsed + #second-sidebar {
+    width: 100% - (2 * 1.5%);
+
+    .region {
+      display: block !important;
+    }
+  }
+}
+
+@media screen and (min-width: $mobile-breakpoint) {
+
+  #first-sidebar.collapsed + #second-sidebar {
+    width: 100% - (2 * 1.5%);
+  }
+}
+
+@media screen and (min-width: $pc-breakpoint) {
+
+  #first-sidebar.collapsed + #second-sidebar {
+    width: 100% - (2 * 1.5%);
+  }
+}
+
+#title-wrapper {
+  padding: .5em;
+  background: $medium-gray;
+  margin-bottom: 2em;
+  overflow: hidden;
+
+  h1 {
+    margin: 0;
+    float: left;
+  }
+
+  #og-context-navigation {
+    float: right;
+  }
+}
+
+
+/**
+ * Footer
+ */
+#site-footer {
+  background-color: $deep-blue;
+  padding: 10px 0;
+  color: white;
+  font-size: 0.7em;
+
+  a {
+    color: white;
+  }
+}

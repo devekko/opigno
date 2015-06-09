@@ -1,0 +1,27 @@
+name = Platon
+description = Opigno LMS default theme. Fully responsive, HTML5 theme.
+core = 7.x
+
+settings[platon_use_home_page_background] = 0
+settings[platon_home_page_image_path] = ""
+
+stylesheets[all][] = css/reset.css
+stylesheets[all][] = css/hacks.css
+stylesheets[all][] = css/styles.css
+stylesheets[all][] = css/color.css
+
+scripts[] = js/vendor/modernizr/modernizr.min.js
+scripts[] = js/platon.js
+
+regions[help] = Help
+regions[sidebar_first] = First sidebar
+regions[content] = Content
+regions[content_bottom] = Bottom of content
+regions[footer] = Footer
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-3.10"
+core = "7.x"
+project = "platon"
+datestamp = "1425246198"
+

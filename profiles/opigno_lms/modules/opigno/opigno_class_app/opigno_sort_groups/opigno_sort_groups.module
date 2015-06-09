@@ -1,0 +1,307 @@
+<?php
+/**
+ * @file
+ * Contains all hook_implementations and module specific functions.
+ */
+
+function opigno_sort_groups_og_permission() {
+  return array(
+    'sort courses' => array(
+      'title' => t("Sort Courses inside classes"),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu().
+ */
+function opigno_sort_groups_menu() {
+  return array(
+    'node/%/sort_courses' => array(
+      'title' => "Sort Courses",
+      'description' => "Sort Courses",
+      'page callback' => 'drupal_get_form',
+      'page arguments' => array('opigno_sort_groups_form', 1),
+      'access callback' => 'opigno_sort_groups_access',
+      'access arguments' => array(1),
+      'file' => 'opigno_sort_groups.pages.inc',
+      'type' => MENU_LOCAL_TASK,
+    ),
+  );
+}
+
+function opigno_sort_groups_access($node_id) {
+  $node = node_load($node_id);
+  if ((og_user_access('node', $node_id, 'sort courses')) && ($node->type == "class")) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+function opigno_sort_groups_set_groups_weight($cgid, $nid, $weight = 0) {
+  db_merge('opigno_sort_groups')
+    ->key(array(
+      'cgid' => $cgid,
+      'gid' => $nid,
+    ))
+    ->fields(array(
+      'cgid' => $cgid,
+      'gid' => $nid,
+      'weight' => $weight,
+    ))
+    ->execute();
+}
+
+function opigno_sort_groups_get_groups_weight($cgid, $gid) {
+  $weight = db_select('opigno_sort_groups', 'w')
+    ->fields('w', array('weight'))
+    ->condition('w.cgid', $cgid)
+    ->condition('w.gid', $gid)
+    ->execute()
+    ->fetchField();
+  return empty($weight) ? 0 : $weight;
+}
+
+
+/**
+ * Implements hook_theme().
+ */
+function opigno_sort_groups_theme() {
+  return array(
+    'opigno_sort_groups_form' => array(
+      'render element' => 'form',
+    ),
+  );
+}
+
+/**
+ * Theme callback: render the order form.
+ */
+function theme_opigno_sort_groups_form($vars) {
+  $form = $vars['form'];
+  drupal_add_tabledrag('opigno-sort-course', 'order', 'sibling', 'opigno-sort-course-weight');
+
+  $header = array(
+    t("Courses"),
+    t("Weight"),
+  );
+
+  $rows = array();
+  foreach ($form['table'] as $key => $item) {
+    if (preg_match('/course_[0-9]+/', $key)) {
+      $data = array();
+      $data[] = drupal_render($item['title']) . drupal_render($item['nid']);
+      $data[] = drupal_render($item['weight']);
+
+      $rows[] = array(
+        'data' => $data,
+        'class' => array('draggable'),
+      );
+    }
+  }
+
+  $form['table'] = array(
+    '#markup' => theme('table', array(
+      'header' => $header,
+      'rows' => $rows,
+      'attributes' => array('id' => 'opigno-sort-course')
+    )),
+    '#weight' => 1,
+  );
+
+  return drupal_render_children($form);
+}
+
+
+/**
+ * Helper function to fetch all class courses.
+ *
+ * @param  stdClass $node
+ *
+ * @return array
+ */
+function opigno_sort_group_courses($node) {
+  $courses = & drupal_static(__FUNCTION__);
+  if (!isset($courses[$node->nid])) {
+    $courses[$node->nid] = array();
+
+    $query = db_select('node', 'n');
+    $query->fields('n', array('nid'));
+    $query->condition('n.type', "course", '=');
+    $query->join('field_data_opigno_class_courses', 'fd', 'fd.opigno_class_courses_target_id = n.nid');
+    $query->fields('fd', array());
+    $query->condition('fd.entity_id', $node->nid, '=');
+    $result = $query->execute();
+
+    while ($record = $result->fetchAssoc()) {
+      $courses[$node->nid][$record['nid']] = $record['nid'];
+    }
+
+    $temp = array();
+    foreach ($courses[$node->nid] as $index => $crs) {
+      $temp[$index] = opigno_sort_groups_get_groups_weight($node->nid, $index);
+    }
+
+    asort($temp);
+    $courses[$node->nid] = array_keys($temp);
+  }
+  return $courses[$node->nid];
+}
+
+/**
+ * Implements hook_views_query_alter().
+ */
+function opigno_sort_groups_views_query_alter(&$view, &$query) {
+  global $user;
+  if (($view->name == "opigno_my_courses") && ($view->current_display == "page_my_courses")) {
+    $join = new views_join();
+    $join->table = 'opigno_sort_groups';
+    $join->field = 'gid';
+    $join->left_table = 'node_og_membership';
+    $join->left_field = 'nid';
+    $join->type = 'LEFT';
+    $query->add_relationship('opigno_sort_groups', $join, 'og_membership');
+    $query->add_where_expression(0, "opigno_sort_groups.cgid = opigno_class_courses_node.nid or opigno_sort_groups.cgid is null", $args = array());
+    $query->add_orderby('opigno_sort_groups', 'weight', $order = 'ASC', $alias = '', $params = array());
+  }
+
+  if (($view->name == "opigno_course_catalgue") && ($view->current_display == "page")) {
+    $join = new views_join();
+    $join->table = 'opigno_sort_groups';
+    $join->field = 'gid';
+    $join->left_table = 'node';
+    $join->left_field = 'nid';
+    $join->type = 'LEFT';
+    $query->add_relationship('opigno_sort_groups', $join, 'og_membership');
+    $query->add_where_expression(0, "opigno_sort_groups.cgid = opigno_class_courses_node.nid or opigno_sort_groups.cgid is null", $args = array());
+    $query->add_orderby('opigno_sort_groups', 'weight', $order = 'ASC', $alias = '', $params = array());
+  }
+}
+
+
+function opigno_sort_groups_node_insert($node) {
+  if ($node->type == "class") {
+    if (isset($node->opigno_class_courses[LANGUAGE_NONE])) {
+      foreach ($node->opigno_class_courses[LANGUAGE_NONE] as $target) {
+        /// Insert into opigno sort groups
+        db_insert('opigno_sort_groups') // Table name no longer needs {}
+          ->fields(array(
+            'cgid' => $node->nid,
+            'gid' => $target['target_id'],
+            'weight' => 0,
+          ))
+          ->execute();
+        ///////////////////////////////////
+
+        /// If course is alone delete it
+        db_delete('opigno_sort_groups')
+          ->condition('gid', $target['target_id'])
+          ->condition('cgid', NULL, 'IS')
+          ->execute();
+        ////////////////////////////////
+      }
+    }
+  }
+  if ($node->type == "course") {
+    /// Insert into opigno sort groups
+    db_insert('opigno_sort_groups') // Table name no longer needs {}
+      ->fields(array(
+        'gid' => $node->nid,
+        'weight' => 99,
+      ))
+      ->execute();
+    ///////////////////////////////////
+  }
+}
+
+function opigno_sort_groups_node_delete($node) {
+  if ($node->type == "course") {
+    db_delete('opigno_sort_groups')
+      ->condition('gid', $node->nid)
+      ->execute();
+  }
+  if ($node->type == "class") {
+    foreach ($node->opigno_class_courses[LANGUAGE_NONE] as $target) {
+      db_delete('opigno_sort_groups')
+        ->condition('cgid', $node->nid)
+        ->condition('gid', $target['target_id'])
+        ->execute();
+      $res = db_select('opigno_sort_groups', "osg")
+        ->fields('osg', array('weight'))
+        ->condition('gid', $target['target_id'])
+        ->execute()
+        ->fetchAssoc();
+      if (!isset($result['opigno_class_courses_target_id'])) {
+        db_insert('opigno_sort_groups')
+          ->fields(array(
+            'gid' => $target['target_id'],
+            'weight' => 99,
+          ))
+          ->execute();
+      }
+    }
+  }
+}
+
+function opigno_sort_groups_node_update($node) {
+  if (isset($node->original)) {
+    if ($node->type == "class") {
+      /// If courses inside the class changed
+      foreach ($node->opigno_class_courses[LANGUAGE_NONE] as $index => $target) {
+        if (!in_array($target['target_id'], $node->original->opigno_class_courses[LANGUAGE_NONE][$index])) {
+          /// Insert into opigno sort groups
+          db_insert('opigno_sort_groups') // Table name no longer needs {}
+            ->fields(array(
+              'cgid' => $node->nid,
+              'gid' => $target['target_id'],
+              'weight' => 0,
+            ))
+            ->execute();
+          ///////////////////////////////////
+
+
+          /// If course is alone delete it
+          db_delete('opigno_sort_groups')
+            ->condition('gid', $target['target_id'])
+            ->condition('cgid', NULL, 'IS')
+            ->execute();
+          ////////////////////////////////
+        }
+      }
+
+      foreach ($node->original->opigno_class_courses[LANGUAGE_NONE] as $index => $target) {
+        if (!in_array($target['target_id'], $node->opigno_class_courses[LANGUAGE_NONE][$index], TRUE)) {
+          //// Deletes from opigno_sort_groups
+          db_delete('opigno_sort_groups')
+            ->condition('gid', $target['target_id'])
+            ->condition('cgid', $node->nid)
+            ->execute();
+          ////////////////////////////////////
+          if (opigno_sort_group_node_course_is_alone($target['target_id'])) {
+            db_insert('opigno_sort_groups') // Table name no longer needs {}
+              ->fields(array(
+                'gid' => $target['target_id'],
+                'weight' => 99,
+              ))
+              ->execute();
+          }
+        }
+      }
+    }
+  }
+}
+
+function opigno_sort_group_node_course_is_alone($conid) {
+  $result = db_select('field_data_opigno_class_courses', 'n')
+    ->fields('n')
+    ->condition('opigno_class_courses_target_id', $conid, '=')
+    ->condition('deleted', 0, '=')
+    ->execute()
+    ->fetchAssoc();
+  if (isset($result['opigno_class_courses_target_id'])) {
+    return FALSE;
+  }
+  return TRUE;
+}
+
+

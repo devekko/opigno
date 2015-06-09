@@ -1,0 +1,7 @@
+<?php
+/**
+ * @file
+ * Code for the Opigno Features WYSIWYG feature.
+ */
+
+include_once 'opigno_features_wysiwyg.features.inc';

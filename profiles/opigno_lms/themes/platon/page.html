@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <title>Title</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <link rel="stylesheet" href="http://www.opigno.org/modules/system/system.base.css">
+  <link rel="stylesheet" href="http://www.opigno.org/modules/system/system.menus.css">
+  <link rel="stylesheet" href="http://www.opigno.org/modules/system/system.messages.css">
+  <link rel="stylesheet" href="http://www.opigno.org/modules/system/system.theme.css">
+  <link rel="stylesheet" href="http://dev.opigno.org/profiles/opigno_lms/modules/contrib/calendar/css/calendar_multiday.css">
+  <link rel="stylesheet" href="http://dev.opigno.org/profiles/opigno_lms/modules/contrib/date/date_views/css/date_views.css">
+  <link rel="stylesheet" href="http://dev.opigno.org/profiles/opigno_lms/modules/contrib/advanced_forum/styles/naked/advanced-forum.naked.structure.css">
+  <link rel="stylesheet" href="http://dev.opigno.org/profiles/opigno_lms/modules/contrib/advanced_forum/styles/silver_bells/advanced-forum.silver_bells.style.css">
+  <link rel="stylesheet" href="http://dev.opigno.org/profiles/opigno_lms/modules/contrib/advanced_forum/styles/naked/advanced-forum.naked.images.css">
+  <link rel="stylesheet" href="http://dev.opigno.org/profiles/opigno_lms/modules/contrib/advanced_forum/styles/silver_bells/advanced-forum.silver_bells.images.css">
+
+  <link rel="stylesheet" href="css/hacks.css">
+  <link rel="stylesheet" href="css/reset.css">
+  <link rel="stylesheet" href="css/styles.css">
+  <script src="js/vendor/modernizr/modernizr.min.js"></script>
+  <!--[if lt IE 9]>
+  <script src="js/vendor/html5shiv/html5shiv.js"></script>
+  <![endif]-->
+</head>
+<body>
+
+<header id="site-header">
+  <div class="row">
+    <div class="col col-1-out-of-2 col-1-out-of-4 col-1-out-of-6">
+      <a href="#" id="logo"><img src="logo.png" alt="Opigno"></a>
+    </div>
+
+    <div class="col col-1-out-of-2 col-3-out-of-4 col-5-out-of-6">
+      <div id="header-search">
+
+
+
+        <!-- START SEARCH -->
+        <form action="/admin/opigno" method="post" id="search-block-form" accept-charset="UTF-8"><div><div class="container-inline">
+          <h2 class="element-invisible">Formulaire de recherche</h2>
+          <div class="form-item form-type-textfield form-item-search-block-form">
+            <label class="element-invisible" for="edit-search-block-form--2">Rechercher </label>
+            <input title="Indiquer les termes à rechercher" class="input-medium search-query form-text" placeholder="Rechercher..." type="text" id="edit-search-block-form--2" name="search_block_form" value="" size="15" maxlength="128">
+          </div>
+          <div class="form-actions form-wrapper" id="edit-actions"><input class="btn-search form-submit" alt="Search button" type="submit" id="edit-submit" name="submit" ></div><input type="hidden" name="form_build_id" value="form-U_0t2zbx-IGz_0lN8-LQ3bX_q1BDCIbj2YXTsXvY4Lc">
+          <input type="hidden" name="form_token" value="wy2nSLIDvZCNAKGHsmEK35aACMyWDUr1UpPC_Lw9c-0">
+          <input type="hidden" name="form_id" value="search_block_form">
+        </div>
+        </div></form>
+        <!-- END SEARCH -->
+
+
+
+      </div>
+
+      <div id="user-account-information">
+        <div id="user-account-information-picture">
+          <img src="img/anonymous-account.png">
+        </div>
+
+        <div id="user-account-information-name">
+          welcome user
+
+          <div id="user-account-information-links">
+            <a href="#">my account</a> | <a href="#">logout</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<div id="site-content">
+  <div class="row">
+    <div id="first-sidebar" class="col col-2-out-of-2 col-1-out-of-4 col-1-out-of-6">
+
+
+
+      <!-- START MENU -->
+      <div class="row main-navigation-row">
+        <div id="main-navigation-item-home" class="col col-2-out-of-2 col-2-out-of-4 col-3-out-of-6 main-navigation-item">
+          <a href="#" class="active"><span>Home</span></a>
+        </div>
+
+        <div id="main-navigation-item-my-courses" class="col col-2-out-of-2 col-2-out-of-4 col-3-out-of-6 main-navigation-item">
+          <a href="#"><span>My courses</span></a>
+        </div>
+      </div>
+
+      <div class="row main-navigation-row">
+        <div id="main-navigation-item-training-catalogue" class="col col-2-out-of-2 col-2-out-of-4 col-3-out-of-6 main-navigation-item">
+          <a href="#"><span>Home</span></a>
+        </div>
+
+        <div id="main-navigation-item-forum" class="col col-2-out-of-2 col-2-out-of-4 col-3-out-of-6 main-navigation-item">
+          <a href="#"><span>Home</span></a>
+        </div>
+      </div>
+
+      <div class="row main-navigation-row">
+        <div id="main-navigation-item-calendar" class="col col-2-out-of-2 col-2-out-of-4 col-3-out-of-6 main-navigation-item">
+          <a href="#"><span>Home</span></a>
+        </div>
+
+        <div id="main-navigation-item-my-achievements" class="col col-2-out-of-2 col-2-out-of-4 col-3-out-of-6 main-navigation-item">
+          <a href="#"><span>Home</span></a>
+        </div>
+      </div>
+
+      <div class="row main-navigation-row">
+        <div id="main-navigation-item-messages" class="col col-2-out-of-2 col-2-out-of-4 col-3-out-of-6 main-navigation-item">
+          <a href="#"><span>Home</span></a>
+        </div>
+
+        <div id="main-navigation-item-administration" class="col col-2-out-of-2 col-2-out-of-4 col-3-out-of-6 main-navigation-item">
+          <a href="#"><span>Home</span></a>
+        </div>
+      </div>
+      <!-- END MENU -->
+
+
+
+    </div>
+
+    <div id="second-sidebar" class="col col-2-out-of-2 col-3-out-of-4 col-5-out-of-6">
+      <div id="back-to-parent-link">
+        <a href="#">&lt; Parent link</a>
+      </div>
+
+      <div id="title-wrapper">
+        <h1>Title here</h1>
+
+        <div id="og-context-navigation">
+
+          <!-- START TABS -->
+          <ul class="tabs primary"><li class="active"><a href="/features" class="active">View<span class="element-invisible">(active tab)</span></a></li>
+            <li><a href="/node/1/edit">Edit</a></li>
+            <li><a href="/node/1/revisions">Revisions</a></li>
+            <li><a href="/node/1/devel">Devel</a></li>
+          </ul>
+          <!-- END TABS -->
+
+        </div>
+      </div>
+
+      <div id="messages">
+
+        <!-- START MESSAGES -->
+        <div class="messages status">
+          <span class="messages-dismiss">x</span>
+          <h2 class="element-invisible">Status message</h2>
+          Basic page <em class="placeholder">Professional services</em> has been updated.
+        </div>
+        <div class="messages warning">
+          <span class="messages-dismiss">x</span>
+          <h2 class="element-invisible">Status message</h2>
+          Basic page <em class="placeholder">Professional services</em> has been updated.
+        </div>
+        <div class="messages error">
+          <span class="messages-dismiss">x</span>
+          <h2 class="element-invisible">Status message</h2>
+          Basic page <em class="placeholder">Professional services</em> has been updated.
+        </div>
+        <!-- END MESSAGES -->
+
+
+      </div>
+
+      <div id="tabs">
+
+
+        <!-- START TABS -->
+        <ul class="tabs primary"><li class="active"><a href="/features" class="active">View<span class="element-invisible">(active tab)</span></a></li>
+          <li><a href="/node/1/edit">Edit</a></li>
+          <li><a href="/node/1/revisions">Revisions</a></li>
+          <li><a href="/node/1/devel">Devel</a></li>
+        </ul>
+        <!-- END TABS -->
+
+
+      </div>
+
+      <!-- START ACTIONS -->
+      <ul class="action-links">
+          <li><a href="/admin/structure/block/add">Add block</a></li>
+<li><a href="/admin/structure/block/add-menu-block">Add menu block</a></li>
+        </ul>
+      <!-- END ACTIONS -->
+
+      <div id="content">
+
+
+        <!-- START CALENDAR -->
+<div class="region region-content clearfix">
+  <div id="block-system-main" class="clearfix block block-system">       <div class="content"> <div class="view view-calendar view-id-calendar view-display-id-page_1 view-dom-id-6b3d114ef6beb6b58cfd12c3ca276b5d">
+            <div class="view-header">
+      <div class="date-nav-wrapper clearfix">
+  <div class="date-nav item-list">
+    <div class="date-heading">
+      <h3>October 2013</h3>
+    </div>
+    <ul class="pager">
+          <li class="date-prev">
+        <a href="http://dev.opigno.org/opigno-calendar/month/2013-09" title="Navigate to previous month" rel="nofollow">« Prev</a>      &nbsp;</li>
+              <li class="date-next">&nbsp;
+        <a href="http://dev.opigno.org/opigno-calendar/month/2013-11" title="Navigate to next month" rel="nofollow">Next »</a>      </li>
+        </ul>
+  </div>
+</div>    </div>
+  
+  
+  
+      <div class="view-content">
+      <div class="calendar-calendar"><div class="month-view">
+<table class="full">
+  <thead>
+    <tr>
+              <th class="days sun" id="Sunday">
+          Sun        </th>
+              <th class="days mon" id="Monday">
+          Mon        </th>
+              <th class="days tue" id="Tuesday">
+          Tue        </th>
+              <th class="days wed" id="Wednesday">
+          Wed        </th>
+              <th class="days thu" id="Thursday">
+          Thu        </th>
+              <th class="days fri" id="Friday">
+          Fri        </th>
+              <th class="days sat" id="Saturday">
+          Sat        </th>
+          </tr>
+  </thead>
+  <tbody>
+    <tr class="date-box">
+  <td id="calendar-2013-09-29-date-box" class="date-box past empty" colspan="1" rowspan="1" data-date="2013-09-29" headers="Sunday" data-day-of-month="29">
+  <div class="inner">
+    <div class="month day"> 29 </div>  </div>
+</td>
+<td id="calendar-2013-09-30-date-box" class="date-box past empty" colspan="1" rowspan="1" data-date="2013-09-30" headers="Monday" data-day-of-month="30">
+  <div class="inner">
+    <div class="month day"> 30 </div>  </div>
+</td>
+<td id="calendar-2013-10-01-date-box" class="date-box past" colspan="1" rowspan="1" data-date="2013-10-01" headers="Tuesday" data-day-of-month="1">
+  <div class="inner">
+    <div class="month day"> 1 </div>  </div>
+</td>
+<td id="calendar-2013-10-02-date-box" class="date-box past" colspan="1" rowspan="1" data-date="2013-10-02" headers="Wednesday" data-day-of-month="2">
+  <div class="inner">
+    <div class="month day"> 2 </div>  </div>
+</td>
+<td id="calendar-2013-10-03-date-box" class="date-box past" colspan="1" rowspan="1" data-date="2013-10-03" headers="Thursday" data-day-of-month="3">
+  <div class="inner">
+    <div class="month day"> 3 </div>  </div>
+</td>
+<td id="calendar-2013-10-04-date-box" class="date-box past" colspan="1" rowspan="1" data-date="2013-10-04" headers="Friday" data-day-of-month="4">
+  <div class="inner">
+    <div class="month day"> 4 </div>  </div>
+</td>
+<td id="calendar-2013-10-05-date-box" class="date-box past" colspan="1" rowspan="1" data-date="2013-10-05" headers="Saturday" data-day-of-month="5">
+  <div class="inner">
+    <div class="month day"> 5 </div>  </div>
+</td>
+</tr>
+<tr class="single-day">
+  <td id="calendar-2013-09-29-0" class="single-day past empty" colspan="1" rowspan="1" data-date="2013-09-29" headers="Sunday" data-day-of-month="29">
+  <div class="inner">
+    <div class="calendar-empty">&nbsp;</div>
+  </div>
+</td>
+<td id="calendar-2013-09-30-0" class="single-day past empty" colspan="1" rowspan="1" data-date="2013-09-30" headers="Monday" data-day-of-month="30">
+  <div class="inner">
+    <div class="calendar-empty">&nbsp;</div>
+  </div>
+</td>
+<td id="calendar-2013-10-01-0" class="single-day no-entry past" colspan="1" rowspan="1" data-date="2013-10-01" headers="Tuesday" data-day-of-month="1">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-02-0" class="single-day no-entry past" colspan="1" rowspan="1" data-date="2013-10-02" headers="Wednesday" data-day-of-month="2">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-03-0" class="single-day no-entry past" colspan="1" rowspan="1" data-date="2013-10-03" headers="Thursday" data-day-of-month="3">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-04-0" class="single-day no-entry past" colspan="1" rowspan="1" data-date="2013-10-04" headers="Friday" data-day-of-month="4">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-05-0" class="single-day no-entry past" colspan="1" rowspan="1" data-date="2013-10-05" headers="Saturday" data-day-of-month="5">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+</tr>
+<tr class="date-box">
+  <td id="calendar-2013-10-06-date-box" class="date-box past" colspan="1" rowspan="1" data-date="2013-10-06" headers="Sunday" data-day-of-month="6">
+  <div class="inner">
+    <div class="month day"> 6 </div>  </div>
+</td>
+<td id="calendar-2013-10-07-date-box" class="date-box past" colspan="1" rowspan="1" data-date="2013-10-07" headers="Monday" data-day-of-month="7">
+  <div class="inner">
+    <div class="month day"> 7 </div>  </div>
+</td>
+<td id="calendar-2013-10-08-date-box" class="date-box past" colspan="1" rowspan="1" data-date="2013-10-08" headers="Tuesday" data-day-of-month="8">
+  <div class="inner">
+    <div class="month day"> <a href="http://dev.opigno.org/opigno-calendar/day/2013-10-08">8</a> </div>  </div>
+</td>
+<td id="calendar-2013-10-09-date-box" class="date-box today" colspan="1" rowspan="1" data-date="2013-10-09" headers="Wednesday" data-day-of-month="9">
+  <div class="inner">
+    <div class="month day"> 9 </div>  </div>
+</td>
+<td id="calendar-2013-10-10-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-10" headers="Thursday" data-day-of-month="10">
+  <div class="inner">
+    <div class="month day"> 10 </div>  </div>
+</td>
+<td id="calendar-2013-10-11-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-11" headers="Friday" data-day-of-month="11">
+  <div class="inner">
+    <div class="month day"> 11 </div>  </div>
+</td>
+<td id="calendar-2013-10-12-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-12" headers="Saturday" data-day-of-month="12">
+  <div class="inner">
+    <div class="month day"> 12 </div>  </div>
+</td>
+</tr>
+<tr class="single-day">
+  <td id="calendar-2013-10-06-0" class="single-day no-entry past" colspan="1" rowspan="1" data-date="2013-10-06" headers="Sunday" data-day-of-month="6">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-07-0" class="single-day no-entry past" colspan="1" rowspan="1" data-date="2013-10-07" headers="Monday" data-day-of-month="7">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-08-0" class="single-day past" colspan="1" rowspan="1" data-date="2013-10-08" headers="Tuesday" data-day-of-month="8">
+  <div class="inner">
+    <div class="item">
+  <div class="view-item view-item-calendar">
+  <div class="calendar monthview">
+        <div class="calendar.21.opigno_calendar_date.0.0 contents">
+                        
+  <div class="views-field views-field-title">        <span class="field-content"><a href="/event/tue-10082013-1945/cours-ln">Cours ln</a></span>  </div>  
+  <div class="views-field views-field-opigno-calendar-date">        <div class="field-content"><span class="date-display-single">10/08/2013 - <span class="date-display-start">19:45</span> to <span class="date-display-end">20:45</span></span></div>  </div>          </div>  
+        <div class="cutoff">&nbsp;</div>
+      </div> 
+  </div>   
+</div>  </div>
+</td>
+<td id="calendar-2013-10-09-0" class="single-day no-entry today" colspan="1" rowspan="1" data-date="2013-10-09" headers="Wednesday" data-day-of-month="9">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-10-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-10" headers="Thursday" data-day-of-month="10">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-11-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-11" headers="Friday" data-day-of-month="11">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-12-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-12" headers="Saturday" data-day-of-month="12">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+</tr>
+<tr class="date-box">
+  <td id="calendar-2013-10-13-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-13" headers="Sunday" data-day-of-month="13">
+  <div class="inner">
+    <div class="month day"> 13 </div>  </div>
+</td>
+<td id="calendar-2013-10-14-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-14" headers="Monday" data-day-of-month="14">
+  <div class="inner">
+    <div class="month day"> 14 </div>  </div>
+</td>
+<td id="calendar-2013-10-15-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-15" headers="Tuesday" data-day-of-month="15">
+  <div class="inner">
+    <div class="month day"> 15 </div>  </div>
+</td>
+<td id="calendar-2013-10-16-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-16" headers="Wednesday" data-day-of-month="16">
+  <div class="inner">
+    <div class="month day"> 16 </div>  </div>
+</td>
+<td id="calendar-2013-10-17-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-17" headers="Thursday" data-day-of-month="17">
+  <div class="inner">
+    <div class="month day"> 17 </div>  </div>
+</td>
+<td id="calendar-2013-10-18-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-18" headers="Friday" data-day-of-month="18">
+  <div class="inner">
+    <div class="month day"> 18 </div>  </div>
+</td>
+<td id="calendar-2013-10-19-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-19" headers="Saturday" data-day-of-month="19">
+  <div class="inner">
+    <div class="month day"> 19 </div>  </div>
+</td>
+</tr>
+<tr class="single-day">
+  <td id="calendar-2013-10-13-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-13" headers="Sunday" data-day-of-month="13">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-14-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-14" headers="Monday" data-day-of-month="14">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-15-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-15" headers="Tuesday" data-day-of-month="15">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-16-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-16" headers="Wednesday" data-day-of-month="16">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-17-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-17" headers="Thursday" data-day-of-month="17">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-18-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-18" headers="Friday" data-day-of-month="18">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-19-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-19" headers="Saturday" data-day-of-month="19">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+</tr>
+<tr class="date-box">
+  <td id="calendar-2013-10-20-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-20" headers="Sunday" data-day-of-month="20">
+  <div class="inner">
+    <div class="month day"> 20 </div>  </div>
+</td>
+<td id="calendar-2013-10-21-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-21" headers="Monday" data-day-of-month="21">
+  <div class="inner">
+    <div class="month day"> 21 </div>  </div>
+</td>
+<td id="calendar-2013-10-22-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-22" headers="Tuesday" data-day-of-month="22">
+  <div class="inner">
+    <div class="month day"> 22 </div>  </div>
+</td>
+<td id="calendar-2013-10-23-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-23" headers="Wednesday" data-day-of-month="23">
+  <div class="inner">
+    <div class="month day"> 23 </div>  </div>
+</td>
+<td id="calendar-2013-10-24-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-24" headers="Thursday" data-day-of-month="24">
+  <div class="inner">
+    <div class="month day"> 24 </div>  </div>
+</td>
+<td id="calendar-2013-10-25-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-25" headers="Friday" data-day-of-month="25">
+  <div class="inner">
+    <div class="month day"> 25 </div>  </div>
+</td>
+<td id="calendar-2013-10-26-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-26" headers="Saturday" data-day-of-month="26">
+  <div class="inner">
+    <div class="month day"> 26 </div>  </div>
+</td>
+</tr>
+<tr class="single-day">
+  <td id="calendar-2013-10-20-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-20" headers="Sunday" data-day-of-month="20">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-21-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-21" headers="Monday" data-day-of-month="21">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-22-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-22" headers="Tuesday" data-day-of-month="22">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-23-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-23" headers="Wednesday" data-day-of-month="23">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-24-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-24" headers="Thursday" data-day-of-month="24">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-25-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-25" headers="Friday" data-day-of-month="25">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-26-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-26" headers="Saturday" data-day-of-month="26">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+</tr>
+<tr class="date-box">
+  <td id="calendar-2013-10-27-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-27" headers="Sunday" data-day-of-month="27">
+  <div class="inner">
+    <div class="month day"> 27 </div>  </div>
+</td>
+<td id="calendar-2013-10-28-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-28" headers="Monday" data-day-of-month="28">
+  <div class="inner">
+    <div class="month day"> 28 </div>  </div>
+</td>
+<td id="calendar-2013-10-29-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-29" headers="Tuesday" data-day-of-month="29">
+  <div class="inner">
+    <div class="month day"> 29 </div>  </div>
+</td>
+<td id="calendar-2013-10-30-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-30" headers="Wednesday" data-day-of-month="30">
+  <div class="inner">
+    <div class="month day"> 30 </div>  </div>
+</td>
+<td id="calendar-2013-10-31-date-box" class="date-box future" colspan="1" rowspan="1" data-date="2013-10-31" headers="Thursday" data-day-of-month="31">
+  <div class="inner">
+    <div class="month day"> 31 </div>  </div>
+</td>
+<td id="calendar-2013-11-01-date-box" class="date-box future empty" colspan="1" rowspan="1" data-date="2013-11-01" headers="Friday" data-day-of-month="1">
+  <div class="inner">
+    <div class="month day"> 1 </div>  </div>
+</td>
+<td id="calendar-2013-11-02-date-box" class="date-box future empty" colspan="1" rowspan="1" data-date="2013-11-02" headers="Saturday" data-day-of-month="2">
+  <div class="inner">
+    <div class="month day"> 2 </div>  </div>
+</td>
+</tr>
+<tr class="single-day">
+  <td id="calendar-2013-10-27-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-27" headers="Sunday" data-day-of-month="27">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-28-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-28" headers="Monday" data-day-of-month="28">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-29-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-29" headers="Tuesday" data-day-of-month="29">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-30-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-30" headers="Wednesday" data-day-of-month="30">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-10-31-0" class="single-day no-entry future" colspan="1" rowspan="1" data-date="2013-10-31" headers="Thursday" data-day-of-month="31">
+  <div class="inner">
+    &nbsp;  </div>
+</td>
+<td id="calendar-2013-11-01-0" class="single-day future empty" colspan="1" rowspan="1" data-date="2013-11-01" headers="Friday" data-day-of-month="1">
+  <div class="inner">
+    <div class="calendar-empty">&nbsp;</div>
+  </div>
+</td>
+<td id="calendar-2013-11-02-0" class="single-day future empty" colspan="1" rowspan="1" data-date="2013-11-02" headers="Saturday" data-day-of-month="2">
+  <div class="inner">
+    <div class="calendar-empty">&nbsp;</div>
+  </div>
+</td>
+</tr>
+  </tbody>
+</table>
+</div></div></div>
+  
+  
+  
+  
+  
+  
+</div> </div>
+</div></div>
+        <!-- END CALENDAR -->
+
+
+
+
+        <!-- START FORUM -->
+          <div class="region region-content clearfix">
+  <div id="block-system-main" class="clearfix block block-system">       <div class="content"> 
+  <div id="forum">
+
+    
+    
+    
+<div class="view view-advanced-forum-topic-list view-id-advanced_forum_topic_list view-display-id-default view-dom-id-7954005b92098b59ff7284f469d8f8c8">
+  
+  
+  
+  
+      <div class="forum-node-create-links forum-node-create-links-top"><div class="forum-add-node forum-add-forum"><a href="/node/add/forum/1" class="af-button-large"><span>New  topic</span></a></div></div>
+  
+  
+      <div class="view-content">
+       <div id="forum-topic-list">
+  
+  <table class="sticky-header" style="position: fixed; top: 28px; left: 355.625px; visibility: hidden;"><thead style="">
+      <tr>
+                  <th class="views-field views-field-topic-icon">
+                      </th>
+                  <th class="views-field views-field-title">
+            <a href="/forum/1?order=title&amp;sort=asc" title="sort by Topic / Topic starter" class="active">Topic / Topic starter</a>          </th>
+                  <th class="views-field views-field-comment-count">
+            <a href="/forum/1?order=comment_count&amp;sort=asc" title="sort by Replies" class="active">Replies</a>          </th>
+                  <th class="views-field views-field-last-updated active">
+            <a href="/forum/1?order=last_updated&amp;sort=asc" title="sort by Last post" class="active" style="border: none;">Last post<img src="http://dev.opigno.org/misc/arrow-asc.png" width="13" height="13" alt="sort ascending" title="sort ascending"></a>          </th>
+              </tr>
+    </thead></table><table class="forum-table forum-table-topics forum-table forum-table-topics sticky-enabled cols-4 tableheader-processed sticky-table">
+    <thead>
+      <tr>
+                  <th class="views-field views-field-topic-icon">
+                      </th>
+                  <th class="views-field views-field-title">
+            <a href="/forum/1?order=title&amp;sort=asc" title="sort by Topic / Topic starter" class="active">Topic / Topic starter</a>          </th>
+                  <th class="views-field views-field-comment-count">
+            <a href="/forum/1?order=comment_count&amp;sort=asc" title="sort by Replies" class="active">Replies</a>          </th>
+                  <th class="views-field views-field-last-updated active">
+            <a href="/forum/1?order=last_updated&amp;sort=asc" title="sort by Last post" class="active" style="border: none;">Last post<img src="http://dev.opigno.org/misc/arrow-asc.png" width="13" height="13" alt="sort ascending" title="sort ascending"></a>          </th>
+              </tr>
+    </thead>
+    <tbody>
+              <tr class="odd views-row-first views-row-last">
+                                                  <td class="views-field views-field-topic-icon">
+                                               <a name="new">
+  
+      <span class="topic-icon topic-icon-new topic-icon-node-type-forum">New comments</span>
+  
+    </a>
+
+              </td>
+                                        <td class="views-field views-field-title">
+                                             <a href="/forum/general-discussion/topic/20/test" title="test forum
+"><span class="forum-topic-title">test</span> </a>  <span class="marker">new</span>  <br> by <a href="/users/john" title="View user profile." class="username">john</a> » Mon, 10/07/2013 - 13:14              </td>
+                                        <td class="views-field views-field-comment-count">
+                                             0<br>               </td>
+                                        <td class="views-field views-field-last-updated active">
+                                             by <a href="/users/john" title="View user profile." class="username">john</a><br>Mon, 10/07/2013 - 13:14              </td>
+                              </tr>
+          </tbody>
+  </table>
+</div>    </div>
+  
+  <div class="forum-node-create-links"><div class="forum-add-node forum-add-forum"><a href="/node/add/forum/1" class="af-button-large"><span>New  topic</span></a></div></div>
+
+  
+      <div id="forum-sort"><form action="/forum/1" method="get" id="advanced-forum-forum-topic-list-sort-form" accept-charset="UTF-8"><div><div class="container-inline"><div class="form-item form-type-select form-item-order">
+  <label class="element-invisible" for="edit-order">Order by </label>
+ <select id="edit-order" name="order" class="form-select"><option value="title">Topic / Topic starter</option><option value="comment_count">Replies</option><option value="last_updated" selected="selected">Last post</option></select>
+</div>
+<div class="form-item form-type-select form-item-sort">
+  <label class="element-invisible" for="edit-sort">Sort </label>
+ <select id="edit-sort" name="sort" class="form-select"><option value="asc">Up</option><option value="desc" selected="selected">Down</option></select>
+</div>
+<input type="submit" id="sort-topic-submit" name="" value="Sort" class="form-submit"></div><input type="hidden" name="form_build_id" value="form-E8wP1oxe-Iza-u1AO2jJx8NzsZd18b0Xlv5ZP-TK8lY">
+<input type="hidden" name="form_token" value="FgN27rsNOAu-RsCOMspILIxBYzXlXQvPSEi7BK90ang">
+<input type="hidden" name="form_id" value="advanced_forum_forum_topic_list_sort_form">
+</div></form></div>
+  
+      <div class="forum-tools"><form action="/forum/1" method="post" id="ctools-jump-menu" accept-charset="UTF-8"><div><div class="container-inline"><div class="form-item form-type-select form-item-jump">
+ <select class="ctools-jump-menu-select ctools-jump-menu-change form-select ctools-jump-menu-processed" id="edit-jump" name="jump"><option value="" selected="selected">- Forum Tools -</option><option value="/forum/active?forum%5B%5D=1">View active posts in this forum</option><option value="/forum/unanswered?forum%5B%5D=1">View unanswered posts in this forum</option><option value="/forum/new?forum%5B%5D=1">View new posts in this forum</option><option value="/forum/markasread/1">Mark all topics read</option></select>
+</div>
+<input class="ctools-jump-menu-button ctools-jump-menu-hide form-submit ctools-jump-menu-processed" type="submit" id="edit-go" name="op" value="Go" style="display: none;"></div><input type="hidden" name="form_build_id" value="form-dIiDJ0pdnsL8QXKWSn0m-TZ0Si2kQtk86l17G9J6yhw">
+<input type="hidden" name="form_token" value="zIopPJn8oF5mLzcD0fk5tsfYI7RDHf4di8qraq9A83E">
+<input type="hidden" name="form_id" value="ctools_jump_menu">
+</div></form></div>
+  
+
+  
+  
+  
+  
+</div> 
+          
+<div class="forum-topic-legend clearfix">
+  <div class="topic-icon-new">New posts</div>
+  <div class="topic-icon-default">No new posts</div>
+  <div class="topic-icon-hot-new">Hot topic with new posts</div>
+  <div class="topic-icon-hot">Hot topic without new posts</div>
+  <div class="topic-icon-sticky">Sticky topic</div>
+  <div class="topic-icon-closed">Locked topic</div>
+</div>
+ 
+     
+    
+       </div>
+ </div>
+</div></div>
+
+
+
+
+        <div class="region region-content clearfix">
+            <div id="block-system-main" class="clearfix block block-system">       <div class="content"> 
+            <div id="forum">
+
+              
+
+            
+            <div class="forum-table-wrap">
+              <div class="forum-table-superheader">
+                <div class="forum-table-name">
+                            Forums              </div>
+                        <span id="forum-collapsible-4" class="forum-collapsible forum-collapsible-processed clickable">&nbsp;</span>
+                      <div class="forum-table-description"></div>
+
+              </div>
+              <div id="forum-table-4">
+                <table class="forum-table forum-table-forums">
+                  <thead class="forum-header">
+                    <tr>
+                      <th class="forum-icon">&nbsp;</th>
+                      <th class="forum-name">Forum</th>
+                      <th class="forum-topics">Topics</th>
+                      <th class="forum-posts">Posts</th>
+                      <th class="forum-last-post">Last post</th>
+                    </tr>
+                  </thead>
+
+                  <tbody id="forum-table-4-content">
+                                              <tr id="forum-4" class="forum-row even container-4-child">
+                        
+                                        <td class="forum-list-icon forum-list-icon-new-posts">
+                            <span class="forum-list-icon-wrapper"><span>New posts</span></span>
+                          </td>
+                        
+                                      <td class="forum-details" colspan="1">
+                          <div class="forum-name">
+                            <a href="/forums/cours-test">Cours test</a>
+                          </div>
+                          
+                          
+                                        </td>
+                                        <td class="forum-number-topics">
+                            <div class="forum-number-topics">1                                          <div class="forum-number-new-topics">
+                                  <a href="/forums/cours-test#new">1 new</a>
+                                </div>
+                                                </div>
+                          </td>
+
+                          <td class="forum-number-posts">
+                            1
+                                            </td>
+                          <td class="forum-last-reply">
+                            
+                      <a href="/forum/cours-test/topic/5/test-sd#new">Test SD</a><br>by <a href="/users/student" title="View user profile." class="username">student</a><br>10/03/2013 - 11:45                      </td>
+                        
+                      </tr>
+
+                                              <tr id="forum-7" class="forum-row odd container-7-child">
+                        
+                                        <td class="forum-list-icon forum-list-icon-default">
+                            <span class="forum-list-icon-wrapper"><span>No new</span></span>
+                          </td>
+                        
+                                      <td class="forum-details" colspan="1">
+                          <div class="forum-name">
+                            <a href="/forums/demo-course-1">Demo course 1</a>
+                          </div>
+                          
+                          
+                                        </td>
+                                        <td class="forum-number-topics">
+                            <div class="forum-number-topics">0                                      </div>
+                          </td>
+
+                          <td class="forum-number-posts">
+                            0
+                                            </td>
+                          <td class="forum-last-reply">
+                            
+            n/a                </td>
+                        
+                      </tr>
+
+                                              <tr id="forum-10" class="forum-row even container-10-child">
+                        
+                                        <td class="forum-list-icon forum-list-icon-default">
+                            <span class="forum-list-icon-wrapper"><span>No new</span></span>
+                          </td>
+                        
+                                      <td class="forum-details" colspan="1">
+                          <div class="forum-name">
+                            <a href="/forums/demo-course-2">Demo course 2</a>
+                          </div>
+                          
+                          
+                                        </td>
+                                        <td class="forum-number-topics">
+                            <div class="forum-number-topics">0                                      </div>
+                          </td>
+
+                          <td class="forum-number-posts">
+                            0
+                                            </td>
+                          <td class="forum-last-reply">
+                            
+            n/a                </td>
+                        
+                      </tr>
+
+                                              <tr id="forum-1" class="forum-row odd container-1-child">
+                        
+                                        <td class="forum-list-icon forum-list-icon-new-posts">
+                            <span class="forum-list-icon-wrapper"><span>New posts</span></span>
+                          </td>
+                        
+                                      <td class="forum-details" colspan="1">
+                          <div class="forum-name">
+                            <a href="/forum/1">General discussion</a>
+                          </div>
+                          
+                          
+                                        </td>
+                                        <td class="forum-number-topics">
+                            <div class="forum-number-topics">1                                          <div class="forum-number-new-topics">
+                                  <a href="/forum/1#new">1 new</a>
+                                </div>
+                                                </div>
+                          </td>
+
+                          <td class="forum-number-posts">
+                            1
+                                            </td>
+                          <td class="forum-last-reply">
+                            
+                     <a href="/forum/general-discussion/topic/20/test#new">test</a><br>by <a href="/users/john" title="View user profile." class="username">john</a><br>1 day 18 hours ago                      </td>
+                        
+                      </tr>
+
+                                              <tr id="forum-14" class="forum-row even container-14-child">
+                        
+                                        <td class="forum-list-icon forum-list-icon-default">
+                            <span class="forum-list-icon-wrapper"><span>No new</span></span>
+                          </td>
+                        
+                                      <td class="forum-details" colspan="1">
+                          <div class="forum-name">
+                            <a href="/forums/james-test-course-1">James Test course 1</a>
+                          </div>
+                          
+                          
+                                        </td>
+                                        <td class="forum-number-topics">
+                            <div class="forum-number-topics">0                                      </div>
+                          </td>
+
+                          <td class="forum-number-posts">
+                            0
+                                            </td>
+                          <td class="forum-last-reply">
+                            
+            n/a                </td>
+                        
+                      </tr>
+
+                                              <tr id="forum-17" class="forum-row odd container-17-child">
+                        
+                                        <td class="forum-list-icon forum-list-icon-default">
+                            <span class="forum-list-icon-wrapper"><span>No new</span></span>
+                          </td>
+                        
+                                      <td class="forum-details" colspan="1">
+                          <div class="forum-name">
+                            <a href="/forums/james-test-course-2">James Test course 2</a>
+                          </div>
+                          
+                          
+                                        </td>
+                                        <td class="forum-number-topics">
+                            <div class="forum-number-topics">0                                      </div>
+                          </td>
+
+                          <td class="forum-number-posts">
+                            0
+                                            </td>
+                          <td class="forum-last-reply">
+                            
+            n/a                </td>
+                        
+                      </tr>
+
+                            </tbody>
+                </table>
+              </div>
+            </div>
+
+                    <div class="forum-tools"><form action="/forum" method="post" id="ctools-jump-menu" accept-charset="UTF-8"><div><div class="container-inline"><div class="form-item form-type-select form-item-jump">
+           <select class="ctools-jump-menu-select ctools-jump-menu-change form-select ctools-jump-menu-processed" id="edit-jump" name="jump"><option value="" selected="selected">- Forum Tools -</option><option value="/forum/active">View active forum posts</option><option value="/forum/unanswered">View unanswered forum posts</option><option value="/forum/new">View new forum posts</option><option value="/forum/markasread">Mark all forums read</option></select>
+          </div>
+          <input class="ctools-jump-menu-button ctools-jump-menu-hide form-submit ctools-jump-menu-processed" type="submit" id="edit-go" name="op" value="Go" style="display: none;"></div><input type="hidden" name="form_build_id" value="form-UQrne3F5wahHj1VDA4PgNgQi2hOYCoFUTNWT3hLhXmY">
+          <input type="hidden" name="form_token" value="zIopPJn8oF5mLzcD0fk5tsfYI7RDHf4di8qraq9A83E">
+          <input type="hidden" name="form_id" value="ctools_jump_menu">
+          </div></form></div>
+              
+              
+              
+                    
+          <div class="forum-list-icon-legend clearfix">
+            <div class="forum-list-legend-item">
+              <span class="forum-list-icon-wrapper">
+                <span class="forum-list-icon-new-posts">
+                </span>
+              </span>
+
+              <span class="forum-list-text-legend-new-posts">
+                New posts    </span>
+            </div>
+
+            <div class="forum-list-legend-item">
+              <span class="forum-list-icon-wrapper">
+                <span class="forum-list-icon-default">
+                </span>
+              </span>
+
+              <span class="forum-list-text-legend-default">
+                No new posts    </span>
+            </div>
+          </div>
+              
+                      
+          <div id="forum-statistics">
+            <div id="forum-statistics-header">What's Going On?</div>
+
+            <div id="forum-statistics-active-header" class="forum-statistics-sub-header">
+              Currently active users: 1  </div>
+                <div id="forum-statistics-active-body" class="forum-statistics-sub-body">
+                <a href="/users/admin" title="View user profile." class="username">admin</a>    </div>
+            
+            <div id="forum-statistics-statistics-header" class="forum-statistics-sub-header">
+              Statistics  </div>
+
+            <div id="forum-statistics-statistics-body" class="forum-statistics-sub-body">
+              <div id="forum-statistics-topics">
+                Topics: 2, Posts: 2, Users: 7    </div>
+              <div id="forum-statistics-latest-users">
+                Welcome to our latest members: <a href="/users/teacher" title="View user profile." class="username">teacher</a>, <a href="/users/mohamed" title="View user profile." class="username">mohamed</a>, <a href="/users/student" title="View user profile." class="username">student</a>, <a href="/users/john" title="View user profile." class="username">john</a>, <a href="/users/admin" title="View user profile." class="username">admin</a>    </div>
+            </div>
+          </div>
+                 </div>
+           </div>
+          </div></div>
+        <!-- END FORUM -->
+      </div>
+    </div>
+  </div>
+</div>
+
+<footer id="site-footer">
+  <div class="row">
+    <div class="col span_6">
+      Footer
+    </div>
+  </div>
+</footer>
+
+<script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+<script>var Drupal = { behaviors: {} };</script>
+<script src="js/platon.js"></script>
+<script>Drupal.behaviors.platon.attach(document);</script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+<?php
+
+/**
+ * @file
+ * Opigno notifications app module functions file.
+ */
+
+function opigno_notifications_app_ctools_plugin_api($module, $api) {
+  if ($module == 'field_group' && $api == 'field_group') {
+    return array('version' => 1);
+  }
+}
+
+function opigno_notifications_app_menu() {
+  $items['admin/opigno/students/notify'] = array(
+    'title' => "Notify students",
+    'description' => "Send notifications to students of your courses and/or classes.",
+    'page callback' => 'opigno_notifications_app_redirect_to_node_creation_form',
+    'access arguments' => array('create notification content'),
+  );
+  return $items;
+}
+
+function opigno_notifications_app_redirect_to_node_creation_form() {
+  drupal_goto('node/add/notification');
+}
+
+function opigno_notifications_app_og_permission() {
+  return array(
+    'notify group members' => array(
+      'title' => t("Notify group members"),
+    ),
+  );
+}
+
+function opigno_notifications_app_permission() {
+  return array(
+    'notify everyone' => array(
+      'title' => t("Notify everyone"),
+      'description' => t("Allows the notification of everyone in the platform"),
+    ),
+  );
+}
+
+function opigno_notifications_app_form_alter(&$form, &$form_state, $form_id) {
+  if (($form['#form_id'] == "notification_node_form") && (strpos($form['#action'], 'node/add/notification') !== FALSE)) {
+    $form['#attached']['js'][] = Drupal_add_js(drupal_get_path('module', 'opigno_notifications_app') . '/js/notifications_hide.js');
+    $form['opigno_calendar_date']['#prefix'] = '<div id="notifications_timespan-div">';
+    $form['opigno_calendar_date']['#suffix'] = '</div>';
+    $form['opigno_calendar_date']['#validated'] = TRUE;
+    $form['group_content_access'][LANGUAGE_NONE]['#default_value'][0] = 2;
+    $form['group_content_access']['#access'] = FALSE;
+    if (!user_access("notify everyone")) {
+      $form['og_group_ref']['#validated'] = TRUE;
+      $form['notification_notify_everyone']['#access'] = FALSE;
+    }
+    $form['#validate'][] = 'opigno_notifications_app_form_callback_valid';
+  }
+}
+
+function opigno_notifications_app_form_callback_valid($form, &$form_state) {
+  if ($form_state['values']['notification_add_calendar'][LANGUAGE_NONE][0]['value'] == 0) {
+    $form_state['values']['opigno_calendar_date'] = NULL;
+  }
+  if ($form_state['values']['notification_notify_everyone'][LANGUAGE_NONE][0]['value'] == 1) {
+    $i = 0;
+    $groups = og_get_all_group('node');
+    foreach ($groups as $group) {
+      $form_state['values']['og_group_ref'][LANGUAGE_NONE][$i]['target_id'] = $group;
+      $i++;
+    }
+  }
+  return TRUE;
+}
+
+function opigno_notifications_app_views_api() {
+  return array('api' => '3.0');
+}
+
+function opigno_notifications_app_modules_enabled($modules) {
+  foreach ($modules as $module) {
+    if ($module == "opigno_calendar_app") {
+      opigno_notifications_app_install_calendar_fields();
+    }
+  }
+}

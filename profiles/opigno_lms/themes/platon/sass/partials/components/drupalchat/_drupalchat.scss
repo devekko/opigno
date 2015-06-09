@@ -1,0 +1,18 @@
+/**
+ * @file
+ * Contains styles for the Drupal Chat module.
+ */
+
+#drupalchat-wrapper {
+
+  .subpanel_title {
+    background-color: $dark-blue;
+  }
+
+  .subpanel {
+
+    ul, ul li {
+      background-color: $light-gray;
+    }
+  }
+}

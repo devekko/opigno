@@ -1,0 +1,14 @@
+name = Opigno Pdf viewer
+description = "Enables the pdf viewer module and created field for slides"
+core = 7.x
+package = Opigno Apps
+
+dependencies[] = quiz_directions
+dependencies[] = pdf
+dependencies[] = file
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.11"
+core = "7.x"
+project = "opigno_quiz_app"
+datestamp = "1425245887"
+

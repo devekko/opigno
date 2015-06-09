@@ -1,0 +1,81 @@
+.questions {
+  margin: 20px 0 0 20px;
+  width: 730px;
+}
+.questions .ques-head {
+  background: #3b3a33;
+  border-radius: 3px;
+  color: #fff;
+  height: 60px;
+  padding: 10px;
+}
+.questions .ques-head .top {
+  font-size: 14px;
+  margin-bottom: 15px;
+}
+.questions .ques-head .top span {
+  float: right;
+}
+.questions .ques-head h3 {
+  font-size: 14px;
+  font-weight: bold;
+}
+.questions .ques-mid h2 {
+  font-size: 14px;
+  font-weight: bold;
+  margin-bottom: 10px;
+}
+.questions .ques-mid ul.option {
+  margin-top: 18px;
+}
+.questions .ques-mid ul.option li {
+  display: block;
+  font-size: 12px;
+  font-weight: bold;
+  list-style: none;
+  margin-bottom: 14px;
+}
+.questions .ques-mid input.txtbox {
+  border: 1px solid #999;
+  margin-top: 10px;
+  padding: 5px;
+}
+.questions .ques-footer span {
+  background: #3b3a33;
+  border-bottom: 1px solid #65645f;
+  display: block;
+  height: 20px;
+}
+.questions .ques-footer .btns {
+  background: #292825;
+  border-bottom-left-radius: 3px;
+  border-bottom-right-radius: 3px;
+  overflow: hidden;
+  padding: 20px;
+}
+ul.matches li {
+  background: url(images/match-box.gif) no-repeat;
+  background-position:center;
+  padding: 20px;
+  float: left;
+  font-size: 14px;
+  font-weight: bold;
+  height: 89px;
+  line-height: 85px;
+  list-style: none;
+  margin-right: 10px;
+  text-align: center;
+  width: 129px;
+}
+.reset_btn {
+  margin-bottom: 10px;
+}
+.seperator {
+  padding: 8px;
+  text-align: center;
+  width: 392px;
+}
+fieldset#edit-field-dragdrop-image-und .fieldset-description p em {
+  color: red;
+}
+ 

@@ -1,0 +1,38 @@
+<?php
+
+/**
+ * @file
+ * Install logic.
+ */
+
+/**
+ * Implements hook_schema().
+ */
+function opigno_scorm_quiz_schema() {
+  return array(
+    'opigno_scorm_quiz_user_results' => array(
+      'fields' => array(
+        'question_nid' => array(
+          'type' => 'int',
+          'unsiged' => TRUE,
+          'not null' => TRUE,
+        ),
+        'question_vid' => array(
+          'type' => 'int',
+          'unsiged' => TRUE,
+          'not null' => TRUE,
+        ),
+        'result_id' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'score_scaled' => array(
+          'type' => 'float',
+          'size' => 'big',
+        ),
+      ),
+      'primary key' => array('question_nid', 'question_vid', 'result_id'),
+    ),
+  );
+}

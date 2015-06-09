@@ -1,0 +1,34 @@
+name = Opigno Features WYSIWYG
+description = Opigno default WYSIWYG profile
+core = 7.x
+package = Opigno Features
+version = 7.x-1.0-beta7+49-dev
+project = opigno_lms
+dependencies[] = defaultconfig
+dependencies[] = features
+dependencies[] = filter
+dependencies[] = imce
+dependencies[] = imce_wysiwyg
+dependencies[] = wysiwyg
+dependencies[] = wysiwyg_filter
+datestamp = 1381409379
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[filter][] = html
+features[variable][] = imce_profiles
+features[variable][] = imce_roles_profiles
+features[variable][] = imce_settings_absurls
+features[variable][] = imce_settings_disable_private
+features[variable][] = imce_settings_replace
+features[variable][] = imce_settings_textarea
+features[variable][] = imce_settings_thumb_method
+features[wysiwyg][] = html
+features_exclude[dependencies][ctools] = ctools
+features_exclude[dependencies][strongarm] = strongarm
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.18"
+core = "7.x"
+project = "opigno_lms"
+datestamp = "1425249184"
+

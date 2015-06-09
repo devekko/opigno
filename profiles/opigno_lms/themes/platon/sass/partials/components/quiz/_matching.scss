@@ -1,0 +1,17 @@
+/**
+ * @file
+ * Defines styles for the matching question type.
+ */
+
+.matching-tbl {
+  margin-top: 1em;
+
+  .matching-select {
+    min-width: 300px;
+    text-align: center;
+
+    select {
+      width: 98%;
+    }
+  }
+}

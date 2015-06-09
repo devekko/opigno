@@ -1,0 +1,12 @@
+name = Certificate tests
+core = 7.x
+description = Tests for the Certificate module
+dependencies[] = certificate
+hidden = TRUE
+
+; Information added by  packaging script on 2013-11-07
+version = "7.x-2.0"
+core = "7.x"
+project = "certificate"
+datestamp = "1383803619"
+

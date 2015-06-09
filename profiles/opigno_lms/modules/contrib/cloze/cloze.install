@@ -1,0 +1,91 @@
+<?php
+
+/**
+ * The installer file for short_answer.
+ * @file
+ */
+
+/**
+ * Implementation of hook_install().
+ */
+function cloze_install() {
+  // Add body field to cloze node
+  quiz_question_add_body_field('cloze');
+  variable_set('node_options_cloze', array('status'));
+  cache_clear_all('autoload:', 'cache');
+}
+
+/**
+ * Implementation of hook_schema().
+ */
+function cloze_schema() {
+  // User answers go in here.
+  $schema['quiz_cloze_user_answers'] = array(
+    'fields' => array(
+      'answer_id' => array(
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'question_nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'question_vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'result_id' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'score' => array(
+        'type' => 'float',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'answer' => array(
+        'type' => 'text'
+      ),
+    ),
+    'primary key' => array('answer_id'),
+    'unique keys' => array(
+      'ids' => array('result_id', 'question_nid', 'question_vid'),
+    ),
+  );
+  $schema['quiz_cloze_node_properties'] = array(
+    'fields' => array(
+      'nid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'vid' => array(
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'learning_mode' => array(
+        'type' => 'int',
+        'size' => 'tiny',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('nid', 'vid'),
+  );
+  return $schema;
+}
+
+/**
+ * Adding table {quiz_cloze_node_properties}
+ */
+function cloze_update_7401() {
+  db_create_table('quiz_cloze_node_properties', drupal_get_schema_unprocessed('cloze', 'quiz_cloze_node_properties'));
+  return 'Adding table {quiz_cloze_node_properties}';
+}

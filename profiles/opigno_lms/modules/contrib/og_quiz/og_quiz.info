@@ -1,0 +1,16 @@
+name = OG Quiz integration
+description = Integrate Quiz with OG groups. Allows site admins to give quiz permissions at the group level instead of globally.
+core = 7.x
+package = Organic groups
+dependencies[] = og
+dependencies[] = quiz
+
+files[] = includes/og_quiz_question.php
+files[] = includes/og_long_answer.php
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.3"
+core = "7.x"
+project = "og_quiz"
+datestamp = "1425246207"
+

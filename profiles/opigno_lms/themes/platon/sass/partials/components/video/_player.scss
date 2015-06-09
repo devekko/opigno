@@ -1,0 +1,29 @@
+/**
+ * @file
+ * Styles for the video player.
+ */
+
+.vjs-default-skin {
+  color: $dark-blue;
+  
+  .vjs-big-play-button {
+    top: 35%;
+    left: 37%;
+  }
+
+  .vjs-control-bar {
+    background: $dark-gray; 
+  }
+
+  .vjs-load-progress { 
+    background: $medium-gray; 
+  }
+
+  .vjs-volume-level, .vjs-play-progress { 
+    background: $dark-blue; 
+  }
+
+  .vjs-slider-handle:before { 
+    content: ''; 
+  }
+}

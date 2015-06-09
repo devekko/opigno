@@ -1,0 +1,14 @@
+name = Opigno SCORM UI
+description = User interface for the Opigno SCORM API. Provides a SCORM player.
+core = 7.x
+package = Opigno
+dependencies[] = file
+dependencies[] = opigno_scorm
+
+files[] = tests/OpignoScormUIUnitTest.test
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.11"
+core = "7.x"
+project = "opigno"
+datestamp = "1425246497"
+

@@ -1,0 +1,128 @@
+<?php
+
+/**
+ * @file
+ * Defines the base class for Opigno unit testing.
+ * This base class contains re-usable logic that will make it easier and faster to
+ * write Opigno-specific unit tests.
+ */
+
+class OpignoWebTestCase extends DrupalWebTestCase {
+
+  /**
+   * Create a course and assign members to it.
+   *
+   * @param  string $title = NULL
+   * @param  object $creator = NULL
+   * @param  int $private = NULL
+   * @param  array $members = array()
+   *          A 2-dimensional array, where the key is the user ID and the value an
+   *          array of roles.
+   *          Ex:
+   *            array(12 => array('manager', 'teacher'))
+   *
+   * @return object
+   */
+  protected function createCourse($title = NULL, $creator = NULL, $private = NULL, $members = array()) {
+    $settings = array(
+      'type' => OPIGNO_COURSE_BUNDLE,
+      'title' => $title ? $title : $this->randomName(8),
+      'body' => array(
+        LANGUAGE_NONE => array(
+          array('value' => $this->randomName(16)),
+        ),
+      ),
+    );
+    if (!empty($creator->uid)) {
+      $settings['uid'] = $creator->uid;
+    }
+    if (isset($private)) {
+      $settings['group_access'][LANGUAGE_NONE][0]['value'] = $private;
+    }
+    $node = $this->drupalCreateNode($settings);
+
+    $this->assertTrue(!empty($node->nid), 'Created a new course.');
+
+    if (!empty($members)) {
+      foreach ($members as $uid => $roles) {
+        $this->addMemberToCourse($node, $uid, $roles);
+      }
+    }
+
+    return $node;
+  }
+
+  /**
+   * Add member to course.
+   *
+   * @param object $node
+   * @param int $uid
+   * @param array $roles
+   */
+  protected function addMemberToCourse($node, $uid, $roles = array('member')) {
+    og_membership_create('node', $node->nid, 'user', $uid, 'og_user_node');
+    foreach ($roles as $role) {
+      $rid = $this->getRoleId($role);
+      if (!empty($rid)) {
+        og_role_grant('node', $node->nid, $uid, $rid);
+      }
+      else {
+        $this->fail("Could not find the role '$role'.");
+      }
+    }
+  }
+
+  /**
+   * Create a role and set the permissions.
+   *
+   * @param  string $role_name
+   * @param  array $permissions = array()
+   *
+   * @return object
+   */
+  protected function createRole($role_name, $permissions = array()) {
+    $role = og_role_create($role_name, 'node', 0, OPIGNO_COURSE_BUNDLE);
+    og_role_save($role);
+    og_role_grant_permissions($role->rid, $permissions);
+    return $role;
+  }
+
+
+  /**
+   * Fetch the role ID by name.
+   *
+   * @param  string $role_name
+   *
+   * @return int
+   */
+  protected function getRoleId($role_name) {
+    $rid  = db_select('og_role', 'r')
+              ->fields('r', array('rid'))
+              ->condition('r.name', $role_name)
+              ->condition('group_bundle', OPIGNO_COURSE_BUNDLE)
+              ->execute()
+              ->fetchField();
+    return !empty($rid) ? $rid : 0;
+  }
+
+  /**
+   * Helper function to enable a block.
+   */
+  protected function enableBlock($module, $delta, $region = 'sidebar_first', $pages_visible = array(), $pages_unvisible = array()) {
+    $block = array(
+      'module' => $module,
+      'delta' => $delta,
+      'theme' => variable_get('theme_default', 'bartik'),
+      'status' => 1,
+      'weight' => 0,
+      'region' => $region,
+      'visibility' => (int) empty($pages_visible),
+      'pages' => implode("\n", !empty($pages_visible) ? $pages_visible : $pages_unvisible),
+      'cache' => -1,
+    );
+
+    $query = db_insert('block')->fields(array('module', 'delta', 'theme', 'status', 'weight', 'region', 'visibility', 'pages', 'cache'));
+    $query->values($block);
+    $query->execute();
+  }
+}

@@ -1,0 +1,22 @@
+name = Opigno Features Field Groups
+description = Groups all course fields.
+core = 7.x
+package = Opigno Features
+version = 7.x-1.0-alpha12
+project = opigno_lms
+dependencies[] = ctools
+dependencies[] = field_group
+dependencies[] = strongarm
+datestamp = 1379610178
+features[ctools][] = field_group:field_group:1
+features[ctools][] = strongarm:strongarm:1
+features[features_api][] = api:2
+features[field_group][] = group_course_settings|node|course|form
+features[variable][] = field_bundle_settings_node__course
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.18"
+core = "7.x"
+project = "opigno_lms"
+datestamp = "1425249184"
+

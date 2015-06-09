@@ -1,0 +1,15 @@
+/**
+ * Styles for the Video module video browser.
+ */
+
+#video-browser-page {
+
+  .video-item {
+    margin-right: 10px;
+    width: 150px;
+
+    img {
+      max-width: 100%;
+    }
+  }
+}

@@ -1,0 +1,289 @@
+/**
+ * @file
+ * Defines form styles and generic mixins.
+ */
+
+@mixin action-element {
+  border: 0;
+  background: $leaf-green;
+  color: white;
+  display: inline-block;
+  padding: .25em 1em;
+  background-position: .5em center;
+  background-repeat: no-repeat;
+}
+
+.action-element {
+  @include action-element;
+}
+
+@mixin action-select-element {
+  @include action-element;
+}
+
+@mixin action-add-element {
+  @include action-element;
+  padding-left: 2em;
+  background-image: url(../img/add-element-icon.png);
+}
+
+.action-add-element {
+  @include action-add-element;
+  height:24px;
+}
+
+@mixin action-sort-element {
+  @include action-element;
+  padding-left: 2em;
+  background-image: url(../img/sort-element-icon.png);
+}
+
+.action-sort-element {
+  @include action-sort-element;
+  height:24px;
+}
+
+@mixin action-start-element {
+  @include action-element;
+  padding-left: 2em;
+  background-image: url(../img/start-element-icon.png);
+}
+
+.action-start-element {
+  @include action-start-element;
+  height:65px;
+}
+
+@mixin action-next-element {
+  @include action-element;
+  padding-right: 3em;
+  background-image: url(../img/next-element-icon.png);
+  background-position: right center;
+}
+
+.action-next-element {
+  height:24px;
+  @include action-next-element;
+}
+
+@mixin action-prev-element {
+  @include action-element;
+  padding-left: 3em;
+  background-image: url(../img/prev-element-icon.png);
+}
+
+.action-prev-element {
+  height:24px;
+  @include action-prev-element;
+}
+
+.action-question-element {
+  border: 0;
+  background: #5aa449;
+  color: white;
+  display: inline-block;
+  padding: .25em 1em;
+  background-position: .5em center;
+  background-repeat: no-repeat;
+  padding-left: 2em;
+  background-image: url(../img/question-element-icon.png);
+  /* Ajout d'une taille pour l'élement afin de centrer la border */
+  height:24px;
+}
+/* Nouvelle classe pour les resultats */
+.action-results-element {
+  border: 0;
+  background: #5aa449;
+  color: white;
+  display: inline-block;
+  padding: .25em 1em;
+  background-position: .5em center;
+  background-repeat: no-repeat;
+  padding-left: 2em;
+  background-image: url(../img/results-element-icon.png);
+  /* Ajout d'une taille pour l'élement afin de centrer la border */
+  height:27px;
+}
+/* Nouvelle classe edition des leçons */
+.action-edit-element {
+  border: 0;
+  background: #5aa449;
+  color: white;
+  display: inline-block;
+  padding: .25em 1em;
+  background-position: .5em center;
+  background-repeat: no-repeat;
+  padding-left: 2em;
+  background-image: url(../img/edit-element-icon.png);
+  /* Ajout d'une taille pour l'élement afin de centrer la border */
+  height:24px;
+}
+
+@mixin danger-element {
+  @include action-element;
+  background: $blood-red;
+}
+
+.danger-element {
+  @include danger-element;
+}
+
+.form-submit, input[type="submit"], input[type="button"], button {
+  @include action-element;
+}
+
+input[type="submit"] + input[type="submit"],
+input[type="submit"] + input[type="button"],
+input[type="submit"] + button,
+input[type="submit"] + a,
+input[type="button"] + input[type="button"],
+input[type="button"] + input[type="submit"],
+input[type="button"] + button,
+input[type="button"] + a,
+button + input[type="submit"],
+button + input[type="button"],
+button + button,
+button + a {
+  margin-left: .5em;
+}
+
+#edit-delete {
+  @include danger-element;
+}
+
+label {
+  margin-bottom: .5em;
+}
+
+input[type="text"], input[type="password"], textarea, select {
+  border: 2px solid $medium-gray;
+  outline: 0;
+  padding: .5em;
+  max-width: 95%;
+}
+
+input.form-autocomplete {
+  padding: 0; // @todo - replace throbber.gif
+}
+
+fieldset {
+  
+  input[type="text"], input[type="password"], textarea, select {
+    border-color: darken($medium-gray, 10%);
+  }
+}
+
+html.js fieldset.collapsed {
+  height: auto;
+}
+
+.form-item {
+
+  .description {
+    color: $dark-gray;
+  }
+}
+
+form .field-multiple-table th.field-label {
+  padding-left: 1em;
+}
+
+// In editor context.
+body.cke_show_borders {
+  background: $light-gray;
+  padding: 1em;
+}
+
+.cke_skin_kama {
+  border: 0;
+}
+
+.fieldset-wrapper {
+  padding: 1em;
+
+  > .form-item:first-child {
+    margin-top: 0;
+  }
+}
+
+fieldset.collapsible {
+
+  legend {
+
+    a {
+      color: white;
+      text-decoration: none;
+    }
+  }
+}
+
+html.js fieldset.collapsible .fieldset-legend {
+  background: url(../img/fieldset-collapsible-icon.png) left bottom no-repeat;
+  padding-left: 1.3em;
+}
+
+html.js fieldset.collapsed .fieldset-legend {
+  background-position: left top;
+}
+
+.vertical-tabs-pane {
+  background: white;
+}
+
+.filter-wrapper {
+
+  .form-type-select {
+    margin-top: 0;
+  }
+
+  .filter-guidelines {
+    display: none;
+  }
+}
+
+#opigno-quiz-app-filter-by-status-form {
+  overflow: hidden;
+
+  .form-item {
+    float: left;
+    margin-right: 1em;
+  }
+
+  .form-submit {
+    float: left;
+    margin-top: 3.1em;
+  }
+}
+
+.draggable {
+
+  input {
+    padding: 2px !important;
+  }
+}
+
+#platon-css-editor {
+  min-height: 400px;
+}
+
+.color-form {
+  max-width: none;
+
+  #palette {
+    clear: both;
+
+    .form-item {
+      min-height: 130px;
+      float: left;
+      width: 250px;
+
+      .lock, .hook {
+        display: none;
+      }
+    }
+
+    .description {
+      clear: both;
+    }
+  }
+}

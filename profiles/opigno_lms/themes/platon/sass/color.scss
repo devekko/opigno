@@ -1,0 +1,274 @@
+// Load colors.
+@import "partials/utility";
+
+.color-white { color: $white; }
+.background-color-white { background-color: $white; }
+
+.color-light-gray { color: $light-gray; }
+.background-color-light-gray { background-color: $light-gray; }
+
+.color-medium-gray { color: $medium-gray; }
+.background-color-medium-gray { background-color: $medium-gray; }
+
+.color-dark-gray { color: $dark-gray; }
+.background-color-dark-gray { background-color: $dark-gray; }
+
+.color-light-blue { color: $light-blue; }
+.background-color-light-blue { background-color: $light-blue; }
+
+.color-dark-blue { color: $dark-blue; }
+.background-color-dark-blue { background-color: $dark-blue; }
+
+.color-deep-blue { color: $deep-blue; }
+.background-color-deep-blue { background-color: $deep-blue; }
+
+.color-leaf-green { color: $leaf-green; }
+.background-color-leaf-green { background-color: $leaf-green; }
+
+.color-blood-red { color: $blood-red; }
+.background-color-blood-red { background-color: $blood-red; }
+
+// Retrieve color usage from all other scss files.
+// @todo This is currently done by hand and error prone. Write batch ?
+
+// _layout.scss
+#second-sidebar { background-color: $light-gray; }
+#title-wrapper { background: $medium-gray; }
+#site-header { background-color: $deep-blue; }
+#site-footer { background-color: $deep-blue; }
+
+// _forms.scss
+body.cke_show_borders { background: $light-gray; }
+input[type="text"], input[type="password"], textarea, select { border-color: $medium-gray; }
+fieldset {
+  input[type="text"], input[type="password"], textarea, select { border-color: darken($medium-gray, 10%);  }
+}
+.quiz-question-body { background: $medium-gray; }
+.form-item {
+  .description {
+    color: $dark-gray;
+  }
+}
+.action-element, .action-add-element, .action-sort-element, .action-start-element, .action-next-element, .action-prev-element, .form-submit, input[type="submit"], input[type="button"], button { background: $leaf-green; }
+.danger-element, #edit-delete { background: $blood-red; }
+
+// _misc.scss
+.admin {
+  .left, .right {
+    .admin-panel {
+      h3 { background: $light-blue; }
+      dt { background: $medium-gray; }
+      dd { background: $medium-gray; }
+      dt.hover, dd.hover { background: $light-gray; }
+    }
+  }
+}
+body.platon-use-custom-background {
+  #first-sidebar { background: $medium-gray; }
+}
+a:hover #messages-num-unread, a.active #messages-num-unread { color: $dark-blue; }
+
+// _tables.scss
+td { background: $medium-gray; }
+th { background: $light-blue; }
+caption { background: $dark-blue; }
+
+// _tags.scss
+body { background-color: $deep-blue; }
+fieldset { background: $medium-gray; }
+legend { background: $light-blue; }
+a { color: $link-color; }
+a:hover { color: $link-hover-color; }
+
+// _menus.scss
+ul.tabs {
+  li {
+    a, a.active { background-color: $light-blue; }
+    a.active, a:hover { background-color: $dark-blue; }
+  }
+}
+.action-links li a.opigno-quiz-app-sort-quizzes { background-color: $leaf-green; }
+.action-links {
+  li {
+    a { background-color: $leaf-green; }
+  }
+}
+#og-context-navigation {
+  li {
+    a { background-color: $light-blue; }
+    a:hover, a.acive { background-color: $dark-blue; }
+  }
+}
+.main-navigation-row {
+  .main-navigation-item {
+    a { color: $dark-blue; }
+    a:hover, a.active { background-color: $dark-blue; }
+  }
+}
+#back-to-parent-link {
+  a { color: $dark-blue; }
+}
+
+// components/apps/_list.scss
+#apps-list {
+  .app-name { background: $light-blue; }
+  .app-status { color: $light-blue; }
+  .app-action {
+    color: $dark-gray;
+    background: $medium-gray;
+  }
+}
+
+// components/apps/_app-page.scss
+#app-wrapper {
+  .app-main {
+    #app-top {
+      h1 { color: $dark-gray; }
+    }
+  }
+}
+
+// components/video/player
+.vjs-default-skin {
+  color: $dark-blue;
+  .vjs-control-bar { background: $dark-gray; }
+  .vjs-load-progress { background: $medium-gray; }
+  .vjs-volume-level, .vjs-play-progress { background: $dark-blue; }
+}
+
+// components/audio/player
+.audiojs {
+  color: $dark-blue;
+  background: $dark-gray; 
+  .loaded { background: $medium-gray; }
+  .progress { background: $dark-blue; }
+}
+
+// components/forum/_forum.scss
+#forum-statistics {
+  #forum-statistics-header { background: $dark-blue; }
+  .forum-statistics-sub-header { background: $light-blue; }
+  .forum-statistics-sub-body { background: $medium-gray;  }
+}
+.forum-tools { background: $dark-gray; }
+.forum-post-info { background: $light-blue; }
+.forum-post-title { background: $dark-blue; }
+body .forum-table-wrap .forum-table-superheader { background-color: $dark-blue; }
+.forum-table th { background-color: $light-blue; }
+#forum {
+  .form-type-select {
+    select { background-color: $leaf-green; }
+  }
+}
+.forum-add-node, .topic-reply-allowed {
+  a, a:hover { background-color: $leaf-green; }
+}
+
+// components/quiz/_form.scss
+#quiz-question-answering-form {
+  .quiz-question-navigation-wrapper { background: $dark-gray; }
+}
+#quiz_progress { background: $light-blue; }
+
+// components/quiz/_results.scss
+div.quiz-report {
+  div.dt { background: $dark-blue; }
+}
+
+// components/node/_course.scss
+.node-course-other-fields { background-color: $light-blue; }
+
+// components/quiz/_truefalse.scss
+#quiz-question-answering-form {
+  .form-type-radio:first-of-type {
+    label { background: lighten($leaf-green, 20%); }
+  }
+  .form-type-radio:last-of-type {
+    label { background: lighten($blood-red, 20%); }
+  }
+}
+
+// components/opigno/_tools.scss
+.opigno-tool-block { background: $light-blue; }
+.opigno-tool-block.js-processed:hover { background: $dark-blue; }
+
+// components/homebox/_homebox.scss
+#homebox-add {
+  .item-list {
+    background: $medium-gray;
+    a { background-color: lighten($leaf-green, 20%); }
+    a:hover { background-color: $leaf-green; }
+    a.restore { background-color: $blood-red; }
+  }
+}
+#homebox {
+  .homebox-portlet {
+    background: $medium-gray;
+    .portlet-header { background: $dark-blue; }
+  }
+}
+#homebox-add-link { background-color: $leaf-green; }
+
+// components/tft/_tft.scss
+#folder-menu-container .folder-wrapper {
+  background: $dark-blue;
+  #tabs {
+    ul {
+      li {
+        a.disabled { background-color: lighten($dark-gray, 20%) !important; }
+      }
+    }
+  }
+}
+#folder-add-content-links { background: $dark-gray; }
+
+// components/views/_calendar.scss
+.view-calendar { background-color: $medium-gray; }
+.calendar-calendar {
+  th, th.days { background: $medium-gray; }
+  td { color: $dark-gray; }
+  td.today {
+    background: $medium-gray !important;
+    div.day { border-color: $dark-gray !important; }
+  }
+}
+
+// components/drupalchat/_drupalchat.scss
+#drupalchat-wrapper {
+  .subpanel_title { background-color: $dark-blue; }
+  .subpanel {
+    ul, ul li { background-color: $light-gray; }
+  }
+}
+
+// Retrieve image usage from all other scss files.
+// @todo This is currently done by hand and error prone. Write batch ?
+
+// _layout.scss
+#first-sidebar {
+  #first-sidebar-toggle { background-image: url(../img/collapse-menu-icon.png); }
+}
+#site-header { background-image: url(../img/header-background.jpg); }
+
+// _menu.scss
+#back-to-parent-link {
+  a { background-image: url(../img/back-icon.png); }
+}
+
+// components/opigno/_menu.scss
+$menu-items-collection: (home, my-courses, training-catalogue, forum, calendar, my-achievements, messages, administration);
+@each $menu-item in $menu-items-collection {
+  #main-navigation-item-#{$menu-item} {
+    a { background-image: url(../img/main-navigation-#{$menu-item}-icon-inactive.png); }
+  }
+}
+
+.view-opigno-course-catalgue .opigno-group h3
+{
+  background: $dark-blue;
+}
+
+.view-opigno-my-courses .opigno-group h3
+{
+  background: $dark-blue;
+}

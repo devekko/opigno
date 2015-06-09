@@ -1,0 +1,201 @@
+<?php
+
+function opigno_certificate_app_menu() {
+  $items = array();
+  $items['node/%node/user/%user/certificate'] = array(
+    'title' => 'Certificate',
+    'description' => 'Display earned certificate for this node',
+    'page callback' => 'certificate_single',
+    'page arguments' => array(3, 1),
+    'access callback' => 'certificate_can_access_certificate',
+    'access arguments' => array(1, 3, TRUE),
+    'file' => 'certificate.pages.inc',
+    'file path' => drupal_get_path('module', 'certificate'),
+    'type' => MENU_CALLBACK,
+  );
+  $items['admin/opigno/students/add/certificate'] = array(
+    'title' => "Add Certificate",
+    'description' => "Create a new certificate",
+    'page callback' => 'opigno_certificate_app_redirect_to_node_creation_form',
+    'access arguments' => array('create certificate content'),
+  );
+  return $items;
+}
+
+function opigno_certificate_app_redirect_to_node_creation_form() {
+  drupal_goto('node/add/certificate');
+}
+
+function opigno_certificate_app_menu_alter(&$items)
+{
+  $items['node/%node/certificate']['access callback'] = 'opigno_certificate_app_certificate_exists';
+  $items['node/%node/certificate']['type']=MENU_LOCAL_ACTION;
+}
+
+function opigno_certificate_app_certificate_exists($node)
+{
+  if (isset($node->certificate['node_settings']['manual']['manual']))
+  {
+  if ($node->certificate['node_settings']['manual']['manual']==="-1")
+  {
+    return false;
+  }
+  else
+  {
+    return certificate_can_access_certificate($node);
+  }
+  }
+  else
+  {
+    return false;
+  }
+}
+
+function opigno_certificate_app_access_certificate($node, $account) {
+  global $user;
+  if (($user->uid != $account->uid) && (!user_access('view all user certificates'))) {
+    drupal_set_message(t("You do not have access to viewing others certificates"));
+    return FALSE;
+  }
+  if (opigno_certificate_app_user_passed($node->nid, $account->uid)) {
+    return TRUE;
+  }
+  return FALSE;
+}
+
+function opigno_certificate_app_get_certificate_path($nodeid, $userid) {
+  global $user;
+  if (($user->uid != $userid) && (!user_access('view all user certificates'))) {
+    return "";
+  }
+  if (opigno_certificate_app_user_passed($nodeid, $userid)) {
+    return 'node/' . $nodeid . '/user/' . $userid . '/certificate';
+  }
+  return "";
+}
+
+function opigno_certificate_app_node_view($node, $view_mode, $langcode) {
+  if (isset($node->content['certificate']['#markup']))
+  {
+    if (isset($node->certificate['node_settings']['manual']['manual']))
+    {
+        $node->content['certificate']['#markup']="";
+    }
+  }
+}
+
+
+function opigno_certificate_app_user_passed($nid, $uid) {
+  $node = node_load($nid);
+  if (module_exists("opigno_quiz_app")) {
+    if (isset($node->opigno_class_courses[LANGUAGE_NONE])) {
+      foreach ($node->opigno_class_courses[LANGUAGE_NONE] as $index => $cid) {
+        if (!opigno_quiz_app_user_passed($cid['target_id'], $uid)) {
+          return FALSE;
+        }
+      }
+    }
+    else {
+      if (!opigno_quiz_app_user_passed($nid, $uid)) {
+        return FALSE;
+      }
+    }
+  }
+  if (isset($node->certificate['node_settings']['manual']['manual']))
+  {
+    if ($node->certificate['node_settings']['manual']['manual']==="-1")
+    {
+      return FALSE;
+    }
+  }
+  return TRUE;
+}
+
+function opigno_certificate_app_token_info() {
+  $node['certificate_granted_node'] = array(
+    'name' => t("Certificate date"),
+    'description' => t("The day the certificate was granted"),
+    'value' => "coisa",
+  );
+  $node['list_of_courses'] = array(
+    'name' => t("The list of courses"),
+    'description' => t("The list of courses"),
+  );
+  return array(
+    'tokens' => array('node' => $node),
+  );
+}
+
+function opigno_certificate_app_tokens($type, $tokens, array $data = array(), array $options = array()) {
+  $replacements = array();
+  if ($type == 'node' && !empty($data['node'])) {
+    $node = $data['node'];
+    foreach ($tokens as $name => $original) {
+      switch ($name) {
+        case 'certificate_granted_node':
+          $replacements[$original] = opigno_certificate_app_token_approved_date($node->nid, $data['user']->uid);
+          break;
+        case 'list_of_courses':
+          $replacements[$original] = opigno_certificate_app_token_list_of_courses($node);
+          break;
+      }
+    }
+  }
+  return $replacements;
+}
+
+function opigno_certificate_app_token_list_of_courses($node) {
+  if (isset($node->opigno_class_courses[LANGUAGE_NONE])) {
+    $courselist = "";
+    foreach ($node->opigno_class_courses[LANGUAGE_NONE] as $courses) {
+      $course = node_load($courses);
+      $courselist .= $course->title . ", ";
+    }
+    $courselist = substr($courselist, 0, -2);
+    $courselist .= ".";
+    return $courselist;
+  }
+  return "";
+}
+
+function opigno_certificate_app_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == "certificate_node_form") {
+    $form['options']['status']['#default_value'] = 0;
+  }
+  if (isset($form['certificate']['map']['manual']['manual'])) {
+    if (empty($form['certificate']['map']['manual']['manual']['#default_value'])) {
+      $form['certificate']['map']['manual']['manual']['#default_value'] = '-1';
+    }
+  }
+}
+
+function opigno_certificate_app_token_approved_date($nodeid, $userid) {
+  $node = node_load($nodeid);
+  $time_last = 0;
+  $i = 0;
+  if (isset($node->opigno_class_courses[LANGUAGE_NONE])) {
+    foreach ($node->opigno_class_courses['und'] as $course) {
+      $courses[$i] = node_load($course['target_id']);
+      $i++;
+    }
+  }
+  else {
+    $courses[0] = $node;
+  }
+  foreach ($courses as $acourse) {
+    if (isset($acourse->course_required_quiz_ref[LANGUAGE_NONE])) {
+      $quizes = opigno_quiz_app_get_all_required_quizzes($acourse);
+      $scoresall = opigno_quiz_app_get_score_data(array_keys($quizes), $userid, FALSE);
+      foreach ($scoresall as $quiz_id => $scores) {
+        foreach ($scores as $scoreid => $score) {
+          if ($score->time_end != 0) {
+            if ($score->time_end > $time_last) {
+              $time_last = $score->time_end;
+            }
+          }
+        }
+      }
+    }
+  }
+  return gmdate("d/M/Y", $time_last);
+}

@@ -1,0 +1,99 @@
+<?php
+
+/**
+ * Implements hook_field_attach_validate
+ * Adds a validation hook to prevent users from posting to groups they are not members of.
+ *
+ * TODO: test
+ * TODO: admin config to turn on or off
+ * TODO: some of this should be in field_attach_form_validate
+ *
+ * @param $entity_type
+ * @param $entity
+ * @param $errors
+ *
+ */
+function og_create_perms_field_attach_validate($entity_type, $entity, &$errors) {
+  // we only work on nodes for now
+  $types = og_create_perms_list_bundles();
+  if ($entity_type == 'node' && in_array($entity->type, $types)){
+    global $user;
+    $account = clone $user;
+
+    $field_name = OG_AUDIENCE_FIELD;
+
+    // Language may always be UND, but I am being cautious here
+    $language_code = field_language($entity_type, $entity, $field_name);
+
+    if (!$items = $entity->{$field_name}[$language_code]) {
+      // if we don't have any items, initialise an array with a null entry
+      $items = array(0 => array('target_id' => NULL));
+    }
+
+      // Make sure we are a member of all attached groups
+    foreach ($items as $delta => $group) {
+      if (empty($group['target_id'])) {
+        if (!user_access('create ' . $entity->type . ' content', $account) && !user_access('administer nodes')) {
+          $errors[$field_name][$language_code][$delta][] = array(
+            'error' => 'og_create_perms:No global create permissions',
+            'message' => t('You are not permitted to create %type content outside a group',
+                array('%type' => $entity->type))
+          );
+        }
+      }
+      else {
+        $group_info = og_create_perms_load_og_info($group['target_id']);
+        if (og_is_member($group_info['group_type'], $group_info['gid'], 'user', $account) || user_access('administer nodes')) {
+          if (!og_user_access($group_info['group_type'], $group_info['gid'], 'create '. $entity->type .' content', $account) && !user_access('administer nodes')) {
+            $errors[$field_name][$language_code][$delta][] = array(
+              'error' => 'og_create_perms:content type restriction',
+              'message' => t('You are not permitted to create %type content in %group',
+                array('%type' => $entity->type, '%group' => $group_info['title']))
+            );
+          }
+        }
+        else {
+          // we have a gid, but for a group the user does not belong to
+          $errors[$field_name][$language_code][0][] = array(
+            'error' => 'og_create_perms:user not a member',
+            'message' => t("You are not permitted to post content in a group you're not a member of.")
+          );
+        }
+      }
+    }
+  }
+  // no return value, errors is a reference
+}
+
+/**
+ * Helper function to load information for a given group.
+ * @todo We hard code this to get node groups. It is not flexible, but there's currently no other way.
+ *
+ * @param  $gid
+ *
+ * @return array
+ */
+function og_create_perms_load_og_info($gid) {
+  $query = db_select('og_membership', 'm');
+  $query->leftJoin('node', 'n', 'n.nid = m.gid');
+  $query->leftJoin('node_revision', 'v', 'v.vid = n.vid');
+
+  return $query->fields('m', array('group_type', 'gid'))
+            ->fields('v', array('title'))
+            ->condition('m.gid', $gid)
+            ->condition('m.group_type', 'node')
+            ->execute()
+            ->fetchAssoc();
+}
+
+/**
+ * Helper function to return a list of types that can be added to a group
+ */
+function og_create_perms_list_bundles() {
+  $bundles = array();
+  $field_info = field_info_field(OG_AUDIENCE_FIELD);
+  if (array_key_exists('node', $field_info['bundles'])) {
+    $bundles = $field_info['bundles']['node'];
+  }
+  return $bundles;
+}

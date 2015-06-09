@@ -1,0 +1,348 @@
+<?php
+
+/**
+ * @file
+ * Module hooks.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function opigno_class_app_menu() {
+  $items = array();
+
+  if (module_exists('opigno_quiz_app')) {
+    $items['admin/opigno/students/class-results'] = array(
+      'title' => t("My class student results"),
+      'description' => t("Displays all class student results"),
+      'page callback' => 'opigno_class_app_class_results',
+      'access arguments' => array('access class results'),
+    );
+  }
+
+  return $items;
+}
+
+/**
+ * Implements hook_menu_alter().
+ */
+function opigno_class_app_menu_alter(&$items) {
+  if (module_exists('opigno_quiz_app') && !empty($items['user/%/achievements'])) {
+    $items['user/%/achievements']['page callback'] = $items['my-achievements']['page callback'] = 'opigno_class_app_user_results';
+  }
+}
+
+/**
+ * Implements hook_views_api().
+ */
+function opigno_class_app_views_api() {
+  return array(
+    'api' => '3.0',
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function opigno_class_app_permission() {
+  return array(
+    'access class results' => array(
+      'title' => t('Access class results'),
+      'description' => t('Allows class coaches to access all their student results.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_og_permission().
+ */
+function opigno_class_app_og_permission() {
+  return array(
+    'access class results' => array(
+      'title' => t('Access class results'),
+      'description' => t('Allows class coaches to access all their student results.'),
+    ),
+  );
+}
+
+/**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function opigno_class_app_menu_local_tasks_alter(&$data, $router_item, $root_path) {
+  if ($root_path == 'admin/opigno/content/class-administration') {
+    $item = menu_get_item('node/add/class');
+    if ($item['access']) {
+      $item['title'] = t("Add a new class");
+      $item['options']['attributes']['class'][] = $item['localized_options']['attributes']['class'][] = 'add-class';
+      $item['options']['attributes']['class'][] = $item['localized_options']['attributes']['class'][] = 'opigno-class-app-add-class';
+      $item['options']['attributes']['class'][] = $item['localized_options']['attributes']['class'][] = 'opigno-class-app-class-administration-add-class-link';
+      $data['actions']['output'][] = array(
+        '#theme' => 'menu_local_action',
+        '#link' => $item,
+      );
+    }
+  }
+}
+
+/**
+ * Implements of hook_views_default_views_alter().
+ */
+function opigno_class_app_views_default_views_alter(&$views) {
+  // Group the courses by class.
+  if (array_key_exists('opigno_my_courses', $views)) {
+    $display = $views['opigno_my_courses']->display['default'];
+
+    // Add grouping.
+    $display->display_options['style_options']['grouping'] = array(
+      0 => array(
+        'field' => 'title_1',
+        'rendered' => 1,
+        'rendered_strip' => 0,
+      ),
+    );
+
+    // Add Class relationship.
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['id'] = 'reverse_opigno_class_courses_node';
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['table'] = 'node';
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['field'] = 'reverse_opigno_class_courses_node';
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['relationship'] = 'og_membership_related_node_group';
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['label'] = 'Class referencing the course';
+
+    // Add class title field.
+    $display->display_options['fields']['title_1']['id'] = 'title_1';
+    $display->display_options['fields']['title_1']['table'] = 'node';
+    $display->display_options['fields']['title_1']['field'] = 'title';
+    $display->display_options['fields']['title_1']['relationship'] = 'reverse_opigno_class_courses_node';
+    $display->display_options['fields']['title_1']['label'] = '';
+    $display->display_options['fields']['title_1']['exclude'] = TRUE;
+    $display->display_options['fields']['title_1']['element_label_colon'] = FALSE;
+  }
+
+  if (array_key_exists('opigno_course_catalgue', $views)) {
+    $display = $views['opigno_course_catalgue']->display['default'];
+
+    // Add grouping.
+    $display->display_options['style_options']['grouping'] = array(
+      0 => array(
+        'field' => 'group_group_1',
+        'rendered' => 1,
+        'rendered_strip' => 0,
+      ),
+    );
+
+    // Add Class relationship.
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['id'] = 'reverse_opigno_class_courses_node';
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['table'] = 'node';
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['field'] = 'reverse_opigno_class_courses_node';
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['relationship'] = 'og_membership_related_node_group';
+    $display->display_options['relationships']['reverse_opigno_class_courses_node']['label'] = 'Class referencing the course';
+
+    // Add class title field.
+    $display->display_options['fields']['title_1']['id'] = 'title_1';
+    $display->display_options['fields']['title_1']['table'] = 'node';
+    $display->display_options['fields']['title_1']['field'] = 'title';
+    $display->display_options['fields']['title_1']['relationship'] = 'reverse_opigno_class_courses_node';
+    $display->display_options['fields']['title_1']['label'] = '';
+    $display->display_options['fields']['title_1']['exclude'] = TRUE;
+    $display->display_options['fields']['title_1']['element_label_colon'] = FALSE;
+
+    /* Field: Content: Group */
+    $display->display_options['fields']['group_group_1']['id'] = 'group_group_1';
+    $display->display_options['fields']['group_group_1']['table'] = 'field_data_group_group';
+    $display->display_options['fields']['group_group_1']['field'] = 'group_group';
+    $display->display_options['fields']['group_group_1']['relationship'] = 'reverse_opigno_class_courses_node';
+    $display->display_options['fields']['group_group_1']['label'] = '';
+    $display->display_options['fields']['group_group_1']['exclude'] = TRUE;
+    $display->display_options['fields']['group_group_1']['alter']['alter_text'] = TRUE;
+    $display->display_options['fields']['group_group_1']['alter']['text'] = '[title_1] <div class="catalogue-class-group"> [group_group_1] </div>';
+    $display->display_options['fields']['group_group_1']['element_label_colon'] = FALSE;
+    $display->display_options['fields']['group_group_1']['type'] = 'og_group_subscribe';
+    $display->display_options['fields']['group_group_1']['settings'] = array(
+      'field_name' => 'og_user_node',
+    );
+  }
+}
+
+/**
+ * Page callback: display class results.
+ */
+function opigno_class_app_class_results() {
+  global $user;
+  $html = '';
+
+  // Failsafe.
+  if (!module_exists('opigno_quiz_app')) {
+    return t("This page requires the Opigno Quiz App to be enabled.");
+  }
+
+  // Cache accounts, as we will potentially use them many times.
+  $accounts = array();
+
+  $state = isset($_SESSION['opigno_quiz_app']['state_filter'][request_path()]) ? $_SESSION['opigno_quiz_app']['state_filter'][request_path()] : OG_STATE_ACTIVE;
+
+  foreach (og_get_groups_by_user($user, 'node') as $gid => $nid) {
+    $node = node_load($nid);
+    if ($node->type == 'class' && og_user_access('node', $nid, 'access class results')) {
+      $rows = array();
+      $scores = array();
+      foreach ($node->opigno_class_courses as $lang => $items) {
+        foreach ($items as $item) {
+          foreach (opigno_get_users_in_group($item['target_id'], $state) as $uid => $account) {
+            if (og_is_member('node', $nid, 'user', $account)) {
+              if ($data = opigno_quiz_app_get_course_data_result($uid, $item['target_id'])) {
+                $course = node_load($item['target_id']);
+                $scores[$uid][$course->title] = $data;
+                $scores[$uid][$course->title]['node'] = $course;
+                $accounts[$uid] = $account;
+              }
+            }
+          }
+        }
+      }
+
+      foreach ($scores as $uid => $course_results) {
+        $passed = OPIGNO_QUIZ_APP_PASSED;
+        foreach ($course_results as $results) {
+          if (!empty($results['passed']) && $results['passed'] != OPIGNO_QUIZ_APP_PASSED) {
+            $passed = $results['passed'];
+            break;
+          }
+        }
+        $rows[] = array(
+          theme('table', array(
+            'header' => array(
+              t("@name (!status)", array('@name' => $accounts[$uid]->name, '!status' => $passed == OPIGNO_QUIZ_APP_PASSED ? t("Passed") : ($passed == OPIGNO_QUIZ_APP_FAILED ? t("Failed") : t("Pending"))))
+            ),
+            'rows' => array(
+              array(theme('opigno_quiz_app_user_results', array('user' => $accounts[$uid], 'results' => $course_results)))
+            ),
+            'attributes' => array(
+              'class' => array('opigno-quiz-app-results-table', 'opigno-quiz-app-results-collapsible-table', 'opigno-quiz-app-course-class-user-results-table')
+            ),
+          ))
+        );
+      }
+
+      $header = array(
+        check_plain($node->title),
+      );
+      $html .= theme('table', array(
+        'header' => $header,
+        'rows' => $rows,
+        'attributes' => array(
+          'class' => array('opigno-quiz-app-results-table', 'opigno-quiz-app-results-collapsible-table', 'opigno-quiz-app-course-class-results-table')
+        ),
+      ));
+    }
+  }
+
+  module_load_include('inc', 'opigno_quiz_app', 'includes/opigno_quiz_app.pages');
+  $path = drupal_get_path('module', 'opigno_quiz_app');
+  drupal_add_js($path . '/js/opigno_quiz_app.js');
+  drupal_add_css($path . '/css/opigno_quiz_app.css');
+
+  $form = drupal_get_form('opigno_quiz_app_filter_by_status_form');
+  return render($form) . $html;
+}
+
+/**
+ * Page callback: view user results.
+ * Overwrite callback from Quiz app, group courses by class.
+ *
+ * @param  int $uid
+ *
+ * @return string
+ */
+function opigno_class_app_user_results($uid = NULL) {
+  if (!isset($uid)) {
+    global $user;
+    $uid = $user->uid;
+    $account = clone $user;
+  }
+  else {
+    $account = user_load($uid);
+  }
+
+  if (empty($uid)) {
+    drupal_set_message(t("Could not find any user to display results for."), 'error');
+    drupal_not_found();
+  }
+
+  // Failsafe.
+  if (!module_exists('opigno_quiz_app')) {
+    return t("This page requires the Opigno Quiz App to be enabled.");
+  }
+
+  $html = '';
+
+  $scores = array();
+  $classes = array();
+  $printed_scores = array();
+  foreach (og_get_groups_by_user($account, 'node') as $gid => $nid) {
+    $node = node_load($nid);
+    if ($node->type == OPIGNO_COURSE_BUNDLE) {
+      if ($score_data = opigno_quiz_app_get_course_data_result($uid, $nid)) {
+        $scores[$nid] = $score_data;
+        $scores[$nid]['node'] = $node;
+      }
+    }
+    elseif ($node->type == 'class') {
+      $classes[$nid]['node'] = $node;
+      foreach ($node->opigno_class_courses as $lang => $items) {
+        foreach ($items as $item) {
+          $classes[$nid]['courses'][$item['target_id']] = $item['target_id'];
+        }
+      }
+    }
+  }
+
+  if (!empty($classes)) {
+    foreach ($classes as $class_nid => $data) {
+      $class_scores = array();
+      if (!empty($data['courses'])) {
+        $printed_scores += array_keys($data['courses']);
+        foreach ($data['courses'] as $course_nid) {
+          $class_scores[$scores[$course_nid]['node']->title] = $scores[$course_nid];
+        }
+
+        $passed = OPIGNO_QUIZ_APP_PASSED;
+        foreach ($data['courses'] as $course_nid) {
+          if (!empty($scores[$course_nid]['passed']) && $scores[$course_nid]['passed'] != OPIGNO_QUIZ_APP_PASSED) {
+            $passed = $scores[$course_nid]['passed'];
+            break;
+          }
+        }
+
+        $html .= theme('table', array(
+          'header' => array(
+            t("@name (!status)", array('@name' => check_plain($data['node']->title), '!status' => $passed == OPIGNO_QUIZ_APP_PASSED ? t("Passed") : ($passed == OPIGNO_QUIZ_APP_FAILED ? t("Failed") : t("Pending"))))
+          ),
+          'rows' => array(
+            array(theme('opigno_quiz_app_user_results', array('user' => $account, 'results' => $class_scores))),
+          ),
+          'attributes' => array(
+            'class' => array('opigno-quiz-app-results-table', 'opigno-quiz-app-results-collapsible-table', 'opigno-quiz-app-course-class-results-table')
+          ),
+        ));
+      }
+    }
+
+    foreach ($printed_scores as $printed_score) {
+      unset($scores[$printed_score]);
+    }
+  }
+
+  $other_scores = array();
+  foreach ($scores as $nid => $score_data) {
+    $other_scores[$score_data['node']->title] = $score_data;
+  }
+
+  $html .= theme('opigno_quiz_app_user_results', array('user' => $account, 'results' => $other_scores));
+
+  $path = drupal_get_path('module', 'opigno_quiz_app');
+  drupal_add_js($path . '/js/opigno_quiz_app.js');
+  drupal_add_css($path . '/css/opigno_quiz_app.css');
+
+  return $html;
+}
+

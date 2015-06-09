@@ -1,0 +1,127 @@
+<?php
+
+/**
+ * @file
+ * Defines module install  logic.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function opigno_calendar_app_install() {
+  $type = node_type_load("calendar_event"); //Check if content type exists
+  if (empty($type)) {
+    $type = node_type_set_defaults(array(
+      'type' => 'calendar_event',
+      'name' => st('Calendar Event'),
+      'base' => 'node_content',
+      'description' => st('A Calendar event, allows display of calendar events'),
+      'has_title' => '1',
+      'title_label' => st('Title'),
+      'help' => '',
+    ));
+    node_add_body_field($type, 'Body');
+    node_type_save($type);
+  }
+
+  if (module_exists('comment')) {
+    variable_set('comment_calendar_event', COMMENT_NODE_CLOSED);
+  }
+
+  // Add the OG audience field.
+  if (function_exists("og_ui_node_type_save")) {
+    variable_set("og_group_content_type_calendar_event", TRUE);
+    og_ui_node_type_save('calendar_event');
+  }
+
+  if (module_exists('og_access')) {
+    og_create_field(OG_CONTENT_ACCESS_FIELD, 'node', 'calendar_event');
+  }
+
+  $field = field_info_field('opigno_calendar_date');
+  if (empty($field)) {
+    field_create_field(array(
+      'active' => 1,
+      'cardinality' => 1,
+      'deleted' => 0,
+      'entity_types' => array(),
+      'field_name' => 'opigno_calendar_date',
+      'foreign keys' => array(),
+      'indexes' => array(),
+      'locked' => 0,
+      'module' => 'date',
+      'settings' => array(
+        'cache_count' => 4,
+        'cache_enabled' => 0,
+        'granularity' => array(
+          'day' => 'day',
+          'hour' => 'hour',
+          'minute' => 'minute',
+          'month' => 'month',
+          'second' => 0,
+          'year' => 'year',
+        ),
+        'timezone_db' => 'UTC',
+        'todate' => 'optional',
+        'tz_handling' => 'site',
+      ),
+      'translatable' => 0,
+      'type' => 'datetime',
+    ));
+  }
+
+  $instance = field_info_instance('node', 'opigno_calendar_date', 'calendar_event');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'description' => '',
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'date',
+          'settings' => array(
+            'format_type' => 'long',
+            'fromto' => 'both',
+            'multiple_from' => '',
+            'multiple_number' => '',
+            'multiple_to' => '',
+          ),
+          'type' => 'date_default',
+          'weight' => 2,
+        ),
+        'teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
+      ),
+      'label' => 'Date',
+      'required' => 1,
+      'settings' => array(
+        'default_value' => 'now',
+        'default_value2' => 'now',
+        'default_value_code' => '',
+        'default_value_code2' => '',
+        'user_register_form' => FALSE,
+      ),
+      'widget' => array(
+        'active' => 1,
+        'module' => 'date',
+        'settings' => array(
+          'increment' => 15,
+          'input_format' => 'm/d/Y - H:i:s',
+          'input_format_custom' => '',
+          'label_position' => 'above',
+          'text_parts' => array(),
+          'year_range' => '-3:+3',
+        ),
+        'type' => 'date_popup',
+        'weight' => 2,
+      ),
+      'field_name' => 'opigno_calendar_date',
+      'entity_type' => 'node',
+      'bundle' => 'calendar_event',
+      'deleted' => '0',
+    ));
+  }
+}

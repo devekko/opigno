@@ -1,0 +1,46 @@
+/**
+ * @file
+ * Styles for the app page.
+ */
+
+#app-wrapper {
+  border: 0;
+  padding: 0;
+
+  #sidebar {
+
+    .app-stars-holder {
+      background-image: url(../img/rating-stars.png);
+
+      .app-stars {
+        background-image: url(../img/rating-stars-green.png);
+      }
+    }
+
+  }
+
+  .app-main {
+    float:left;
+    max-width: 70% !important;
+
+    #app-top {
+      margin-top: 0;
+      background: white;
+      padding: 5px;
+
+      h1 {
+        font-weight: normal;
+        color: $dark-gray;
+        margin: 0;
+      }
+    }
+
+    .app-description {
+      font-size: 2em;
+
+      h2 {
+        font-size: 1.2em;
+      }
+    }
+  }
+}

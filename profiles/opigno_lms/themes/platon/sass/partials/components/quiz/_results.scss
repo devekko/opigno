@@ -1,0 +1,44 @@
+/**
+ * @file
+ * Defines styles for the quiz results page.
+ */
+
+div.quiz-report {
+
+  div.dt {
+    background: $dark-blue;
+    color: white;
+    overflow: hidden;
+
+    p {
+      float: left;
+      margin: .25em 1em .25em .5em;
+    }
+
+    div.quiz-report-score-container {
+      border-width: 0;
+      padding: .25em .25em .25em 2em;
+      background-color: transparent;
+      background-position: left center;
+      background-repeat: no-repeat;
+      color: white;
+    }
+
+    .q-correct {
+      background-image: url(../img/answered-correctly.png);
+    }
+
+    .q-wrong {
+      background-image: url(../img/answered-incorrectly.png);
+    }
+  }
+
+  .multichoice-icon {
+    background-image: url(../img/quiz-multichoice-result-icons.png)
+  }
+
+  .multichoice-icon-cell {
+    padding-top: .5em;
+  }
+}
+

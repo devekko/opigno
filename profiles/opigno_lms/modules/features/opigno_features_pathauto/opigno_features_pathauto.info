@@ -1,0 +1,40 @@
+name = Opigno Features Pathauto
+description = Provides sensible default patterns for pathauto.
+core = 7.x
+package = Opigno Features
+dependencies[] = defaultconfig
+features[defaultconfig][] = strongarm:pathauto_blog_pattern
+features[defaultconfig][] = strongarm:pathauto_file_audio_pattern
+features[defaultconfig][] = strongarm:pathauto_file_document_pattern
+features[defaultconfig][] = strongarm:pathauto_file_image_pattern
+features[defaultconfig][] = strongarm:pathauto_file_pattern
+features[defaultconfig][] = strongarm:pathauto_file_video_pattern
+features[defaultconfig][] = strongarm:pathauto_forum_pattern
+features[defaultconfig][] = strongarm:pathauto_node_calendar_event_pattern
+features[defaultconfig][] = strongarm:pathauto_node_certificate_pattern
+features[defaultconfig][] = strongarm:pathauto_node_class_pattern
+features[defaultconfig][] = strongarm:pathauto_node_course_pattern
+features[defaultconfig][] = strongarm:pathauto_node_forum_pattern
+features[defaultconfig][] = strongarm:pathauto_node_long_answer_pattern
+features[defaultconfig][] = strongarm:pathauto_node_matching_pattern
+features[defaultconfig][] = strongarm:pathauto_node_multichoice_pattern
+features[defaultconfig][] = strongarm:pathauto_node_notification_pattern
+features[defaultconfig][] = strongarm:pathauto_node_pattern
+features[defaultconfig][] = strongarm:pathauto_node_poll_pattern
+features[defaultconfig][] = strongarm:pathauto_node_quiz_ddlines_pattern
+features[defaultconfig][] = strongarm:pathauto_node_quiz_directions_pattern
+features[defaultconfig][] = strongarm:pathauto_node_quiz_pattern
+features[defaultconfig][] = strongarm:pathauto_node_scale_pattern
+features[defaultconfig][] = strongarm:pathauto_node_short_answer_pattern
+features[defaultconfig][] = strongarm:pathauto_node_tft_file_pattern
+features[defaultconfig][] = strongarm:pathauto_node_truefalse_pattern
+features[defaultconfig][] = strongarm:pathauto_punctuation_hyphen
+features[features_api][] = api:2
+features_exclude[dependencies][defaultconfig] = defaultconfig
+
+; Information added by Drupal.org packaging script on 2015-03-01
+version = "7.x-1.18"
+core = "7.x"
+project = "opigno_lms"
+datestamp = "1425249184"
+

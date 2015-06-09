@@ -1,0 +1,37 @@
+
+#block-user-login {
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    text-align: center;
+  }
+}
+
+#block-user-login h2
+{
+  display:none;
+}
+
+#user-login-form {
+
+  @media screen and (max-width: $mobile-breakpoint) {
+    text-align: center;
+
+    .form-text, .form-password, .form-submit {
+      width: 80%;
+      text-align: center;
+    }
+
+    .form-submit {
+      padding-top: .5em;
+      padding-bottom: .5em;
+    }
+
+    .item-list ul {
+      list-style: none;
+
+      li {
+        display: inline;
+      }
+    }
+  }
+}

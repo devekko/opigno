@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * @file
+ * Defines unit tests for Opigno Quiz App.
+ */
+
+class OpignoQuizAppTest extends DrupalWebTestCase {
+
+  public static function getInfo() {
+    
+  }
+  
+}

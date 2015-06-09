@@ -1,0 +1,514 @@
+<?php
+
+/**
+ * @file
+ * Opigno notifications app install file.
+ */
+
+function opigno_notifications_app_install() {
+
+  $type = node_type_load("notification"); //Check if content type exists
+  if (empty($type)) {
+    $type = node_type_set_defaults(array(
+      'type' => 'notification',
+      'name' => st('Notification'),
+      'base' => 'node_content',
+      'description' => st('A Notification, allows teachers to notify, by calendar and/or email students'),
+      'has_title' => '1',
+      'title_label' => st('Title'),
+      'help' => '',
+    ));
+    node_type_save($type);
+  }
+
+  if (module_exists('comment')) {
+    variable_set('comment_notification', COMMENT_NODE_CLOSED);
+  }
+
+  if (function_exists('og_ui_node_type_save')) {
+    variable_set("og_group_content_type_notification", TRUE);
+    og_ui_node_type_save('notification');
+    if (module_exists('og_access')) {
+      og_create_field(OG_CONTENT_ACCESS_FIELD, 'node', 'notification');
+    }
+  }
+
+  opigno_notifications_app_install_calendar_fields();
+
+  $field = field_info_field('notification_notify_everyone');
+  if (empty($field)) {
+    field_create_field(array(
+      'translatable' => '0',
+      'entity_types' => array(),
+      'settings' => array(
+        'allowed_values' => array(
+          '',
+          '',
+        ),
+        'allowed_values_function' => '',
+      ),
+      'storage' => array(
+        'type' => 'field_sql_storage',
+        'settings' => array(),
+        'module' => 'field_sql_storage',
+        'active' => '1',
+        'details' => array(
+          'sql' => array(
+            'FIELD_LOAD_CURRENT' => array(
+              'field_data_field_notify_everyone' => array(
+                'value' => 'field_notify_everyone_value',
+              ),
+            ),
+            'FIELD_LOAD_REVISION' => array(
+              'field_revision_field_notify_everyone' => array(
+                'value' => 'field_notify_everyone_value',
+              ),
+            ),
+          ),
+        ),
+      ),
+      'foreign keys' => array(),
+      'indexes' => array(
+        'value' => array(
+          'value',
+        ),
+      ),
+      'field_name' => 'notification_notify_everyone',
+      'type' => 'list_boolean',
+      'module' => 'list',
+      'active' => '1',
+      'locked' => '0',
+      'cardinality' => '1',
+      'deleted' => '0',
+      'columns' => array(
+        'value' => array(
+          'type' => 'int',
+          'not null' => FALSE,
+        ),
+      ),
+      'bundles' => array(
+        'node' => array(
+          'notification',
+        ),
+      ),
+    ));
+  }
+
+  $instance = field_info_instance('node', 'notification_notify_everyone', 'notification');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'label' => 'Notify everyone',
+      'widget' => array(
+        'weight' => '1',
+        'type' => 'options_onoff',
+        'module' => 'options',
+        'active' => 1,
+        'settings' => array(
+          'display_label' => 1,
+        ),
+      ),
+      'settings' => array(
+        'user_register_form' => FALSE,
+      ),
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'type' => 'list_default',
+          'settings' => array(),
+          'module' => 'list',
+          'weight' => 7,
+        ),
+        'teaser' => array(
+          'type' => 'hidden',
+          'label' => 'above',
+          'settings' => array(),
+          'weight' => 0,
+        ),
+      ),
+      'required' => 0,
+      'description' => '',
+      'default_value' => array(
+        array(
+          'value' => 0,
+        ),
+      ),
+      'field_name' => 'notification_notify_everyone',
+      'entity_type' => 'node',
+      'bundle' => 'notification',
+      'deleted' => '0',
+      'weight' => 10,
+    ));
+  }
+
+  $field = field_info_field('notification_message');
+  if (empty($field)) {
+    field_create_field(array(
+      'active' => 1,
+      'cardinality' => 1,
+      'deleted' => 0,
+      'entity_types' => array(),
+      'field_name' => 'notification_message',
+      'foreign keys' => array(
+        'format' => array(
+          'columns' => array(
+            'format' => 'format',
+          ),
+          'table' => 'filter_format',
+        ),
+      ),
+      'indexes' => array(
+        'format' => array(
+          0 => 'format',
+        ),
+      ),
+      'locked' => 0,
+      'module' => 'text',
+      'settings' => array(),
+      'translatable' => 0,
+      'type' => 'text_long',
+    ));
+  }
+
+  $instance = field_info_instance('node', 'notification_message', 'notification');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'bundle' => 'notification',
+      'default_value' => NULL,
+      'deleted' => 0,
+      'description' => '',
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'text',
+          'settings' => array(),
+          'type' => 'text_default',
+          'weight' => 1,
+        ),
+        'teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
+      ),
+      'entity_type' => 'node',
+      'field_name' => 'notification_message',
+      'label' => 'Message',
+      'required' => 0,
+      'settings' => array(
+        'text_processing' => 0,
+        'user_register_form' => FALSE,
+      ),
+      'widget' => array(
+        'active' => 1,
+        'module' => 'text',
+        'settings' => array(
+          'rows' => 10,
+        ),
+        'type' => 'text_textarea',
+        'weight' => 11,
+      ),
+    ));
+  }
+
+  $field = field_info_field('notification_send_email');
+  if (empty($field)) {
+    field_create_field(array(
+      'active' => 1,
+      'cardinality' => 1,
+      'deleted' => 0,
+      'entity_types' => array(),
+      'field_name' => 'notification_send_email',
+      'foreign keys' => array(),
+      'indexes' => array(
+        'value' => array(
+          0 => 'value',
+        ),
+      ),
+      'locked' => 0,
+      'module' => 'list',
+      'settings' => array(
+        'allowed_values' => array(
+          0 => '',
+          1 => '',
+        ),
+        'allowed_values_function' => '',
+      ),
+      'translatable' => 0,
+      'type' => 'list_boolean',
+    ));
+  }
+
+  $instance = field_info_instance('node', 'notification_send_email', 'notification');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'bundle' => 'notification',
+      'default_value' => array(
+        0 => array(
+          'value' => 0,
+        ),
+      ),
+      'deleted' => 0,
+      'description' => '',
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'list',
+          'settings' => array(),
+          'type' => 'list_default',
+          'weight' => 3,
+        ),
+        'teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
+      ),
+      'entity_type' => 'node',
+      'field_name' => 'notification_send_email',
+      'label' => 'Send Email',
+      'required' => 0,
+      'settings' => array(
+        'user_register_form' => FALSE,
+      ),
+      'widget' => array(
+        'active' => 1,
+        'module' => 'options',
+        'settings' => array(
+          'display_label' => 1,
+        ),
+        'type' => 'options_onoff',
+        'weight' => 12,
+      ),
+    ));
+  }
+
+  $field = field_info_field('notification_validity');
+  if (empty($field)) {
+    field_create_field(array(
+      'active' => 1,
+      'cardinality' => 1,
+      'deleted' => 0,
+      'entity_types' => array(),
+      'field_name' => 'notification_validity',
+      'foreign keys' => array(),
+      'indexes' => array(),
+      'locked' => 0,
+      'module' => 'date',
+      'settings' => array(
+        'cache_count' => 4,
+        'cache_enabled' => 0,
+        'granularity' => array(
+          'day' => 'day',
+          'hour' => 'hour',
+          'minute' => 'minute',
+          'month' => 'month',
+          'second' => 0,
+          'year' => 'year',
+        ),
+        'timezone_db' => 'UTC',
+        'todate' => 'required',
+        'tz_handling' => 'site',
+      ),
+      'translatable' => 0,
+      'type' => 'datetime',
+    ));
+  }
+
+  $instance = field_info_instance('node', 'notification_validity', 'notification');
+  if (empty($instance)) {
+    field_create_instance(array(
+      'description' => '',
+      'display' => array(
+        'default' => array(
+          'label' => 'above',
+          'module' => 'date',
+          'settings' => array(
+            'format_type' => 'long',
+            'fromto' => 'both',
+            'multiple_from' => '',
+            'multiple_number' => '',
+            'multiple_to' => '',
+          ),
+          'type' => 'date_default',
+          'weight' => 5,
+        ),
+        'teaser' => array(
+          'label' => 'above',
+          'settings' => array(),
+          'type' => 'hidden',
+          'weight' => 0,
+        ),
+      ),
+      'label' => 'Notification validity',
+      'required' => 0,
+      'settings' => array(
+        'default_value' => 'now',
+        'default_value2' => 'strtotime',
+        'default_value_code' => '',
+        'default_value_code2' => '+1day',
+        'user_register_form' => FALSE,
+      ),
+      'widget' => array(
+        'active' => 1,
+        'module' => 'date',
+        'settings' => array(
+          'increment' => 15,
+          'input_format' => 'm/d/Y - H:i:s',
+          'input_format_custom' => '',
+          'label_position' => 'above',
+          'text_parts' => array(),
+          'year_range' => '-0:+3',
+        ),
+        'type' => 'date_popup',
+        'weight' => 15,
+      ),
+      'field_name' => 'notification_validity',
+      'entity_type' => 'node',
+      'bundle' => 'notification',
+      'deleted' => '0',
+    ));
+  }
+
+  // Translatables
+  // Included for use with string extractors like potx.
+  st('Add to Calendar');
+  st('Groups audience');
+  st('Message');
+  st('Send Email');
+  st('Calendar timespan');
+  st('Notification validity');
+}
+
+
+function opigno_notifications_app_install_calendar_fields() {
+  if (module_exists('opigno_calendar_app')) {
+    $field = field_info_field('notification_add_calendar');
+    if (empty($field)) {
+      field_create_field(array(
+        'active' => 1,
+        'cardinality' => 1,
+        'deleted' => 0,
+        'entity_types' => array(),
+        'field_name' => 'notification_add_calendar',
+        'foreign keys' => array(),
+        'indexes' => array(
+          'value' => array(
+            0 => 'value',
+          ),
+        ),
+        'locked' => 0,
+        'module' => 'list',
+        'settings' => array(
+          'allowed_values' => array(
+            0 => '',
+            1 => '',
+          ),
+          'allowed_values_function' => '',
+        ),
+        'translatable' => 0,
+        'type' => 'list_boolean',
+      ));
+    }
+    $instance = field_info_instance('node', 'notification_add_calendar', 'notification');
+    if (empty($instance)) {
+      field_create_instance(array(
+        'bundle' => 'notification',
+        'default_value' => array(
+          0 => array(
+            'value' => 0,
+          ),
+        ),
+        'deleted' => 0,
+        'description' => '',
+        'display' => array(
+          'default' => array(
+            'label' => 'above',
+            'module' => 'list',
+            'settings' => array(),
+            'type' => 'list_default',
+            'weight' => 4,
+          ),
+          'teaser' => array(
+            'label' => 'above',
+            'settings' => array(),
+            'type' => 'hidden',
+            'weight' => 0,
+          ),
+        ),
+        'entity_type' => 'node',
+        'field_name' => 'notification_add_calendar',
+        'label' => 'Add to Calendar',
+        'required' => 0,
+        'settings' => array(
+          'user_register_form' => FALSE,
+        ),
+        'widget' => array(
+          'active' => 1,
+          'module' => 'options',
+          'settings' => array(
+            'display_label' => 1,
+          ),
+          'type' => 'options_onoff',
+          'weight' => 13,
+        ),
+      ));
+    }
+
+    $instance = field_info_instance('node', 'opigno_calendar_date', 'notification');
+    if (empty($instance)) {
+      field_create_instance(array(
+        'description' => '',
+        'display' => array(
+          'default' => array(
+            'label' => 'above',
+            'module' => 'date',
+            'settings' => array(
+              'format_type' => 'long',
+              'fromto' => 'both',
+              'multiple_from' => '',
+              'multiple_number' => '',
+              'multiple_to' => '',
+            ),
+            'type' => 'date_default',
+            'weight' => 2,
+          ),
+          'teaser' => array(
+            'label' => 'above',
+            'settings' => array(),
+            'type' => 'hidden',
+            'weight' => 0,
+          ),
+        ),
+        'label' => 'Date',
+        'required' => 1,
+        'settings' => array(
+          'default_value' => 'now',
+          'default_value2' => 'now',
+          'default_value_code' => '',
+          'default_value_code2' => '',
+          'user_register_form' => FALSE,
+        ),
+        'widget' => array(
+          'active' => 1,
+          'module' => 'date',
+          'settings' => array(
+            'increment' => 15,
+            'input_format' => 'm/d/Y - H:i:s',
+            'input_format_custom' => '',
+            'label_position' => 'above',
+            'text_parts' => array(),
+            'year_range' => '-3:+3',
+          ),
+          'type' => 'date_popup',
+          'weight' => 14,
+        ),
+        'field_name' => 'opigno_calendar_date',
+        'entity_type' => 'node',
+        'bundle' => 'notification',
+        'deleted' => '0',
+      ));
+    }
+  }
+}

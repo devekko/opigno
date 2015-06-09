@@ -1,0 +1,19 @@
+<?php
+
+/**
+ * @file
+ * Defines module install  logic.
+ */
+
+/**
+ * Implements hook_install().
+ */
+function opigno_forum_app_install() {
+  if (module_exists('advanced_forum')) {
+    // Add the OG audience field.
+    if (function_exists("og_ui_node_type_save")) {
+      variable_set("og_group_content_type_forum_event", TRUE);
+      og_ui_node_type_save('forum');
+    }
+  }
+}

@@ -1,0 +1,98 @@
+<?php
+
+/**
+ * @file
+ * Opigno course quota app install file
+ */
+
+/**
+ * Implements hook_install().
+ */
+function opigno_sort_groups_install() {
+  og_invalidate_cache();
+  $roles = og_roles("node", "class", $gid = 0, $force_group = FALSE, $include_all = TRUE);
+  foreach ($roles as $index => $role) {
+    if ($role == 'manager') {
+      og_role_grant_permissions($index, array(
+        'sort courses',
+      ));
+    }
+  }
+  opigno_sort_groups_set_defaults();
+}
+
+/**
+ * Implements hook_schema().
+ */
+function opigno_sort_groups_schema() {
+  return array(
+    'opigno_sort_groups' => array(
+      'fields' => array(
+        'cgid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => FALSE,
+        ),
+        'gid' => array(
+          'type' => 'int',
+          'unsigned' => TRUE,
+          'not null' => TRUE,
+        ),
+        'weight' => array(
+          'type' => 'int',
+          'not null' => TRUE,
+          'default' => '0',
+        ),
+      ),
+      'indexes' => array(
+        'opigno_cgid' => array('cgid'),
+        'opigno_gid' => array('gid'),
+      ),
+    ),
+  );
+}
+
+function opigno_sort_groups_set_defaults() {
+  $courses = array();
+  $query = db_select('node', 'n')
+    ->fields('n')
+    ->condition('type', "class", '=');
+  $result = $query->execute();
+
+  while ($record = $result->fetchAssoc()) {
+    $ccourses = array();
+    $query2 = db_select('field_data_opigno_class_courses', 'fdd')
+      ->fields('fdd')
+      ->condition('entity_id', $record['nid'], '=')
+      ->condition('deleted', 0, '=');
+    $result2 = $query2->execute();
+    while ($record2 = $result2->fetchAssoc()) {
+      $ccourses[$record2['opigno_class_courses_target_id']] = $record2['opigno_class_courses_target_id'];
+    }
+    foreach ($ccourses as $course) {
+      db_insert('opigno_sort_groups') // Table name no longer needs {}
+        ->fields(array(
+          'cgid' => $record['nid'],
+          'gid' => $course,
+          'weight' => 0,
+        ))
+        ->execute();
+    }
+    $courses += $ccourses;
+  }
+
+  $query = db_select('node', 'n')
+    ->fields('n')
+    ->condition('type', "course", '=');
+  $result = $query->execute();
+  while ($record = $result->fetchAssoc()) {
+    if (!in_array($record['nid'], $courses)) {
+      db_insert('opigno_sort_groups') // Table name no longer needs {}
+        ->fields(array(
+          'gid' => $record['nid'],
+          'weight' => 99,
+        ))
+        ->execute();
+    }
+  }
+}

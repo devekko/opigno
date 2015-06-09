@@ -1,0 +1,280 @@
+<?php
+
+/**
+ * @file
+ * Defines module hooks and logic.
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function guideme_menu() {
+  return array(
+    'guideme/mark-done/%' => array(
+      'page callback' => 'guideme_ajax_mark_done',
+      'page arguments' => array(2),
+      'access callback' => 'guideme_access',
+      'access arguments' => array(2),
+      'type' => MENU_CALLBACK,
+    ),
+  );
+}
+
+/**
+ * Implements hook_hook_info().
+ */
+function guideme_hook_info() {
+  return array(
+    'guideme_path' => array('group' => 'guideme'),
+    'guideme_path_alter' => array('group' => 'guideme'),
+  );
+}
+
+/**
+ * Implements hook_permission().
+ */
+function guideme_permission() {
+  $guide_paths = guideme_get_guide_paths();
+  if (!empty($guide_paths)) {
+    $permission = array();
+    foreach ($guide_paths as $key => $value) {
+      $permission["use $key guided path"] = array(
+        'title' => t("Use the %path guided path", array('%path' => $key)),
+        'description' => t("Allow a user to follow the %path guided step by step instructional path.", array('%path' => $key)),
+      );
+    }
+    return $permission;
+  }
+}
+
+/**
+ * Implements hook_init().
+ */
+function guideme_init() {
+  global $user;
+
+  $map = guideme_get_map();
+  $url = drupal_is_front_page() ? '<front>' : current_path();
+  $guide_path_id = guidemap_fetch_appropriate_guide_path($map, $url);
+
+  if (!empty($guide_path_id)) {
+    if (user_access("use $guide_path_id guided path") && !guideme_has_user_completed_guide_path($user->uid, $guide_path_id)) {
+      guideme_initialize_guide_path($guide_path_id, $url);
+    }
+  }
+}
+
+/**
+ * Access callback: check if user has access to guide path.
+ *
+ * @param string $guide_path_id
+ *
+ * @return bool
+ */
+function guideme_access($guide_path_id) {
+  return user_access("use $guide_path_id guided path");
+}
+
+/**
+ * Page callback: AJAX, mark guide path as done.
+ *
+ * @param string $guide_path_id
+ */
+function guideme_ajax_mark_done($guide_path_id) {
+  global $user;
+  if ($_POST['token'] === $_SESSION['guideme']['token']) {
+    guideme_user_completed_guide_path($user->uid, $guide_path_id);
+    return '';
+  }
+  else {
+    drupal_access_denied();
+  }
+}
+
+/**
+ * Helper function to get the registered guide paths.
+ * Uses both static and persistent caching.
+ *
+ * @return array
+ */
+function guideme_get_guide_paths() {
+  $guide_paths = &drupal_static(__FUNCTION__);
+  
+  if (!isset($guide_paths)) {
+    $cache = cache_get('guideme:guide_paths');
+    if ($cache) {
+      $guide_paths = $cache->data;
+    }
+    else {
+      $guide_paths = module_invoke_all('guideme_path');
+      drupal_alter('guideme_path', $guide_paths);
+      $guide_paths = guideme_add_defaults($guide_paths);
+
+      cache_set('guideme:guide_paths', $guide_paths, 'cache', CACHE_TEMPORARY);
+    }
+  }
+  
+  return $guide_paths;
+}
+
+/**
+ * Helper function to get a single guide path.
+ *
+ * @param string $guide_path_id
+ *
+ * @return array|null
+ */
+function guideme_get_guide_path($guide_path_id) {
+  $guide_paths = guideme_get_guide_paths();
+  return !empty($guide_paths[$guide_path_id]) ? $guide_paths[$guide_path_id] : NULL;
+}
+
+/**
+ * Helper function to get the registered paths map.
+ * Uses both static and persistent caching.
+ *
+ * @return array
+ */
+function guideme_get_map() {
+  $map = &drupal_static(__FUNCTION__);
+  
+  if (!isset($map)) {
+    $cache = cache_get('guideme:map');
+    if ($cache) {
+      $map = $cache->data;
+    }
+    else {
+      $guide_paths = guideme_get_guide_paths();
+      $map = guideme_map_guide_paths($guide_paths);
+      cache_set('guideme:map', $map, 'cache', CACHE_TEMPORARY);
+    }
+  }
+  
+  return $map;
+}
+
+/**
+ * Extract URI mapping from the registered paths for quick retreival and
+ * to easily initiate a guide path.
+ *
+ * @param array $guide_paths
+ *
+ * @return array
+ */
+function guideme_map_guide_paths($guide_paths) {
+  $map = array();
+
+  // First, sort by weight.
+  uasort($guide_paths, 'drupal_sort_weight');
+
+  // Extract the URIs.
+  foreach ($guide_paths as $key => $info) {
+    $map[$key] = array_keys($info['steps']);
+  }
+
+  return $map;
+}
+
+/**
+ * Set default values on guide paths that left out optional parameters,
+ * like weight.
+ *
+ * @param array $guide_paths
+ *
+ * @return array
+ */
+function guideme_add_defaults($guide_paths) {
+  foreach ($guide_paths as $key => $info) {
+    if (!isset($info['weight'])) {
+      $guide_paths[$key]['weight'] = 0;
+    }
+  }
+  return $guide_paths;
+}
+
+/**
+ * Check if the current path is registered for a guided path.
+ *
+ * @param array $map
+ * @param string $current_path
+ *
+ * @return string|null
+ */
+function guidemap_fetch_appropriate_guide_path($map, $current_path) {
+  foreach ($map as $key => $paths) {
+    if (in_array($current_path, $paths)) {
+      return $key;
+    }
+  }
+}
+
+/**
+ * Check if user has completed the path.
+ *
+ * @param int $uid
+ * @param string $guide_path
+ *
+ * @return bool
+ */
+function guideme_has_user_completed_guide_path($uid, $guide_path) {
+  $result = db_select('guideme_user_completion', 'gc')
+    ->fields('gc', array('uid'))
+    ->condition('gc.uid', $uid)
+    ->condition('gc.guide_path', $guide_path)
+    ->execute();
+
+  if (!empty($result)) {
+    return !!$result->fetchField();
+  }
+  else {
+    return FALSE;
+  }
+}
+
+/**
+ * Set user has completed the path.
+ *
+ * @param int $uid
+ * @param string $guide_path
+ */
+function guideme_user_completed_guide_path($uid, $guide_path) {
+  db_merge('guideme_user_completion')
+    ->key(array('uid' => $uid, 'guide_path' => $guide_path))
+    ->fields(array('uid' => $uid, 'guide_path' => $guide_path))
+    ->execute();
+}
+
+/**
+ * Initialize the guide path.
+ *
+ * @param string $guide_path
+ * @param string $url
+ */
+function guideme_initialize_guide_path($guide_path_id, $url) {
+  $guide_path = guideme_get_guide_path($guide_path_id);
+  $page_steps = $guide_path['steps'][$url];
+
+  $token = uniqid(TRUE);
+  $_SESSION['guideme']['token'] = $token;
+
+  guideme_add_assets();
+  drupal_add_js(array('guideMe' => array(
+    'id' => $guide_path_id,
+    'steps' => $page_steps,
+    'token' => $token,
+  )), 'setting');
+}
+
+/**
+ * Helper function to add all Guideme assets.
+ */
+function guideme_add_assets() {
+  static $added = FALSE;
+  if (!$added) {
+    $path = drupal_get_path('module', 'guideme');
+    drupal_add_js("$path/js/vendor/joyride/jquery.joyride-2.1.js");
+    drupal_add_js("$path/js/guideme.js");
+    drupal_add_css("$path/css/vendor/joyride/joyride-2.1.css");
+    $added = TRUE;
+  }
+}
